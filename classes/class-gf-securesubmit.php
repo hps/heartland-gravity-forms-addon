@@ -47,6 +47,9 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->includeSecureSubmitSDK();
         $config = new HpsServicesConfig();
         $config->secretApiKey = rgpost('key');
+        $config->developerId = '002914';
+        $config->versionNumber = '1916';
+        
         $service = new HpsCreditService($config);
 
         $is_valid = true;
@@ -288,6 +291,8 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
+        $config->developerId = '002914';
+        $config->versionNumber = '1916';
 
         $service = new HpsFluentCreditService($config);
 
@@ -330,6 +335,8 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
+        $config->developerId = '002914';
+        $config->versionNumber = '1916';
 
         $service = new HpsFluentCreditService($config);
 
