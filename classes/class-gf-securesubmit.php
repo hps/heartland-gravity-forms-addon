@@ -237,6 +237,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ccFieldId'  => $cc_field['id'],
             'ccPage'     => rgar($cc_field, 'pageNumber'),
             'isAjax'     => $is_ajax,
+            'settings' => json_encode($this->get_plugin_settings()),
+            'send_email' => $this->getSendEmail(),
+            'authorize_or_charge' => $this->getAuthorizeOrCharge(),
         );
 
         $script = 'new SecureSubmit(' . json_encode($args) . ');';
@@ -299,76 +302,20 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $this->populateCreditCardLastFour($form);
         $this->includeSecureSubmitSDK();
-
         if ($this->getSecureSubmitJsError()) {
             return $this->authorization_error($this->getSecureSubmitJsError());
         }
-
-        $auth = $this->authorizeProduct($feed, $submission_data, $form, $entry);
-
-        return $auth;
-    }
-
-    public function authorizeProduct($feed, $submission_data, $form, $entry)
-    {
-        if ($this->getAuthorizeOrCharge() === 'charge') {
-            return array('is_authorized' => true);
-        }
-
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey();
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
-
-        $service = new HpsFluentCreditService($config);
-
-        $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
-
-        try {
-            $response = $this->getSecureSubmitJsResponse();
-            $token = new HpsTokenData();
-            $token->tokenValue = $response->token_value;
-
-            $charge = $service
-                ->authorize()
-                ->withAmount($submission_data['payment_amount'])
-                ->withCurrency(GFCommon::get_currency())
-                ->withCardHolder($cardHolder)
-                ->withToken($token)
-                ->execute();
-
-            if ($this->getSendEmail() === 'yes') {
-                $this->sendEmail($form, $entry, $charge, $cardHolder);
-            }
-
-            $auth = array(
-                'is_authorized'  => true,
-                'transaction_id' => $charge->transactionId,
-            );
-        } catch (HpsException $e) {
-            $auth = $this->authorization_error($e->getMessage());
-        }
-
-        return $auth;
+        return array('is_authorized' => true);
     }
 
     public function capture($auth, $feed, $submission_data, $form, $entry)
     {
-        if ($this->getAuthorizeOrCharge() === 'authorize') {
-            return array(
-                'is_success'     => true,
-                'transaction_id' => $auth['transaction_id'],
-                'amount'         => $submission_data['payment_amount'],
-                'payment_method' => $response->card_type,
-            );
-        }
-
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
         $config->developerId = '002914';
         $config->versionNumber = '1916';
 
-        $service = new HpsFluentCreditService($config);
+        $service = new HpsCreditService($config);
 
         $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
@@ -377,21 +324,20 @@ class GFSecureSubmit extends GFPaymentAddOn
             $token = new HpsTokenData();
             $token->tokenValue = $response->token_value;
 
-            $charge = $service
-                ->charge()
-                ->withAmount($submission_data['payment_amount'])
-                ->withCurrency(GFCommon::get_currency())
-                ->withCardHolder($cardHolder)
-                ->withToken($token)
-                ->execute();
+            $transaction = null;
+            if ($this->getAuthorizeOrCharge() == 'authorize') {
+                $transaction = $service->authorize($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
+            } else {
+                $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
+            }
 
-            if ($this->getSendEmail() === 'yes') {
-                $this->sendEmail($form, $entry, $charge, $cardHolder);
+            if ($this->getSendEmail() == 'yes') {
+                $this->sendEmail($form, $entry, $transaction, $cardHolder);
             }
 
             $payment = array(
                 'is_success'     => true,
-                'transaction_id' => $charge->transactionId,
+                'transaction_id' => $transaction->transactionId,
                 'amount'         => $submission_data['payment_amount'],
                 'payment_method' => $response->card_type,
             );
@@ -410,7 +356,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected function sendEmail($form, $entry, $transaction, $cardHolder = null)
     {
         $to = $this->getSendEmailRecipientAddress();
-        $subject = 'New Submission: ' . $form;
+        $subject = 'New Submission: ' . $form['title'];
         $message = 'Form: ' . $form['title'] . ' (' . $form['id'] . ")\r\n"
                  . 'Entry ID: ' . $entry['id'] . "\r\n"
                  . "Transaction Details:\r\n"
@@ -496,7 +442,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         $settings = $this->get_plugin_settings();
-        return $this->get_setting("{$type}_api_key", '', $settings);
+        return (string)$this->get_setting("{$type}_api_key", '', $settings);
     }
 
     public function getQueryStringApiKey($type = 'secret')
@@ -507,19 +453,19 @@ class GFSecureSubmit extends GFPaymentAddOn
     public function getAuthorizeOrCharge()
     {
         $settings = $this->get_plugin_settings();
-        return $this->get_setting('authorize_or_charge', 'charge', $settings);
+        return (string)$this->get_setting('authorize_or_charge', 'charge', $settings);
     }
 
     public function getSendEmail()
     {
         $settings = $this->get_plugin_settings();
-        return $this->get_setting('send_email', 'no', $settings);
+        return (string)$this->get_setting('send_email', 'no', $settings);
     }
 
     public function getSendEmailRecipientAddress()
     {
         $settings = $this->get_plugin_settings();
-        return $this->get_setting('send_email_recipient_address', 'charge', $settings);
+        return (string)$this->get_setting('send_email_recipient_address', '', $settings);
     }
 
     public function hasFeedCallback($form)
