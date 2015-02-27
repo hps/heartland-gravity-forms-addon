@@ -101,13 +101,7 @@
     };
 
     this.initSendEmailFieldsToggle = function () {
-      var send_email = $('#send_email').val();
-
-      if (send_email === 'yes') {
-        this.toggleFields(this.sendEmailFields, 'send_email', 'show');
-      } else {
-        this.toggleFields(this.sendEmailFields, 'send_email', 'hide');
-      }
+      this.toggleSendEmailFields($('#gaddon-setting-row-send_email input:checked').val());
     };
 
     this.toggleSendEmailFields = function (value) {
