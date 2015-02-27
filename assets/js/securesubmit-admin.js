@@ -2,6 +2,8 @@
 /*global hps, gforms_securesubmit_admin_strings, ajaxurl*/
 (function (window, $) {
   window.SecureSubmitAdminClass = function () {
+    this.sendEmailFields = ['recipient_address'];
+
     this.validateKey = function (keyName, key) {
       if (key.length === 0) {
         this.setKeyStatus(keyName, "");
@@ -97,6 +99,37 @@
 
       $('#' + keyName).after("<span id='" + keyName + "_status_icon'>&nbsp;&nbsp;" + iconMarkup + "</span>");
     };
+
+    this.initSendEmailFieldsToggle = function () {
+      var send_email = $('#send_email').val();
+
+      if (send_email === 'yes') {
+        this.toggleFields(this.sendEmailFields, 'send_email', 'show');
+      } else {
+        this.toggleFields(this.sendEmailFields, 'send_email', 'hide');
+      }
+    };
+
+    this.toggleSendEmailFields = function (value) {
+      if (value === 'yes') {
+        this.toggleFields(this.sendEmailFields, 'send_email', 'show');
+      } else {
+        this.toggleFields(this.sendEmailFields, 'send_email', 'hide');
+      }
+    };
+
+    this.toggleFields = function (fields, prefix, showOrHide) {
+      var length = fields.length;
+      var i, field;
+      for (i = 0; i < length; i++) {
+        field = fields[i];
+        if (showOrHide === 'show') {
+          $('#gaddon-setting-row-' + prefix + '_' + field).show();
+        } else {
+          $('#gaddon-setting-row-' + prefix + '_' + field).hide();
+        }
+      }
+    };
   };
 
   $(document).ready(function () {
@@ -104,5 +137,6 @@
 
     window.SecureSubmitAdmin.initKeyStatus('public_api_key');
     window.SecureSubmitAdmin.initKeyStatus('secret_api_key');
+    window.SecureSubmitAdmin.initSendEmailFieldsToggle();
   });
 })(window, window.jQuery);

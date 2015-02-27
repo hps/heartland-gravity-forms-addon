@@ -49,7 +49,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $config->secretApiKey = rgpost('key');
         $config->developerId = '002914';
         $config->versionNumber = '1916';
-        
+
         $service = new HpsCreditService($config);
 
         $is_valid = true;
@@ -108,7 +108,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'label'         => __('Payment Action', 'gravityforms-securesubmit'),
                 'type'          => 'select',
                 'default_value' => 'capture',
-                'description'   => __('Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms-securesubmit'),
+                'tooltip'       => __('Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms-securesubmit'),
                 'choices'       => array(
                     array(
                         'label'    => __('Capture', 'gravityforms-securesubmit'),
@@ -120,6 +120,32 @@ class GFSecureSubmit extends GFPaymentAddOn
                         'value' => 'authorize',
                     ),
                 ),
+            ),
+            array(
+                'name'          => 'send_email',
+                'label'         => __('Send Email', 'gravityforms-securesubmit'),
+                'type'          => 'radio',
+                'default_value' => 'no',
+                'tooltip'       => __('Sends email with transaction details independent of GF notification system.', 'gravityforms-securesubmit'),
+                'choices'       => array(
+                    array(
+                        'label'    => __('No', 'gravityforms-securesubmit'),
+                        'value'    => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', 'gravityforms-securesubmit'),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal'    => true,
+                'onchange' => "SecureSubmitAdmin.toggleSendEmailFields(this.value);",
+            ),
+            array(
+                'name'     => 'send_email_recipient_address',
+                'label'    => __('Email Recipient', 'gravityforms-securesubmit'),
+                'type'     => 'text',
+                'class'    => 'medium',
             ),
             array(
                 'label' => 'hidden',
@@ -311,6 +337,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ->withToken($token)
                 ->execute();
 
+            if ($this->getSendEmail() === 'yes') {
+                $this->sendEmail($form, $entry, $charge, $cardHolder);
+            }
+
             $auth = array(
                 'is_authorized'  => true,
                 'transaction_id' => $charge->transactionId,
@@ -355,6 +385,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ->withToken($token)
                 ->execute();
 
+            if ($this->getSendEmail() === 'yes') {
+                $this->sendEmail($form, $entry, $charge, $cardHolder);
+            }
+
             $payment = array(
                 'is_success'     => true,
                 'transaction_id' => $charge->transactionId,
@@ -372,6 +406,23 @@ class GFSecureSubmit extends GFPaymentAddOn
     }
 
     // Helper functions
+
+    protected function sendEmail($form, $entry, $transaction, $cardHolder = null)
+    {
+        $to = $this->getSendEmailRecipientAddress();
+        $subject = 'New Submission: ' . $form;
+        $message = 'Form: ' . $form['title'] . ' (' . $form['id'] . ")\r\n"
+                 . 'Entry ID: ' . $entry['id'] . "\r\n"
+                 . "Transaction Details:\r\n"
+                 . print_r($transaction, true);
+
+        if ($cardHolder != null) {
+            $message .= "Card Holder Details:\r\n"
+                      . print_r($cardHolder, true);
+        }
+
+        wp_mail($to, $subject, $message);
+    }
 
     protected function buildCardHolder($feed, $submission_data, $entry)
     {
@@ -457,6 +508,18 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $settings = $this->get_plugin_settings();
         return $this->get_setting('authorize_or_charge', 'charge', $settings);
+    }
+
+    public function getSendEmail()
+    {
+        $settings = $this->get_plugin_settings();
+        return $this->get_setting('send_email', 'no', $settings);
+    }
+
+    public function getSendEmailRecipientAddress()
+    {
+        $settings = $this->get_plugin_settings();
+        return $this->get_setting('send_email_recipient_address', 'charge', $settings);
     }
 
     public function hasFeedCallback($form)
