@@ -378,8 +378,8 @@ class GFSecureSubmit extends GFPaymentAddOn
         $lastName = implode(' ', $name);
 
         $address = new HpsAddress();
-        $address->address1 = $entry[$feed['meta']['billingInformation_address']];
-        $address->address2 = $entry[$feed['meta']['billingInformation_address2']];
+        $address->address  = $entry[$feed['meta']['billingInformation_address']]
+                           . $entry[$feed['meta']['billingInformation_address2']];
         $address->city     = $entry[$feed['meta']['billingInformation_city']];
         $address->state    = $entry[$feed['meta']['billingInformation_state']];
         $address->zip      = $entry[$feed['meta']['billingInformation_zip']];
