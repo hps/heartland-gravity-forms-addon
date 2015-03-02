@@ -4,7 +4,6 @@ GFForms::include_payment_addon_framework();
 
 class GFSecureSubmit extends GFPaymentAddOn
 {
-
     protected $_version = GF_SECURESUBMIT_VERSION;
 
     protected $_min_gravityforms_version = '1.9.1.1';
@@ -34,6 +33,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         return self::$_instance;
+    }
+
+    public function init()
+    {
+        parent::init();
+        add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 0);
     }
 
     public function init_ajax()
@@ -305,11 +310,8 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($this->getSecureSubmitJsError()) {
             return $this->authorization_error($this->getSecureSubmitJsError());
         }
-        return array('is_authorized' => true);
-    }
 
-    public function capture($auth, $feed, $submission_data, $form, $entry)
-    {
+        $isAuth = $this->getAuthorizeOrCharge() == 'authorize';
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
         $config->developerId = '002914';
@@ -322,10 +324,10 @@ class GFSecureSubmit extends GFPaymentAddOn
         try {
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
-            $token->tokenValue = $response->token_value;
+            $token->tokenValue = ($response != null ? $response->token_value : '');
 
             $transaction = null;
-            if ($this->getAuthorizeOrCharge() == 'authorize') {
+            if ($isAuth) {
                 $transaction = $service->authorize($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
             } else {
                 $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
@@ -335,23 +337,45 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $this->sendEmail($form, $entry, $transaction, $cardHolder);
             }
 
-            $payment = array(
-                'is_success'     => true,
-                'transaction_id' => $transaction->transactionId,
-                'amount'         => $submission_data['payment_amount'],
-                'payment_method' => $response->card_type,
+            $type = $isAuth ? 'Authorization' : 'Payment';
+            $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
+            $note = sprintf(__('%s has been completed. Amount: %s. Transaction Id: %s.', 'gravityforms-securesubmit'), $type, $amount_formatted, $transaction->transactionId);
+            if ($isAuth) {
+                $note .= sprintf(__(' Authorization Code: %s', 'gravityforms-securesubmit'), $transaction->authorizationCode);
+            }
+
+            $auth = array(
+                'is_authorized' => true,
+                'captured_payment' => array(
+                    'is_success'                  => true,
+                    'transaction_id'              => $transaction->transactionId,
+                    'amount'                      => $submission_data['payment_amount'],
+                    'payment_method'              => $response->card_type,
+                    'securesubmit_payment_action' => $this->getAuthorizeOrCharge(),
+                    'note'                        => $note,
+                ),
             );
-        } catch (SecureSubmit_Error $e) {
-            $payment = array(
-                'is_success'    => false,
-                'error_message' => $e->getMessage()
-            );
+        } catch (HpsException $e) {
+            $auth = $this->authorization_error($e->getMessage());
         }
 
-        return $payment;
+        return $auth;
     }
 
     // Helper functions
+
+    public function updateAuthorizationEntry($entry, $result = array())
+    {
+        if (isset($result['securesubmit_payment_action'])
+            && $result['securesubmit_payment_action'] == 'authorize'
+            && isset($result['is_success'])
+            && $result['is_success']) {
+            $entry['payment_status'] = __('Authorized', 'gravityforms-securesubmit');
+            GFAPI::update_entry($entry);
+        }
+
+        return $entry;
+    }
 
     protected function sendEmail($form, $entry, $transaction, $cardHolder = null)
     {
@@ -413,8 +437,8 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $cc_field = $this->get_credit_card_field($form);
         $response = $this->getSecureSubmitJsResponse();
-        $_POST['input_' . $cc_field['id'] . '_1'] = 'XXXXXXXXXXXX' . $response->last_four;
-        $_POST['input_' . $cc_field['id'] . '_4'] = $response->card_type;
+        $_POST['input_' . $cc_field['id'] . '_1'] = 'XXXXXXXXXXXX' . ($response != null ? $response->last_four : '');
+        $_POST['input_' . $cc_field['id'] . '_4'] = ($response != null ? $response->card_type : '');
     }
 
     public function includeSecureSubmitSDK()
