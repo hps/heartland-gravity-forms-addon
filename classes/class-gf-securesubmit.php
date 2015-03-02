@@ -25,6 +25,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected $_capabilities = array('gravityforms_securesubmit', 'gravityforms_securesubmit_uninstall');
 
     private static $_instance = null;
+    public $transaction_response = null;
 
     public static function get_instance()
     {
@@ -38,7 +39,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     public function init()
     {
         parent::init();
-        add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 0);
+        add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 10, 2);
     }
 
     public function init_ajax()
@@ -332,6 +333,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             } else {
                 $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
             }
+            self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
                 $this->sendEmail($form, $entry, $transaction, $cardHolder);
