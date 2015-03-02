@@ -40,6 +40,8 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         parent::init();
         add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 10, 2);
+        add_filter('gform_replace_merge_tags', array($this, 'replaceMergeTags'), 10, 7);
+        add_action('gform_admin_pre_render', array($this, 'addClientSideMergeTags'));
     }
 
     public function init_ajax()
@@ -529,5 +531,42 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($mapped_field_page > $cc_page) {
             $this->set_field_error($field, __('The selected field needs to be on the same page as the Credit Card field or a previous page.', 'gravityforms-securesubmit'));
         }
+    }
+
+    public function replaceMergeTags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format)
+    {
+        $mergeTags = array(
+            'transactionId'     => '{securesubmit_transaction_id}',
+            'authorizationCode' => '{securesubmit_authorization_code}'
+        );
+
+        $gFormsKey = array(
+            'transactionId' => 'transaction_id',
+        );
+     
+        foreach ($mergeTags as $key => $mergeTag) {
+            // added for GF 1.9.x
+            if (strpos($text, $mergeTag) === false || empty($entry) || empty($form)) {
+                return $text;
+            }
+
+            $value = '';
+            if (class_exists('GFSecureSubmit') && isset(GFSecureSubmit::get_instance()->transaction_response)) {
+                $value = GFSecureSubmit::get_instance()->transaction_response->$key;
+            }
+
+            if (isset($gFormsKey[$key]) && empty($value)) {
+                $value = rgar($entry, $gFormsKey[$key]);
+            }
+
+            $text = str_replace($mergeTag, $value, $text);
+        }
+        return $text;
+    }
+
+    public function addClientSideMergeTags($form)
+    {
+        include $this->get_base_path() . '/../gravityforms-securesubmit/templates/client-side-merge-tags.php';
+        return $form;
     }
 }
