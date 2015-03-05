@@ -130,6 +130,25 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
             ),
             array(
+                'name'          => 'allow_payment_action_override',
+                'label'         => __('Allow Payment Action Override', 'gravityforms-securesubmit'),
+                'type'          => 'radio',
+                'default_value' => 'no',
+                'tooltip'       => __('Allows a SecureSubmit Feed to override the default payment action (authorize / capture).', 'gravityforms-securesubmit'),
+                'choices'       => array(
+                    array(
+                        'label'    => __('No', 'gravityforms-securesubmit'),
+                        'value'    => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', 'gravityforms-securesubmit'),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal'    => true,
+            ),
+            array(
                 'name'          => 'send_email',
                 'label'         => __('Send Email', 'gravityforms-securesubmit'),
                 'type'          => 'radio',
@@ -166,6 +185,39 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'type'  => 'hidden',
             ),
         );
+    }
+
+    public function feed_settings_fields()
+    {
+        $default_settings = parent::feed_settings_fields();
+
+        if ($this->getAllowPaymentActionOverride() == 'yes') {
+            $authorize_or_charge_field = array(
+                'name'          => 'authorize_or_charge',
+                'label'         => __('Payment Action', 'gravityforms-securesubmit'),
+                'type'          => 'select',
+                'default_value' => 'capture',
+                'tooltip'       => __('Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms-securesubmit'),
+                'choices'       => array(
+                    array(
+                        'label'    => __('Capture', 'gravityforms-securesubmit'),
+                        'value'    => 'capture',
+                    ),
+                    array(
+                        'label' => __('Authorize', 'gravityforms-securesubmit'),
+                        'value' => 'authorize',
+                    ),
+                ),
+            );
+            if ($this->getAuthorizeOrCharge() == 'capture') {
+                $authorize_or_charge_field['choices'][0]['selected'] = true;
+            } else {
+                $authorize_or_charge_field['choices'][1]['selected'] = true;
+            }
+            $default_settings = $this->add_field_after('paymentAmount', $authorize_or_charge_field, $default_settings);
+        }
+
+        return $default_settings;
     }
 
     public function scripts()
@@ -245,9 +297,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ccFieldId'  => $cc_field['id'],
             'ccPage'     => rgar($cc_field, 'pageNumber'),
             'isAjax'     => $is_ajax,
-            'settings' => json_encode($this->get_plugin_settings()),
-            'send_email' => $this->getSendEmail(),
-            'authorize_or_charge' => $this->getAuthorizeOrCharge(),
         );
 
         $script = 'new SecureSubmit(' . json_encode($args) . ');';
@@ -314,7 +363,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             return $this->authorization_error($this->getSecureSubmitJsError());
         }
 
-        $isAuth = $this->getAuthorizeOrCharge() == 'authorize';
+        $isAuth = $this->getAuthorizeOrCharge($feed) == 'authorize';
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
         $config->developerId = '002914';
@@ -355,7 +404,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'transaction_id'              => $transaction->transactionId,
                     'amount'                      => $submission_data['payment_amount'],
                     'payment_method'              => $response->card_type,
-                    'securesubmit_payment_action' => $this->getAuthorizeOrCharge(),
+                    'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
                     'note'                        => $note,
                 ),
             );
@@ -478,10 +527,19 @@ class GFSecureSubmit extends GFPaymentAddOn
         return rgget($type);
     }
 
-    public function getAuthorizeOrCharge()
+    public function getAuthorizeOrCharge($feed = null)
     {
+        if ($feed != null && isset($feed['meta']['authorize_or_charge'])) {
+            return (string)$feed['meta']['authorize_or_charge'];
+        }
         $settings = $this->get_plugin_settings();
         return (string)$this->get_setting('authorize_or_charge', 'charge', $settings);
+    }
+
+    public function getAllowPaymentActionOverride()
+    {
+        $settings = $this->get_plugin_settings();
+        return (string)$this->get_setting('allow_payment_action_override', 'no', $settings);
     }
 
     public function getSendEmail()
