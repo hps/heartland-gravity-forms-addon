@@ -4,7 +4,6 @@ GFForms::include_payment_addon_framework();
 
 class GFSecureSubmit extends GFPaymentAddOn
 {
-
     protected $_version = GF_SECURESUBMIT_VERSION;
 
     protected $_min_gravityforms_version = '1.9.1.1';
@@ -26,6 +25,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected $_capabilities = array('gravityforms_securesubmit', 'gravityforms_securesubmit_uninstall');
 
     private static $_instance = null;
+    public $transaction_response = null;
 
     public static function get_instance()
     {
@@ -34,6 +34,14 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         return self::$_instance;
+    }
+
+    public function init()
+    {
+        parent::init();
+        add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 10, 2);
+        add_filter('gform_replace_merge_tags', array($this, 'replaceMergeTags'), 10, 7);
+        add_action('gform_admin_pre_render', array($this, 'addClientSideMergeTags'));
     }
 
     public function init_ajax()
@@ -49,7 +57,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $config->secretApiKey = rgpost('key');
         $config->developerId = '002914';
         $config->versionNumber = '1916';
-        
+
         $service = new HpsCreditService($config);
 
         $is_valid = true;
@@ -108,7 +116,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'label'         => __('Payment Action', 'gravityforms-securesubmit'),
                 'type'          => 'select',
                 'default_value' => 'capture',
-                'description'   => __('Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms-securesubmit'),
+                'tooltip'       => __('Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms-securesubmit'),
                 'choices'       => array(
                     array(
                         'label'    => __('Capture', 'gravityforms-securesubmit'),
@@ -120,6 +128,32 @@ class GFSecureSubmit extends GFPaymentAddOn
                         'value' => 'authorize',
                     ),
                 ),
+            ),
+            array(
+                'name'          => 'send_email',
+                'label'         => __('Send Email', 'gravityforms-securesubmit'),
+                'type'          => 'radio',
+                'default_value' => 'no',
+                'tooltip'       => __('Sends email with transaction details independent of GF notification system.', 'gravityforms-securesubmit'),
+                'choices'       => array(
+                    array(
+                        'label'    => __('No', 'gravityforms-securesubmit'),
+                        'value'    => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', 'gravityforms-securesubmit'),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal'    => true,
+                'onchange' => "SecureSubmitAdmin.toggleSendEmailFields(this.value);",
+            ),
+            array(
+                'name'     => 'send_email_recipient_address',
+                'label'    => __('Email Recipient', 'gravityforms-securesubmit'),
+                'type'     => 'text',
+                'class'    => 'medium',
             ),
             array(
                 'label' => 'hidden',
@@ -211,6 +245,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ccFieldId'  => $cc_field['id'],
             'ccPage'     => rgar($cc_field, 'pageNumber'),
             'isAjax'     => $is_ajax,
+            'settings' => json_encode($this->get_plugin_settings()),
+            'send_email' => $this->getSendEmail(),
+            'authorize_or_charge' => $this->getAuthorizeOrCharge(),
         );
 
         $script = 'new SecureSubmit(' . json_encode($args) . ');';
@@ -273,47 +310,54 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $this->populateCreditCardLastFour($form);
         $this->includeSecureSubmitSDK();
-
         if ($this->getSecureSubmitJsError()) {
             return $this->authorization_error($this->getSecureSubmitJsError());
         }
 
-        $auth = $this->authorizeProduct($feed, $submission_data, $form, $entry);
-
-        return $auth;
-    }
-
-    public function authorizeProduct($feed, $submission_data, $form, $entry)
-    {
-        if ($this->getAuthorizeOrCharge() === 'charge') {
-            return array('is_authorized' => true);
-        }
-
+        $isAuth = $this->getAuthorizeOrCharge() == 'authorize';
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey();
         $config->developerId = '002914';
         $config->versionNumber = '1916';
 
-        $service = new HpsFluentCreditService($config);
+        $service = new HpsCreditService($config);
 
         $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
         try {
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
-            $token->tokenValue = $response->token_value;
+            $token->tokenValue = ($response != null ? $response->token_value : '');
 
-            $charge = $service
-                ->authorize()
-                ->withAmount($submission_data['payment_amount'])
-                ->withCurrency(GFCommon::get_currency())
-                ->withCardHolder($cardHolder)
-                ->withToken($token)
-                ->execute();
+            $transaction = null;
+            if ($isAuth) {
+                $transaction = $service->authorize($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
+            } else {
+                $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
+            }
+            self::get_instance()->transaction_response = $transaction;
+
+            if ($this->getSendEmail() == 'yes') {
+                $this->sendEmail($form, $entry, $transaction, $cardHolder);
+            }
+
+            $type = $isAuth ? 'Authorization' : 'Payment';
+            $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
+            $note = sprintf(__('%s has been completed. Amount: %s. Transaction Id: %s.', 'gravityforms-securesubmit'), $type, $amount_formatted, $transaction->transactionId);
+            if ($isAuth) {
+                $note .= sprintf(__(' Authorization Code: %s', 'gravityforms-securesubmit'), $transaction->authorizationCode);
+            }
 
             $auth = array(
-                'is_authorized'  => true,
-                'transaction_id' => $charge->transactionId,
+                'is_authorized' => true,
+                'captured_payment' => array(
+                    'is_success'                  => true,
+                    'transaction_id'              => $transaction->transactionId,
+                    'amount'                      => $submission_data['payment_amount'],
+                    'payment_method'              => $response->card_type,
+                    'securesubmit_payment_action' => $this->getAuthorizeOrCharge(),
+                    'note'                        => $note,
+                ),
             );
         } catch (HpsException $e) {
             $auth = $this->authorization_error($e->getMessage());
@@ -322,56 +366,37 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $auth;
     }
 
-    public function capture($auth, $feed, $submission_data, $form, $entry)
+    // Helper functions
+
+    public function updateAuthorizationEntry($entry, $result = array())
     {
-        if ($this->getAuthorizeOrCharge() === 'authorize') {
-            return array(
-                'is_success'     => true,
-                'transaction_id' => $auth['transaction_id'],
-                'amount'         => $submission_data['payment_amount'],
-                'payment_method' => $response->card_type,
-            );
+        if (isset($result['securesubmit_payment_action'])
+            && $result['securesubmit_payment_action'] == 'authorize'
+            && isset($result['is_success'])
+            && $result['is_success']) {
+            $entry['payment_status'] = __('Authorized', 'gravityforms-securesubmit');
+            GFAPI::update_entry($entry);
         }
 
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey();
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
-
-        $service = new HpsFluentCreditService($config);
-
-        $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
-
-        try {
-            $response = $this->getSecureSubmitJsResponse();
-            $token = new HpsTokenData();
-            $token->tokenValue = $response->token_value;
-
-            $charge = $service
-                ->charge()
-                ->withAmount($submission_data['payment_amount'])
-                ->withCurrency(GFCommon::get_currency())
-                ->withCardHolder($cardHolder)
-                ->withToken($token)
-                ->execute();
-
-            $payment = array(
-                'is_success'     => true,
-                'transaction_id' => $charge->transactionId,
-                'amount'         => $submission_data['payment_amount'],
-                'payment_method' => $response->card_type,
-            );
-        } catch (SecureSubmit_Error $e) {
-            $payment = array(
-                'is_success'    => false,
-                'error_message' => $e->getMessage()
-            );
-        }
-
-        return $payment;
+        return $entry;
     }
 
-    // Helper functions
+    protected function sendEmail($form, $entry, $transaction, $cardHolder = null)
+    {
+        $to = $this->getSendEmailRecipientAddress();
+        $subject = 'New Submission: ' . $form['title'];
+        $message = 'Form: ' . $form['title'] . ' (' . $form['id'] . ")\r\n"
+                 . 'Entry ID: ' . $entry['id'] . "\r\n"
+                 . "Transaction Details:\r\n"
+                 . print_r($transaction, true);
+
+        if ($cardHolder != null) {
+            $message .= "Card Holder Details:\r\n"
+                      . print_r($cardHolder, true);
+        }
+
+        wp_mail($to, $subject, $message);
+    }
 
     protected function buildCardHolder($feed, $submission_data, $entry)
     {
@@ -381,8 +406,8 @@ class GFSecureSubmit extends GFPaymentAddOn
         $lastName = implode(' ', $name);
 
         $address = new HpsAddress();
-        $address->address1 = $entry[$feed['meta']['billingInformation_address']];
-        $address->address2 = $entry[$feed['meta']['billingInformation_address2']];
+        $address->address  = $entry[$feed['meta']['billingInformation_address']]
+                           . $entry[$feed['meta']['billingInformation_address2']];
         $address->city     = $entry[$feed['meta']['billingInformation_city']];
         $address->state    = $entry[$feed['meta']['billingInformation_state']];
         $address->zip      = $entry[$feed['meta']['billingInformation_zip']];
@@ -416,8 +441,8 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $cc_field = $this->get_credit_card_field($form);
         $response = $this->getSecureSubmitJsResponse();
-        $_POST['input_' . $cc_field['id'] . '_1'] = 'XXXXXXXXXXXX' . $response->last_four;
-        $_POST['input_' . $cc_field['id'] . '_4'] = $response->card_type;
+        $_POST['input_' . $cc_field['id'] . '_1'] = 'XXXXXXXXXXXX' . ($response != null ? $response->last_four : '');
+        $_POST['input_' . $cc_field['id'] . '_4'] = ($response != null ? $response->card_type : '');
     }
 
     public function includeSecureSubmitSDK()
@@ -445,7 +470,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         $settings = $this->get_plugin_settings();
-        return $this->get_setting("{$type}_api_key", '', $settings);
+        return (string)$this->get_setting("{$type}_api_key", '', $settings);
     }
 
     public function getQueryStringApiKey($type = 'secret')
@@ -456,7 +481,19 @@ class GFSecureSubmit extends GFPaymentAddOn
     public function getAuthorizeOrCharge()
     {
         $settings = $this->get_plugin_settings();
-        return $this->get_setting('authorize_or_charge', 'charge', $settings);
+        return (string)$this->get_setting('authorize_or_charge', 'charge', $settings);
+    }
+
+    public function getSendEmail()
+    {
+        $settings = $this->get_plugin_settings();
+        return (string)$this->get_setting('send_email', 'no', $settings);
+    }
+
+    public function getSendEmailRecipientAddress()
+    {
+        $settings = $this->get_plugin_settings();
+        return (string)$this->get_setting('send_email_recipient_address', '', $settings);
     }
 
     public function hasFeedCallback($form)
@@ -494,5 +531,42 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($mapped_field_page > $cc_page) {
             $this->set_field_error($field, __('The selected field needs to be on the same page as the Credit Card field or a previous page.', 'gravityforms-securesubmit'));
         }
+    }
+
+    public function replaceMergeTags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format)
+    {
+        $mergeTags = array(
+            'transactionId'     => '{securesubmit_transaction_id}',
+            'authorizationCode' => '{securesubmit_authorization_code}'
+        );
+
+        $gFormsKey = array(
+            'transactionId' => 'transaction_id',
+        );
+     
+        foreach ($mergeTags as $key => $mergeTag) {
+            // added for GF 1.9.x
+            if (strpos($text, $mergeTag) === false || empty($entry) || empty($form)) {
+                return $text;
+            }
+
+            $value = '';
+            if (class_exists('GFSecureSubmit') && isset(GFSecureSubmit::get_instance()->transaction_response)) {
+                $value = GFSecureSubmit::get_instance()->transaction_response->$key;
+            }
+
+            if (isset($gFormsKey[$key]) && empty($value)) {
+                $value = rgar($entry, $gFormsKey[$key]);
+            }
+
+            $text = str_replace($mergeTag, $value, $text);
+        }
+        return $text;
+    }
+
+    public function addClientSideMergeTags($form)
+    {
+        include $this->get_base_path() . '/../gravityforms-securesubmit/templates/client-side-merge-tags.php';
+        return $form;
     }
 }
