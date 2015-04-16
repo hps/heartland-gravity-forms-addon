@@ -21,6 +21,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.1.1 =
+* Fix directory resolution for templates and SDK inclusion
+
 = 1.1.0 =
 * Add ability to inject transaction id or authorization code in notifications.
 * Fix bugs with authorize vs charge payment methods.
