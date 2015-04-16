@@ -496,7 +496,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function includeSecureSubmitSDK()
     {
-        require_once $this->get_base_path() . '/../gravityforms-securesubmit/classes/includes/Hps.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/Hps.php';
         do_action('gform_securesubmit_post_include_api');
     }
 
@@ -601,7 +601,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $gFormsKey = array(
             'transactionId' => 'transaction_id',
         );
-     
+
         foreach ($mergeTags as $key => $mergeTag) {
             // added for GF 1.9.x
             if (strpos($text, $mergeTag) === false || empty($entry) || empty($form)) {
@@ -624,7 +624,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function addClientSideMergeTags($form)
     {
-        include $this->get_base_path() . '/../gravityforms-securesubmit/templates/client-side-merge-tags.php';
+        include plugin_dir_path(__FILE__) . '../templates/client-side-merge-tags.php';
         return $form;
     }
 }
