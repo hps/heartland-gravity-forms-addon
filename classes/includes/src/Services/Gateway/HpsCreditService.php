@@ -359,8 +359,8 @@ class HpsCreditService extends HpsSoapGatewayService
 
     private function _processChargeGatewayResponse($response, $expectedType)
     {
-        $gatewayRspCode = (isset($response->Header->GatewayRspCode) ? $response->Header->GatewayRspCode : null);
-        $transactionId = (isset($response->Header->GatewayTxnId) ? $response->Header->GatewayTxnId : null);
+        $gatewayRspCode = (isset($response->Header->GatewayRspCode) ? (string)$response->Header->GatewayRspCode : null);
+        $transactionId = (isset($response->Header->GatewayTxnId) ? (string)$response->Header->GatewayTxnId : null);
 
         if ($gatewayRspCode == '0') {
             return;
@@ -383,12 +383,12 @@ class HpsCreditService extends HpsSoapGatewayService
 
     private function _processChargeIssuerResponse($response, $expectedType)
     {
-        $transactionId = (isset($response->Header->GatewayTxnId) ? $response->Header->GatewayTxnId : null);
+        $transactionId = (isset($response->Header->GatewayTxnId) ? (string)$response->Header->GatewayTxnId : null);
         $item = $response->Transaction->$expectedType;
 
         if ($item != null) {
-            $responseCode = (isset($item->RspCode) ? $item->RspCode : null);
-            $responseText = (isset($item->RspText) ? $item->RspText : null);
+            $responseCode = (isset($item->RspCode) ? (string)$item->RspCode : null);
+            $responseText = (isset($item->RspText) ? (string)$item->RspText : null);
 
             if ($responseCode != null) {
                 // check if we need to do a reversal

@@ -14,7 +14,7 @@ class HpsReportTransactionSummary extends HpsTransaction
     {
         $transactions = array();
 
-        if ($rsp->Transaction->ReportActivity->Header->TxnCnt == "0") {
+        if ((string)$rsp->Transaction->ReportActivity->Header->TxnCnt == "0") {
             return $transactions;
         }
 
@@ -26,7 +26,7 @@ class HpsReportTransactionSummary extends HpsTransaction
         $serviceName = (isset($filterBy) ? HpsTransaction::transactionTypeToServiceName($filterBy) : null);
 
         foreach ($rsp->Transaction->ReportActivity->Details as $charge) {
-            if (isset($serviceName) && $serviceName != $charge->ServiceName) {
+            if (isset($serviceName) && $serviceName != (string)$charge->ServiceName) {
                 continue;
             }
 
@@ -34,32 +34,32 @@ class HpsReportTransactionSummary extends HpsTransaction
 
             // Hydrate the header
             $summary->_header = new HpsTransactionHeader();
-            $summary->_header->gatewayResponseCode = $charge->GatewayRspCode;
-            $summary->_header->gatewayResponseMessage = $charge->GatewayRspMsg;
+            $summary->_header->gatewayResponseCode = (string)$charge->GatewayRspCode;
+            $summary->_header->gatewayResponseMessage = (string)$charge->GatewayRspMsg;
 
-            $summary->transactionId = $charge->GatewayTxnId;
+            $summary->transactionId = (string)$charge->GatewayTxnId;
 
-            $summary->originalTransactionId = (isset($charge->OriginalGatewayTxnId) ? $charge->OriginalGatewayTxnId : null);
-            $summary->maskedCardNumber = (isset($charge->MaskedCardNbr) ? $charge->MaskedCardNbr : null);
-            $summary->responseCode = (isset($charge->IssuerRspCode) ? $charge->IssuerRspCode : null);
-            $summary->responseText = (isset($charge->IssuerRspText) ? $charge->IssuerRspText : null);
-            $summary->amount = (isset($charge->Amt) ? $charge->Amt : null);
-            $summary->settlementAmount = (isset($charge->SettlementAmt) ? $charge->SettlementAmt : null);
-            $summary->transactionType = (isset($charge->ServiceName) ? HpsTransaction::serviceNameToTransactionType($charge->ServiceName) : null);
-            $summary->transactionUTCDate = (isset($charge->TxnUtcDT) ? $charge->TxnUtcDT : null);
+            $summary->originalTransactionId = (isset($charge->OriginalGatewayTxnId) ? (string)$charge->OriginalGatewayTxnId : null);
+            $summary->maskedCardNumber = (isset($charge->MaskedCardNbr) ? (string)$charge->MaskedCardNbr : null);
+            $summary->responseCode = (isset($charge->IssuerRspCode) ? (string)$charge->IssuerRspCode : null);
+            $summary->responseText = (isset($charge->IssuerRspText) ? (string)$charge->IssuerRspText : null);
+            $summary->amount = (isset($charge->Amt) ? (string)$charge->Amt : null);
+            $summary->settlementAmount = (isset($charge->SettlementAmt) ? (string)$charge->SettlementAmt : null);
+            $summary->transactionType = (isset($charge->ServiceName) ? HpsTransaction::serviceNameToTransactionType((string)$charge->ServiceName) : null);
+            $summary->transactionUTCDate = (isset($charge->TxnUtcDT) ? (string)$charge->TxnUtcDT : null);
 
-            $gwResponseCode = (isset($charge->GatewayRspCode) ? $charge->GatewayRspCode : null);
-            $issuerResponseCode  = (isset($charge->IssuerRspCode) ? $charge->IssuerRspCode : null);
+            $gwResponseCode = (isset($charge->GatewayRspCode) ? (string)$charge->GatewayRspCode : null);
+            $issuerResponseCode  = (isset($charge->IssuerRspCode) ? (string)$charge->IssuerRspCode : null);
 
             if ($gwResponseCode != "0" || $issuerResponseCode != "00") {
                 $exceptions = new HpsChargeExceptions();
                 if ($gwResponseCode != "0") {
-                    $message = $charge->GatewayRspMsg;
-                    $exceptions->hpsException = HpsGatewayResponseValidation::getException($charge->GatewayTxnId, $gwResponseCode, $message);
+                    $message = (string)$charge->GatewayRspMsg;
+                    $exceptions->hpsException = HpsGatewayResponseValidation::getException((string)$charge->GatewayTxnId, $gwResponseCode, $message);
                 }
                 if ($issuerResponseCode != "00") {
-                    $message = $charge->IssuerRspText;
-                    $exceptions->cardException = HpsIssuerResponseValidation::getException($charge->GatewayTxnId, $issuerResponseCode, $message);
+                    $message = (string)$charge->IssuerRspText;
+                    $exceptions->cardException = HpsIssuerResponseValidation::getException((string)$charge->GatewayTxnId, $issuerResponseCode, $message);
                 }
                 $summary->exceptions = $exceptions;
             }

@@ -15,22 +15,22 @@ class HpsTransaction
 
         // Hydrate the header
         $transaction->_header = new HpsTransactionHeader();
-        $transaction->_header->gatewayResponseCode = $rsp->Header->GatewayRspCode;
-        $transaction->_header->gatewayResponseMessage = $rsp->Header->GatewayRspMsg;
-        $transaction->_header->responseDt = $rsp->Header->RspDT;
-        $transaction->_header->clientTxnId = (isset($rsp->Header->ClientTxnId) ? $rsp->Header->ClientTxnId : null);
+        $transaction->_header->gatewayResponseCode = (string)$rsp->Header->GatewayRspCode;
+        $transaction->_header->gatewayResponseMessage = (string)$rsp->Header->GatewayRspMsg;
+        $transaction->_header->responseDt = (string)$rsp->Header->RspDT;
+        $transaction->_header->clientTxnId = (isset($rsp->Header->ClientTxnId) ? (string)$rsp->Header->ClientTxnId : null);
 
-        $transaction->transactionId = $rsp->Header->GatewayTxnId;
+        $transaction->transactionId = (string)$rsp->Header->GatewayTxnId;
         if (isset($rsp->Header->ClientTxnId)) {
-            $transaction->clientTransactionId = $rsp->Header->ClientTxnId;
+            $transaction->clientTransactionId = (string)$rsp->Header->ClientTxnId;
         }
 
         // Hydrate the body
         $item = $rsp->Transaction->$txnType;
         if ($item != null) {
-            $transaction->responseCode = (isset($item->RspCode) ? $item->RspCode : null);
-            $transaction->responseText = (isset($item->RspText) ? $item->RspText : null);
-            $transaction->referenceNumber = (isset($item->RefNbr) ? $item->RefNbr : null);
+            $transaction->responseCode = (isset($item->RspCode) ? (string)$item->RspCode : null);
+            $transaction->responseText = (isset($item->RspText) ? (string)$item->RspText : null);
+            $transaction->referenceNumber = (isset($item->RefNbr) ? (string)$item->RefNbr : null);
         }
 
         return $transaction;

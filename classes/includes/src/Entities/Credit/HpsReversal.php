@@ -13,11 +13,11 @@ class HpsReversal extends HpsTransaction
         $reverseResponse = $rsp->Transaction->$txnType;
 
         $reverse = parent::fromDict($rsp, $txnType, $returnType);
-        $reverse->avsResultCode = (isset($reverseResponse->AVSRsltCode) ? $reverseResponse->AVSRsltCode : null);
-        $reverse->avsResultText = (isset($reverseResponse->AVSRsltText) ? $reverseResponse->AVSRsltText : null);
-        $reverse->cpcIndicator  = (isset($reverseResponse->CPCInd) ? $reverseResponse->CPCInd : null);
-        $reverse->cvvResultCode = (isset($reverseResponse->CVVRsltCode) ? $reverseResponse->CVVRsltCode : null);
-        $reverse->cvvResultText = (isset($reverseResponse->CVVRsltText) ? $reverseResponse->CVVRsltText : null);
+        $reverse->avsResultCode = (isset($reverseResponse->AVSRsltCode) ? (string)$reverseResponse->AVSRsltCode : null);
+        $reverse->avsResultText = (isset($reverseResponse->AVSRsltText) ? (string)$reverseResponse->AVSRsltText : null);
+        $reverse->cpcIndicator  = (isset($reverseResponse->CPCInd) ? (string)$reverseResponse->CPCInd : null);
+        $reverse->cvvResultCode = (isset($reverseResponse->CVVRsltCode) ? (string)$reverseResponse->CVVRsltCode : null);
+        $reverse->cvvResultText = (isset($reverseResponse->CVVRsltText) ? (string)$reverseResponse->CVVRsltText : null);
 
         return $reverse;
     }

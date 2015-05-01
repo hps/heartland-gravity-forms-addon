@@ -112,7 +112,7 @@ class HpsCheckService extends HpsSoapGatewayService
 
         if ($response->responseCode != 0) {
             throw new HpsCheckException(
-                $rsp->Header->GatewayTxnId,
+                (string)$rsp->Header->GatewayTxnId,
                 $response->details,
                 $response->responseCode,
                 $response->responseText
