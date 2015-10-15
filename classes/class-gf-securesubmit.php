@@ -149,6 +149,25 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'horizontal'    => true,
             ),
             array(
+                'name'          => 'allow_api_keys_override',
+                'label'         => __('Allow API Keys Override', 'gravityforms-securesubmit'),
+                'type'          => 'radio',
+                'default_value' => 'no',
+                'tooltip'       => __('Allows a SecureSubmit Feed to override the default set of API keys.', 'gravityforms-securesubmit'),
+                'choices'       => array(
+                    array(
+                        'label'    => __('No', 'gravityforms-securesubmit'),
+                        'value'    => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', 'gravityforms-securesubmit'),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal'    => true,
+            ),
+            array(
                 'name'          => 'send_email',
                 'label'         => __('Send Email', 'gravityforms-securesubmit'),
                 'type'          => 'radio',
@@ -215,6 +234,24 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $authorize_or_charge_field['choices'][1]['selected'] = true;
             }
             $default_settings = $this->add_field_after('paymentAmount', $authorize_or_charge_field, $default_settings);
+        }
+        if ($this->getAllowAPIKeysOverride() == 'yes') {
+            $public_api_key_field = array(
+                'name'     => 'public_api_key',
+                'label'    => __('Public Key', 'gravityforms-securesubmit'),
+                'type'     => 'text',
+                'class'    => 'medium',
+                'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",
+            );
+            $secret_api_key_field = array(
+                'name'     => 'secret_api_key',
+                'label'    => __('Secret Key', 'gravityforms-securesubmit'),
+                'type'     => 'text',
+                'class'    => 'medium',
+                'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",
+            );
+            $default_settings = $this->add_field_after('paymentAmount', $public_api_key_field, $default_settings);
+            $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
         }
 
         return $default_settings;
@@ -289,10 +326,13 @@ class GFSecureSubmit extends GFPaymentAddOn
             return;
         }
 
+        $feeds = GFAPI::get_feeds(null, $form['id']);
+        $feed = $feeds[0];
+
         $cc_field = $this->get_credit_card_field($form);
 
         $args = array(
-            'apiKey'     => $this->getPublicApiKey(),
+            'apiKey'     => $this->getPublicApiKey($feed),
             'formId'     => $form['id'],
             'ccFieldId'  => $cc_field['id'],
             'ccPage'     => rgar($cc_field, 'pageNumber'),
@@ -365,7 +405,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $isAuth = $this->getAuthorizeOrCharge($feed) == 'authorize';
         $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey();
+        $config->secretApiKey = $this->getSecretApiKey($feed);
         $config->developerId = '002914';
         $config->versionNumber = '1916';
 
@@ -500,17 +540,17 @@ class GFSecureSubmit extends GFPaymentAddOn
         do_action('gform_securesubmit_post_include_api');
     }
 
-    public function getSecretApiKey()
+    public function getSecretApiKey($feed = null)
     {
-        return $this->getApiKey('secret');
+        return $this->getApiKey('secret', $feed);
     }
 
-    public function getPublicApiKey()
+    public function getPublicApiKey($feed = null)
     {
-        return $this->getApiKey('public');
+        return $this->getApiKey('public', $feed);
     }
 
-    public function getApiKey($type = 'secret')
+    public function getApiKey($type = 'secret', $feed = null)
     {
         // user needs admin privileges for this
         $api_key = $this->getQueryStringApiKey($type);
@@ -518,6 +558,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             return $api_key;
         }
 
+        if ($feed != null && isset($feed['meta']["{$type}_api_key"])) {
+            return (string)$feed['meta']["{$type}_api_key"];
+        }
         $settings = $this->get_plugin_settings();
         return (string)$this->get_setting("{$type}_api_key", '', $settings);
     }
@@ -540,6 +583,12 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $settings = $this->get_plugin_settings();
         return (string)$this->get_setting('allow_payment_action_override', 'no', $settings);
+    }
+
+    public function getAllowAPIKeysOverride()
+    {
+        $settings = $this->get_plugin_settings();
+        return (string)$this->get_setting('allow_api_keys_override', 'no', $settings);
     }
 
     public function getSendEmail()
