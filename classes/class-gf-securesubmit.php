@@ -356,6 +356,34 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $content;
     }
 
+    public function maybe_validate($validationResult)
+    {
+        if (!$this->has_feed($validationResult['form']['id'], true)) {
+            return $validationResult;
+        }
+
+        foreach ($validationResult['form']['fields'] as $field) {
+            $currentPage        = GFFormDisplay::get_source_page($validationResult['form']['id']);
+            $fieldOnCurrentPage = $currentPage > 0 && $field['pageNumber'] == $currentPage;
+
+            if (GFFormsModel::get_input_type($field) != 'creditcard' || !$fieldOnCurrentPage) {
+                continue;
+            }
+
+            if ($this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
+                $field['failed_validation']  = true;
+                $field['validation_message'] = $this->getSecureSubmitJsError();
+            } else {
+                $field['failed_validation'] = false;
+            }
+
+            break;
+        }
+
+        $validationResult['is_valid'] = true;
+        return parent::maybe_validate($validationResult);
+    }
+
     public function validation($validation_result)
     {
         if (!$this->has_feed($validation_result['form']['id'], true)) {
