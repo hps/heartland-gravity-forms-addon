@@ -46,14 +46,12 @@
     this.validatePublicApiKey = function (keyName, key) {
       this.setKeyStatusIcon(keyName, "<img src='" + gforms_securesubmit_admin_strings.spinner + "'/>");
 
-      hps.tokenize({
-        data: {
-          public_key: key,
-          number:     '4111111111111111',
-          cvc:        '123',
-          exp_month:  '01',
-          exp_year:   (new Date()).getFullYear() + 1
-        },
+      var hps = new HPS({
+        publicKey: key,
+        cardNumber: '4111111111111111',
+        cardCvv: '123',
+        cardExpMonth: '12',
+        cardExpYear: '2025',
         success: function (response) {
           if (response.object === 'token') {
             window.SecureSubmitAdmin.setKeyStatus(keyName, "1");
@@ -65,6 +63,8 @@
           window.SecureSubmitAdmin.setKeyStatus(keyName, "0");
         }
       });
+
+      hps.tokenize();
     };
 
     this.initKeyStatus = function (keyName) {

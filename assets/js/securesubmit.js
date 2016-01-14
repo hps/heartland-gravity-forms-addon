@@ -39,14 +39,13 @@
         SecureSubmitObj.form = $form;
 
         if ($('#securesubmit_response').size() === 0) {
-          hps.tokenize({
-            data: {
-              public_key: SecureSubmitObj.apiKey,
-              number:     $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
-              cvc:        $form.find('#' + ccInputPrefix + '3').val(),
-              exp_month:  $form.find('#' + ccInputPrefix + '2_month').val(),
-              exp_year:   $form.find('#' + ccInputPrefix + '2_year').val()
-            },
+
+          var hps = new HPS({
+            publicKey: SecureSubmitObj.apiKey,
+            cardNumber: $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
+            cardCvv: $form.find('#' + ccInputPrefix + '3').val(),
+            cardExpMonth: $form.find('#' + ccInputPrefix + '2_month').val(),
+            cardExpYear: $form.find('#' + ccInputPrefix + '2_year').val(),
             success: function (response) {
               SecureSubmitObj.secureSubmitResponseHandler(response);
             },
@@ -54,6 +53,8 @@
               SecureSubmitObj.secureSubmitResponseHandler(response);
             }
           });
+
+          hps.tokenize();
 
           return false;
         }
