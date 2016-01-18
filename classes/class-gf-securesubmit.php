@@ -262,7 +262,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'class'    => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",
             );
-
             $secret_api_key_field = array(
                 'name'     => 'secret_api_key',
                 'label'    => __('Secret Key', 'gravityforms-securesubmit'),
@@ -270,7 +269,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'class'    => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",
             );
-
             $default_settings = $this->add_field_after('paymentAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
         }
@@ -298,6 +296,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         );
         return $fields;
     }
+
 
     public function scripts()
     {
@@ -467,7 +466,6 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function authorize($feed, $submission_data, $form, $entry)
     {
-        error_log("test!", 0);
         $this->populateCreditCardLastFour($form);
         $this->includeSecureSubmitSDK();
         if ($this->getSecureSubmitJsError()) {
@@ -513,14 +511,14 @@ class GFSecureSubmit extends GFPaymentAddOn
             $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
             $note = sprintf(__('%s has been completed. Amount: %s. Transaction Id: %s.', 'gravityforms-securesubmit'), $type, $amount_formatted, $transaction->transactionId);
 
-            // cpc edit
             if (
-                $this->getAllowLevelII() 
+                $this->getAllowLevelII()
                 && (
                     $transaction->cpcIndicator == 'B' || 
                     $transaction->cpcIndicator == 'R' || 
                     $transaction->cpcIndicator == 'S')
                 ) {
+
                 $cpcData = new HpsCPCData();
                 $cpcData->CardHolderPONbr = $this->getLevelIICustomerPO($feed);
 
@@ -534,9 +532,12 @@ class GFSecureSubmit extends GFPaymentAddOn
 
                 $cpcData->TaxAmt = $this->getLevelIICustomerTaxAmount($feed);
 
-                $cpcResponse = $service->cpcEdit($transaction->transactionId, $cpcData);
-                $note .= sprintf(__(' CPC Response Code: %s', 'gravityforms-securesubmit'), $cpcResponse->responseCode);
+                if (!empty($cpcData->CardHolderPONbr) && !empty($cpcData->TaxType) && !empty($cpcData->TaxAmt)) {
+                    $cpcResponse = $service->cpcEdit($transaction->transactionId, $cpcData);
+                    $note .= sprintf(__(' CPC Response Code: %s', 'gravityforms-securesubmit'), $cpcResponse->responseCode);
+                }
             }
+
 
             if ($isAuth) {
                 $note .= sprintf(__(' Authorization Code: %s', 'gravityforms-securesubmit'), $transaction->authorizationCode);
@@ -652,23 +653,29 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function getLevelIICustomerPO($feed = null) 
     {
-        if ($feed != null && isset($feed['meta']["customerpo"])) {
-            return (string)$feed['meta']["customerpo"];
+        if ($feed != null && isset($feed['meta']["mappedFields_customerpo"])) {
+            return (string)$_POST['input_' . $feed["meta"]["mappedFields_customerpo"]];
         }
     }
 
     public function getLevelIITaxType($feed = null) 
     {
-        if ($feed != null && isset($feed['meta']["taxtype"])) {
-            return (string)$feed['meta']["taxtype"];
+        if ($feed != null && isset($feed['meta']["mappedFields_taxtype"])) {
+            return (string)$_POST['input_' . $feed["meta"]["mappedFields_taxtype"]];
         }
     }
 
     public function getLevelIICustomerTaxAmount($feed = null) 
     {
-        if ($feed != null && isset($feed['meta']["taxamount"])) {
-            return (string)$feed['meta']["taxamount"];
+        if ($feed != null && isset($feed['meta']["mappedFields_taxamount"])) {
+            return (string)$_POST['input_' . $feed["meta"]["mappedFields_taxamount"]];
         }
+    }
+
+    public function getAllowLevelII()
+    {
+        $settings = $this->get_plugin_settings();
+        return (string)$this->get_setting('allow_level_ii', 'no', $settings);
     }
 
     public function getPublicApiKey($feed = null)
@@ -709,12 +716,6 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $settings = $this->get_plugin_settings();
         return (string)$this->get_setting('allow_payment_action_override', 'no', $settings);
-    }
-
-    public function getAllowLevelII()
-    {
-        $settings = $this->get_plugin_settings();
-        return (string)$this->get_setting('allow_level_ii', 'no', $settings);
     }
 
     public function getAllowAPIKeysOverride()
