@@ -595,10 +595,17 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     protected function buildCardHolder($feed, $submission_data, $entry)
     {
-        $name = explode(' ', $submission_data['card_name']);
-        $firstName = $name[0];
-        unset($name[0]);
-        $lastName = implode(' ', $name);
+        $firstName = '';
+        $lastName = '';
+
+        try {
+            $name = explode(' ', $submission_data['card_name']);
+            $firstName = $name[0];
+            unset($name[0]);
+            $lastName = implode(' ', $name);
+        } catch (Exception $ex) {
+            $firstName = $submission_data['card_name'];
+        }
 
         $address = new HpsAddress();
         $address->address  = $entry[$feed['meta']['billingInformation_address']]
