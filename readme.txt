@@ -1,10 +1,10 @@
-=== WooCommerce SecureSubmit Gateway ===
+=== Heartland Secure Submit Addon for Gravity Forms ===
 Contributors: markhagan
 Tags: gravity, forms, gravityforms, heartland, payment, systems, gateway, token, tokenize
-Tested up to: 4.3.1
+Tested up to: 4.5.1
 Stable tag: trunk
 License: GPLv2
-License URI: https://github.com/SecureSubmit/heartland-gravity-forms-addon/blob/master/LICENSE.md
+License URI: https://github.com/hps/heartland-gravity-forms-addon/blob/master/LICENSE.md
 
 SecureSubmit allows merchants to take PCI-Friendly Credit Card payments with Gravity Forms using Heartland Payment Systems Payment Gateway.
 
