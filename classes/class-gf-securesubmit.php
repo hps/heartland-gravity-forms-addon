@@ -674,7 +674,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $auth;
     }
 
-
     // Helper functions
 
     public function updateAuthorizationEntry($entry, $result = array())
