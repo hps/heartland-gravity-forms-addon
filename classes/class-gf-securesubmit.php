@@ -81,6 +81,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'title'  => __('SecureSubmit API', 'gravityforms-securesubmit'),
                 'fields' => $this->sdkSettingsFields()
             ),
+            array(
+                'title' => __('Velocity Limits', $this->_slug),
+                'fields' => $this->vmcSettingsFields()
+            ),
         );
     }
 
@@ -94,6 +98,54 @@ class GFSecureSubmit extends GFPaymentAddOn
         return false;
     }
 
+
+    /**
+     * @return array
+     */
+    public function vmcSettingsFields() {
+        return array(
+            array(
+                'name' => 'enable_fraud',
+                'label' => __('Velocity Settings', $this->_slug),
+                'type' => 'select',
+                'default_value' => 'Enabled',
+                'tooltip' => __('Choose whether you wish to limit failed attempts', $this->_slug),
+                'choices' => array(
+                    array(
+                        'label' => __('Enabled', $this->_slug),
+                        'value' => 'true',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Disabled', $this->_slug),
+                        'value' => 'false',
+                    ),
+                ),
+            ),
+            array(
+                'name' => 'fraud_message',
+                'label' => __('Displayed Message', $this->_slug),
+                'type' => 'text',
+                'tooltip' => __('Text entered here will be displayed to your consumer if they exceed the failures within the timeframe.', $this->_slug),
+                'default_value' => 'Please contact us to complete the transaction.',
+                'class' => 'medium',
+            ),
+            array(
+                'name' => 'fraud_velocity_attempts',
+                'label' => __('How many failed attempts before blocking?', $this->_slug),
+                'type' => 'text',
+                'default_value' => '3',
+                'class' => 'small',
+            ),
+            array(
+                'name' => 'fraud_velocity_timeout',
+                'label' => __('How long (in minutes) should we keep a tally of recent failures?', $this->_slug),
+                'type' => 'text',
+                'default_value' => '10',
+                'class' => 'small',
+            ),
+        );
+    }
     public function sdkSettingsFields()
     {
         return array(
@@ -464,10 +516,47 @@ class GFSecureSubmit extends GFPaymentAddOn
         return parent::validation($validation_result);
     }
 
-    public function authorize($feed, $submission_data, $form, $entry)
-    {
+   /** Authorise or capture a card. Overrides \GFPaymentAddOn::authorize
+     * @param $feed
+     * @param $submission_data
+     * @param $form
+     * @param $entry
+     * @return array
+     * @throws HpsException
+     */
+    public function authorize($feed, $submission_data, $form, $entry) {
         $this->populateCreditCardLastFour($form);
         $this->includeSecureSubmitSDK();
+
+        /** Currently saved plugin settings */
+        $settings                   = $this->get_plugin_settings();
+
+        /** This is the message show to the consumer if the rule is flagged */
+        $fraud_message              = (string)  $this->get_setting("fraud_message", 'Please contact us to complete the transaction.', $settings);
+
+        /** Maximum number of failures allowed before rule is triggered */
+        $fraud_velocity_attempts    = (int)     $this->get_setting("fraud_velocity_attempts", '3', $settings);
+
+        /** Maximum amount of time in minutes to track failures. If this amount of time elapse between failures then the counter($HeartlandHPS_FailCount) will reset */
+        $fraud_velocity_timeout     = (int)     $this->get_setting("fraud_velocity_timeout", '10', $settings);
+
+        /** Variable name with hash of IP address to identify uniqe transient values         */
+        $HPS_VarName                = (string)  "HeartlandHPS_Velocity_" . md5($this->getRemoteIP());
+
+        /** Running count of failed transactions from the current IP*/
+        $HeartlandHPS_FailCount     = (int)     get_transient($HPS_VarName);
+
+        /** Defaults to true or checks actual settings for this plugin from $settings. If true the following settings are applied:
+
+         $fraud_message
+         *
+         $fraud_velocity_attempts
+         *
+         $fraud_velocity_timeout
+         *
+         */
+        $enable_fraud               = (bool)    ($this->get_setting("enable_fraud", 'true', $settings) === 'true');
+
         if ($this->getSecureSubmitJsError()) {
             return $this->authorization_error($this->getSecureSubmitJsError());
         }
@@ -483,6 +572,16 @@ class GFSecureSubmit extends GFPaymentAddOn
         $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
         try {
+
+            /**
+             * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
+             * far too many failures have been tried
+             */
+            if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
+                sleep(5);
+                $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
+                throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+            }
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
             $token->tokenValue = ($response != null ? $response->token_value : '');
@@ -491,13 +590,16 @@ class GFSecureSubmit extends GFPaymentAddOn
             if ($isAuth) {
                 if ($this->getAllowLevelII()) {
                     $transaction = $service->authorize($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder, false, null, null, false, true);
-                } else {
+                }
+                else {
                     $transaction = $service->authorize($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
                 }
-            } else {
+            }
+            else {
                 if ($this->getAllowLevelII()) {
                     $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder, false, null, null, false, true, null);
-                } else {
+                }
+                else {
                     $transaction = $service->charge($submission_data['payment_amount'], GFCommon::get_currency(), $token, $cardHolder);
                 }
             }
@@ -509,24 +611,26 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             $type = $isAuth ? 'Authorization' : 'Payment';
             $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
-            $note = sprintf(__('%s has been completed. Amount: %s. Transaction Id: %s.', 'gravityforms-securesubmit'), $type, $amount_formatted, $transaction->transactionId);
+            $note = sprintf(__('%s has been completed. Amount: %s. Transaction Id: %s.', $this->_slug), $type, $amount_formatted, $transaction->transactionId);
 
             if (
                 $this->getAllowLevelII()
                 && (
-                    $transaction->cpcIndicator == 'B' || 
-                    $transaction->cpcIndicator == 'R' || 
+                    $transaction->cpcIndicator == 'B' ||
+                    $transaction->cpcIndicator == 'R' ||
                     $transaction->cpcIndicator == 'S')
-                ) {
+            ) {
 
                 $cpcData = new HpsCPCData();
                 $cpcData->CardHolderPONbr = $this->getLevelIICustomerPO($feed);
 
                 if ($this->getLevelIITaxType($feed) == "SALES_TAX") {
                     $cpcData->TaxType = HpsTaxType::SALES_TAX;
-                } else if ($this->getLevelIITaxType($feed) == "NOTUSED") {
+                }
+                else if ($this->getLevelIITaxType($feed) == "NOTUSED") {
                     $cpcData->TaxType = HpsTaxType::NOTUSED;
-                } else if ($this->getLevelIITaxType($feed) == "TAXEXEMPT") {
+                }
+                else if ($this->getLevelIITaxType($feed) == "TAXEXEMPT") {
                     $cpcData->TaxType = HpsTaxType::TAXEXEMPT;
                 }
 
@@ -534,32 +638,42 @@ class GFSecureSubmit extends GFPaymentAddOn
 
                 if (!empty($cpcData->CardHolderPONbr) && !empty($cpcData->TaxType) && !empty($cpcData->TaxAmt)) {
                     $cpcResponse = $service->cpcEdit($transaction->transactionId, $cpcData);
-                    $note .= sprintf(__(' CPC Response Code: %s', 'gravityforms-securesubmit'), $cpcResponse->responseCode);
+                    $note .= sprintf(__(' CPC Response Code: %s', $this->_slug), $cpcResponse->responseCode);
                 }
             }
 
 
             if ($isAuth) {
-                $note .= sprintf(__(' Authorization Code: %s', 'gravityforms-securesubmit'), $transaction->authorizationCode);
+                $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
 
             $auth = array(
                 'is_authorized' => true,
                 'captured_payment' => array(
-                    'is_success'                  => true,
-                    'transaction_id'              => $transaction->transactionId,
-                    'amount'                      => $submission_data['payment_amount'],
-                    'payment_method'              => $response->card_type,
+                    'is_success' => true,
+                    'transaction_id' => $transaction->transactionId,
+                    'amount' => $submission_data['payment_amount'],
+                    'payment_method' => $response->card_type,
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
-                    'note'                        => $note,
+                    'note' => $note,
                 ),
             );
         } catch (HpsException $e) {
-            $auth = $this->authorization_error($e->getMessage());
+
+            // if advanced fraud is enabled, increment the error count
+            if ($enable_fraud) {
+                if(empty($HeartlandHPS_FailCount)){$HeartlandHPS_FailCount = 0;}
+                set_transient($HPS_VarName, $HeartlandHPS_FailCount + 1, MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                if ($HeartlandHPS_FailCount < $fraud_velocity_attempts) {
+                    set_transient($HPS_VarName . 'IssuerResponse', $e->getMessage(), MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                }
+            }
+            $auth = $this->authorization_error( $HeartlandHPS_FailCount . $e->getMessage());
         }
 
         return $auth;
     }
+
 
     // Helper functions
 
@@ -815,5 +929,23 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         include plugin_dir_path(__FILE__) . '../templates/client-side-merge-tags.php';
         return $form;
+    } 
+    /**Attempts to get real ip even if there is a proxy chain
+     * @return string
+     */
+    private function getRemoteIP() {
+        $remoteIP = $_SERVER['REMOTE_ADDR'];
+        if (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER) && $_SERVER['HTTP_X_FORWARDED_FOR'] != '') {
+            $remoteIPArray = array_values(
+                array_filter(
+                    explode(
+                        ',',
+                        $_SERVER['HTTP_X_FORWARDED_FOR']
+                    )
+                )
+            );
+            $remoteIP = end($remoteIPArray);
+        }
+        return $remoteIP;
     }
 }
