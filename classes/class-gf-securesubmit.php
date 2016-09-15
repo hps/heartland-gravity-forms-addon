@@ -60,6 +60,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
         return $field_groups;
     }
+    
     public function init()
     {
         parent::init();
