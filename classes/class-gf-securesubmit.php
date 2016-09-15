@@ -1,6 +1,7 @@
 <?php
 
 GFForms::include_payment_addon_framework();
+include_once 'class-gf-field-hpscreditcard.php';
 
 class GFSecureSubmit extends GFPaymentAddOn
 {
@@ -36,12 +37,40 @@ class GFSecureSubmit extends GFPaymentAddOn
         return self::$_instance;
     }
 
+    /** Add our Secure CC button to the pricing fields.
+     * I found this tutorial very helpful
+     * http://wpsmith.net/2011/how-to-create-a-custom-form-field-in-gravity-forms-with-a-terms-of-service-form-field-example/
+     * @param $field_groups
+     * @return mixed
+     */
+    public function hps_add_cc_field($field_groups ) {
+        foreach( $field_groups as &$group ){
+            if( $group["name"] == "pricing_fields" ){
+                $group["fields"][] = array(
+                    'class'     => 'button',
+                    // this has to match
+                    // \GF_Field_HPSCreditCard::$type
+                    'data-type' => 'hpscreditcard',
+                    // the first param here will be the button text
+                    // leave the second one as gravityforms
+                    'value'     => __('Secure CC', "gravityforms"),
+                );
+                break;
+            }
+        }
+        return $field_groups;
+    }
     public function init()
     {
         parent::init();
         add_action('gform_post_payment_completed', array($this, 'updateAuthorizationEntry'), 10, 2);
         add_filter('gform_replace_merge_tags', array($this, 'replaceMergeTags'), 10, 7);
         add_action('gform_admin_pre_render', array($this, 'addClientSideMergeTags'));
+
+        /* Sets WP to call \GFSecureSubmit::hps_add_cc_field and build our button
+        src: wordpress/wp-includes/plugin.php
+         * \GFSecureSubmit::hps_add_cc_field
+         * */
     }
 
     public function init_ajax()
