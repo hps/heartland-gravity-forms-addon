@@ -19,7 +19,26 @@ Features of SecureSubmit:
 * Tokenized payments help reduce PCI Scope
 * Enables credit card saving for a friction-reduced checkout.
 
+== Documentation ==
+
+  * Sign Up for an account @ developer.heartlandpaymentsystems.com if you haven't already
+  * Download Gravity Forms
+  * Install & activate Gravity Forms WP plugin AND Heartland SecureSubmit for Gravity Forms WP plugin
+  * In WP Admin navigate to Plugins > Gravity Forms + SecureSubmit and click the activate link
+  * Navigate to Forms > Settings and enter your API Keys provided by your Heartland Developer Portal Account
+  * Navigate to Forms > Add New Form > Edit Form
+      > Add Standard Field
+      > Add Pricing Fields > Product, Total & Secure CC fields
+      > Form Settings > SecureSubmit > Add new feed button
+      > Add other desired settings
+
+      NEED ADDITIONAL HELP? Contact Us  http://developer.heartlandpaymentsystems.com/support
+
+
 == Changelog ==
+
+= 1.1.3 =
+* UI Updates
 
 = 1.1.2 =
 * Upgraded license to GPLv2

@@ -20,7 +20,12 @@
     }
 
     this.init = function () {
+
       var SecureSubmitObj = this;
+console.log('hello');
+      Heartland.Card.attachNumberEvents('#cc_number');
+      Heartland.Card.attachExpirationEvents('#_exp_date');
+      Heartland.Card.attachCvvEvents('#_cvv_number');
 
       if (!this.isCreditCardOnPage()) {
         return;
@@ -30,6 +35,7 @@
       if (!this.isAjax) {
         gformInitSpinner(this.formId);
       }
+
 
       // bind SecureSubmit functionality to submit event
       $('#gform_' + this.formId).submit(function (event) {

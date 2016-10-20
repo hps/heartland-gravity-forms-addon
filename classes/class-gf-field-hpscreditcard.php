@@ -5,6 +5,8 @@ if ( ! class_exists( 'GFForms' ) ) {
 }
 
 
+
+
 /**
  * Class GF_Field_HPSCreditCard
  */
@@ -137,15 +139,11 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$class_suffix  = $is_entry_detail ? '_admin' : '';
 
 
-		$form_sub_label_placement  = rgar( $form, 'subLabelPlacement' );
-		$field_sub_label_placement = $this->subLabelPlacement;
-		$is_sub_label_above        = $field_sub_label_placement == 'above' || ( empty( $field_sub_label_placement ) && $form_sub_label_placement == 'above' );
-		$sub_label_class_attribute = $field_sub_label_placement == 'hidden_label' ? "class='hidden_sub_label screen-reader-text'" : '';
 
-		$card_number      = '';
+
 		$card_name        = '';
-		$expiration_month = '';
-		$expiration_year  = '';
+		$card_number      = '';
+		$expiration_date = '';
 		$security_code    = '';
 		$autocomplete     = RGFormsModel::is_html5_enabled() ? "autocomplete='off'" : '';
 
@@ -165,7 +163,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
 			$security_code = esc_attr( rgget( $this->id . '.3', $value ) );
 		}
 
-		$action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
+		// $action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
 
 		$onchange = "onchange='{$action}'";
 		$onkeyup  = "onkeyup='{$action}'";
@@ -174,22 +172,9 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$cards      = GFCommon::get_card_types();
 		$card_style = $this->creditCardStyle ? $this->creditCardStyle : 'style1';
 
-		foreach ( $cards as $card ) {
 
-			$style = '';
-			if ( $this->is_card_supported( $card['slug'] ) ) {
-				$print_card = true;
-			} elseif ( $is_form_editor || $is_entry_detail ) {
-				$print_card = true;
-				$style      = "style='display:none;'";
-			} else {
-				$print_card = false;
-			}
+				$card_icons .= "<div class='gform_card_icon'>{$card['name']}</div>";
 
-			if ( $print_card ) {
-				$card_icons .= "<div class='gform_card_icon gform_card_icon_{$card['slug']}' {$style}>{$card['name']}</div>";
-			}
-		}
 
 		$payment_methods = apply_filters( 'gform_payment_methods', array(), $this, $form_id );
 		$payment_options = '';
@@ -203,27 +188,31 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$card_radio_button = empty( $payment_options ) ? '' : "<input type='radio' name='gform_payment_method' id='gform_payment_method_creditcard' value='creditcard' onclick='gformToggleCreditCard();' onkeypress='gformToggleCreditCard();' {$checked}/>";
 		$card_icons        = "{$payment_options}<div class='gform_card_icon_container gform_card_icon_{$card_style}'>{$card_radio_button}{$card_icons}</div>";
 
+
+		//card name fields
+			$tabindex              = $this->get_tabindex();
+			$card_name_field_input = GFFormsModel::get_input( $this, $this->id . '.5' );
+			$card_name_label       = rgar( $card_name_field_input, 'customLabel' ) != '' ? $card_name_field_input['customLabel'] : esc_html__( 'Cardholder Name', 'gravityforms' );
+			$card_name_label       = gf_apply_filters( array( 'gform_card_name', $form_id ), $card_name_label, $form_id );
+			$card_name_placeholder = $this->get_input_placeholder_attribute( $card_name_field_input );
+			$card_name_field = "<span class='ginput_full{$class_suffix}' id='{$field_id}_5_container'>
+													{$card_icons}
+	                                            <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$card_name_label}</label>
+	                                            <input type='text' name='input_{$id}.5' id='{$field_id}_5' placeholder='CARDHOLDER NAME' value='{$card_name}' />
+	                                        </span>";
+
+
 		//card number fields
 		$tabindex                = $this->get_tabindex();
 		$card_number_field_input = GFFormsModel::get_input( $this, $this->id . '.1' );
 		$html5_output            = ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
 		$card_number_label       = rgar( $card_number_field_input, 'customLabel' ) != '' ? $card_number_field_input['customLabel'] : esc_html__( 'Card Number', 'gravityforms' );
 		$card_number_label       = gf_apply_filters( array( 'gform_card_number', $form_id ), $card_number_label, $form_id );
-
-		$card_number_placeholder = $this->get_input_placeholder_attribute( $card_number_field_input );
-		if ( $is_sub_label_above ) {
-			$card_field = "<span class='ginput_full{$class_suffix}' id='{$field_id}_1_container' >
-                                    {$card_icons}
+		$card_field =
+																"<span class='ginput_full{$class_suffix}' id='{$field_id}_1_container' >
                                     <label for='{$field_id}_1' id='{$field_id}_1_label' {$sub_label_class_attribute}>{$card_number_label}</label>
-                                    <input type='text' name='input_{$id}.1' id='{$field_id}_1' value='{$card_number}' {$tabindex} {$disabled_text} {$onchange} {$onkeyup} {$autocomplete} {$html5_output} {$card_number_placeholder}/>
+                                    <input type='text' name='input_{$id}.1' class='card_type_icon' id='cc_number' placeholder='CARD NUMBER' value='{$card_number}' />
                                  </span>";
-		} else {
-			$card_field = "<span class='ginput_full{$class_suffix}' id='{$field_id}_1_container' >
-                                    {$card_icons}
-                                    <input type='text' name='input_{$id}.1' id='{$field_id}_1' value='{$card_number}' {$tabindex} {$disabled_text} {$onchange} {$onkeyup} {$autocomplete} {$html5_output} {$card_number_placeholder}/>
-                                    <label for='{$field_id}_1' id='{$field_id}_1_label' {$sub_label_class_attribute}>{$card_number_label}</label>
-                                 </span>";
-		}
 
 		//expiration date field
 		$expiration_month_tab_index   = $this->get_tabindex();
@@ -236,34 +225,16 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$expiration_years             = $this->get_expiration_years( $expiration_year, $expiration_year_placeholder );
 		$expiration_label             = rgar( $expiration_month_input, 'customLabel' ) != '' ? $expiration_month_input['customLabel'] : esc_html__( 'Expiration Date', 'gravityforms' );
 		$expiration_label             = gf_apply_filters( array( 'gform_card_expiration', $form_id ), $expiration_label, $form_id );
-		if ( $is_sub_label_above ) {
-			$expiration_field = "<span class='ginput_full{$class_suffix} ginput_cardextras' id='{$field_id}_2_container'>
-                                            <span class='ginput_cardinfo_left{$class_suffix}' id='{$field_id}_2_cardinfo_left'>
+		$expiration_field =
+																					"<span class='ginput_full{$class_suffix} ginput_cardextras' id='{$field_id}_2_container'>
+                                            	<span class='ginput_cardinfo_left{$class_suffix}' id='{$field_id}_2_cardinfo_left'>
                                                 <span class='ginput_card_expiration_container ginput_card_field'>
                                                     <label for='{$field_id}_2_month' {$sub_label_class_attribute}>{$expiration_label}</label>
-                                                    <select name='input_{$id}.2[]' id='{$field_id}_2_month' {$expiration_month_tab_index} {$disabled_text} class='ginput_card_expiration ginput_card_expiration_month'>
-                                                        {$expiration_months}
-                                                    </select>
-                                                    <select name='input_{$id}.2[]' id='{$field_id}_2_year' {$expiration_year_tab_index} {$disabled_text} class='ginput_card_expiration ginput_card_expiration_year'>
-                                                        {$expiration_years}
-                                                    </select>
+																										<input type='text' name='input_{$id}.1' id='_exp_date' placeholder='MM / YYYY' value='{$expiration_field}' />
+
                                                 </span>
                                             </span>";
 
-		} else {
-			$expiration_field = "<span class='ginput_full{$class_suffix} ginput_cardextras' id='{$field_id}_2_container'>
-                                            <span class='ginput_cardinfo_left{$class_suffix}' id='{$field_id}_2_cardinfo_left'>
-                                                <span class='ginput_card_expiration_container ginput_card_field'>
-                                                    <select name='input_{$id}.2[]' id='{$field_id}_2_month' {$expiration_month_tab_index} {$disabled_text} class='ginput_card_expiration ginput_card_expiration_month'>
-                                                        {$expiration_months}
-                                                    </select>
-                                                    <select name='input_{$id}.2[]' id='{$field_id}_2_year' {$expiration_year_tab_index} {$disabled_text} class='ginput_card_expiration ginput_card_expiration_year'>
-                                                    {$expiration_years}
-                                                    </select>
-                                                    <label for='{$field_id}_2_month' {$sub_label_class_attribute}>{$expiration_label}</label>
-                                                </span>
-                                            </span>";
-		}
 		//security code field
 		$tabindex                  = $this->get_tabindex();
 		$security_code_field_input = GFFormsModel::get_input( $this, $this->id . '.3' );
@@ -271,41 +242,16 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$security_code_label       = gf_apply_filters( array( 'gform_card_security_code', $form_id ), $security_code_label, $form_id );
 		$html5_output              = GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
 		$security_code_placeholder = $this->get_input_placeholder_attribute( $security_code_field_input );
-		if ( $is_sub_label_above ) {
-			$security_field = "<span class='ginput_cardinfo_right{$class_suffix}' id='{$field_id}_2_cardinfo_right'>
+		$security_field =
+
+																			"<span class='ginput_cardinfo_right{$class_suffix} cvv-field' id='{$field_id}_2_cardinfo_right'>
+																						<span class='ginput_card_expiration_container ginput_card_field'>
                                                 <label for='{$field_id}_3' {$sub_label_class_attribute}>$security_code_label</label>
-                                                <input type='text' name='input_{$id}.3' id='{$field_id}_3' {$tabindex} {$disabled_text} class='ginput_card_security_code' value='{$security_code}' {$autocomplete} {$html5_output} {$security_code_placeholder} />
-                                                <span class='ginput_card_security_code_icon'>&nbsp;</span>
-                                             </span>
+                                                <input type='text' name='input_{$id}.3' id='_cvv_number' placeholder='CVV' {$tabindex} {$disabled_text} class='ginput_card_security_code ginput_card_security_code_icon' value='{$security_code}' {$autocomplete} {$html5_output} {$security_code_placeholder} />
+																					</span>
                                         </span>";
-		} else {
-			$security_field = "<span class='ginput_cardinfo_right{$class_suffix}' id='{$field_id}_2_cardinfo_right'>
-                                                <input type='text' name='input_{$id}.3' id='{$field_id}_3' {$tabindex} {$disabled_text} class='ginput_card_security_code' value='{$security_code}' {$autocomplete} {$html5_output} {$security_code_placeholder}/>
-                                                <span class='ginput_card_security_code_icon'>&nbsp;</span>
-                                                <label for='{$field_id}_3' {$sub_label_class_attribute}>$security_code_label</label>
-                                             </span>
-                                        </span>";
-		}
 
-		$tabindex              = $this->get_tabindex();
-		$card_name_field_input = GFFormsModel::get_input( $this, $this->id . '.5' );
-		$card_name_label       = rgar( $card_name_field_input, 'customLabel' ) != '' ? $card_name_field_input['customLabel'] : esc_html__( 'Cardholder Name', 'gravityforms' );
-		$card_name_label       = gf_apply_filters( array( 'gform_card_name', $form_id ), $card_name_label, $form_id );
-
-		$card_name_placeholder = $this->get_input_placeholder_attribute( $card_name_field_input );
-		if ( $is_sub_label_above ) {
-			$card_name_field = "<span class='ginput_full{$class_suffix}' id='{$field_id}_5_container'>
-                                            <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$card_name_label}</label>
-                                            <input type='text' name='input_{$id}.5' id='{$field_id}_5' value='{$card_name}' {$tabindex} {$disabled_text} {$card_name_placeholder}/>
-                                        </span>";
-		} else {
-			$card_name_field = "<span class='ginput_full{$class_suffix}' id='{$field_id}_5_container'>
-                                            <input type='text' name='input_{$id}.5' id='{$field_id}_5' value='{$card_name}' {$tabindex} {$disabled_text} {$card_name_placeholder}/>
-                                            <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$card_name_label}</label>
-                                        </span>";
-		}
-
-		return "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard' id='{$field_id}'>" . $card_field . $expiration_field . $security_field . $card_name_field . ' </div>';
+		return "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard' id='{$field_id}'>" . $card_name_field . $card_field . $expiration_field . $security_field . ' </div>';
 
 	}
 
@@ -386,7 +332,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		if ( $this->forceSSL && ! GFCommon::is_ssl() && ! GFCommon::is_preview() ) {
 			$script = "document.location.href='" . esc_js( RGFormsModel::get_current_page_url( true ) ) . "';";
 		} else {
-			$script = "jQuery(document).ready(function(){ { gformMatchCard(\"{$field_id}_1\"); } } );";
+			$script = ""; // "jQuery(document).ready(function(){ { gformMatchCard(\"{$field_id}_1\"); } } );";
 		}
 
 		$card_rules = $this->get_credit_card_rules();
