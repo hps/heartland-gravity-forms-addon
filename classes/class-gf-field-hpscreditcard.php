@@ -54,14 +54,6 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		return array(); // this button is conditionally added in the form detail page
 	}
 
-	/**
-	 * @param array|string $value
-	 * @param array $form
-     */
-	public function validate($value, $form ) {
-		$card_number     = rgpost( 'input_' . $this->id . '_1' );
-		$expiration_date = rgpost( 'input_' . $this->id . '_2' );
-
 
 	/**
 	 * @param array $field_values
