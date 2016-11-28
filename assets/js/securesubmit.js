@@ -22,7 +22,6 @@
     this.init = function () {
 
       var SecureSubmitObj = this;
-console.log('hello');
       Heartland.Card.attachNumberEvents('#cc_number');
       Heartland.Card.attachExpirationEvents('#_exp_date');
       Heartland.Card.attachCvvEvents('#_cvv_number');
