@@ -525,7 +525,6 @@ class GFSecureSubmit extends GFPaymentAddOn {
     }
 
     public function add_theme_scripts() {
-      echo '<script>console.log("hello") </script>';
 
 
       wp_enqueue_style( 'style', $this->get_base_url() . '/../css/style.css', array(), '1.1', 'all');
