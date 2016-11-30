@@ -54,6 +54,51 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		return array(); // this button is conditionally added in the form detail page
 	}
 
+	/**
+	 * @param array|string $value
+	 * @param array $form
+     */
+	public function validate($value, $form ) {
+		$card_number     = rgpost( 'input_' . $this->id . '_1' );
+		$expiration_date = rgpost( 'input_' . $this->id . '_2' );
+		$security_code   = rgpost( 'input_' . $this->id . '_3' );
+
+		if ( $this->isRequired && ( empty( $card_number ) || empty( $security_code ) || empty( $expiration_date[0] ) || empty( $expiration_date[1] ) ) ) {
+			$this->failed_validation  = true;
+			$this->validation_message = empty( $this->errorMessage ) ? esc_html__( 'Please enter your credit card information.', 'gravityforms' ) : $this->errorMessage;
+		} elseif ( ! empty( $card_number ) ) {
+			$card_type     = GFCommon::get_card_type( $card_number );
+
+			if ( empty( $security_code ) ) {
+				$this->failed_validation  = true;
+				$this->validation_message = esc_html__( "Please enter your card's security code.", 'gravityforms' );
+			} elseif ( ! $card_type ) {
+				$this->failed_validation  = true;
+				$this->validation_message = esc_html__( 'Invalid credit card number.', 'gravityforms' );
+			} elseif ( ! $this->is_card_supported( $card_type['slug'] ) ) {
+				$this->failed_validation  = true;
+				$this->validation_message = $card_type['name'] . ' ' . esc_html__( 'is not supported. Please enter one of the supported credit cards.', 'gravityforms' );
+			}
+		}
+	}
+
+	/**
+	 * @param $card_slug
+	 * @return bool
+     */
+	public function is_card_supported($card_slug ) {
+		$supported_cards = $this->creditCards;
+		$default_cards   = array( 'amex', 'discover', 'mastercard', 'visa' );
+
+		if ( ! empty( $supported_cards ) && in_array( $card_slug, $supported_cards ) ) {
+			return true;
+		} elseif ( empty( $supported_cards ) && in_array( $card_slug, $default_cards ) ) {
+			return true;
+		}
+
+		return false;
+
+	}
 
 	/**
 	 * @param array $field_values
@@ -185,7 +230,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
                                             	<span class='ginput_cardinfo_left{$class_suffix}' id='{$field_id}_2_cardinfo_left'>
                                                 <span class='ginput_card_expiration_container ginput_card_field'>
                                                     <label for='{$field_id}_2_month' {$sub_label_class_attribute}>{$expiration_label}</label>
-																										<input type='text' name='input_{$id}.1' id='_exp_date' placeholder='MM / YYYY' value='{$expiration_field}' />
+																										<input type='text' name='input_{$id}.2' id='_exp_date' placeholder='MM / YYYY' value='{$expiration_field}' />
 
                                                 </span>
                                             </span>";
