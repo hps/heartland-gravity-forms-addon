@@ -40,7 +40,7 @@
 
         if ($('#securesubmit_response').size() === 0) {
 
-          var hps = new HPS({
+          var hps = new Heartland.HPS({
             publicKey: SecureSubmitObj.apiKey,
             cardNumber: $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
             cardCvv: $form.find('#' + ccInputPrefix + '3').val(),
