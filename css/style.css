@@ -1,5 +1,8 @@
 
 /*wp-admin securesubmit styles*/
+.gform_body {
+  font-family:sans-serif;
+}
 .wp-admin .card_type_icon {
   background:transparent;
 }
@@ -36,34 +39,35 @@ border:1px solid #3989e3;
 
 /*securesubmit styles*/
 
-.ss-field div.gform_card_icon {
+div.gform_card_icon {
   background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
   background-size:250px 30px !important;
   width:540px !important;
   height:42px !important;
 }
 
-.ss-field .field_sublabel_below .ginput_complex.ginput_container label, .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container label {
+.field_sublabel_below .ginput_complex.ginput_container label, .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container label {
   margin-top:10px !important;
 }
 
-.ss-field .gform_card_icon_container {
+.gform_card_icon_container {
   height:42px !important;
 }
 
-.ss-field .ginput_complex .ginput_cardinfo_right.cvv-field input.ginput_card_security_code {
+.ginput_complex .ginput_cardinfo_right.cvv-field input.ginput_card_security_code {
   max-width:100% !important;
 }
 
-.ss-field input:not([type='radio']):not([type='checkbox']):not([type='submit']):not([type='button']):not([type='image']):not([type='file']) {
+.gform_wrapper input:not([type='radio']):not([type='checkbox']):not([type='submit']):not([type='button']):not([type='image']):not([type='file']) {
     font-size: 14px;
     padding:15px !important;
 }
 
-.ss-field input {
+.gform_wrapper input {
   height:48px !important;
   border:1px solid #cecece !important;
   text-transform:uppercase !important;
+  background-color:transparent;
 }
 
 .gform_wrapper input:hover,
@@ -137,6 +141,18 @@ border:1px solid #3989e3;
   background: transparent url(../images/img/mastercard.png) no-repeat right center;
   background-size:65px 100px;
     background-position-y:-1px;
+}
+
+.gform_wrapper input[type=submit] {
+  background-color:#3989e3;
+}
+/*error message*/
+.gform_wrapper div.validation_error {
+  background-color:#ce2027;
+  color:#fff;
+  border:none;
+  font-weight:100;
+  font-family:sans-serif;
 }
 
 

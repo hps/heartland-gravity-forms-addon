@@ -76,8 +76,7 @@ $security_code_label       = rgar( $security_code_field_input, 'customLabel' ) !
 $security_code_label       = gf_apply_filters( array( 'gform_card_security_code', $form_id ), $security_code_label, $form_id );
 $html5_output              = GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
 $security_code_placeholder = $this->get_input_placeholder_attribute( $security_code_field_input );
-$security_field =
-
+$security_field            =
                                   "<span class='ginput_cardinfo_right{$class_suffix} cvv-field' id='{$field_id}_2_cardinfo_right'>
                                         <span class='ginput_card_expiration_container ginput_card_field'>
                                             <label for='{$field_id}_3' {$sub_label_class_attribute}>$security_code_label</label>
