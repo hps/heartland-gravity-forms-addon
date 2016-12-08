@@ -432,4 +432,4 @@ class GF_Field_HPSCreditCard extends GF_Field {
 	}
 }
 
-GF_Fields::register( new GF_Field_HPSCreditCard() );
+GF_Fields::register( new GF_Field_HPSCreditCard() ); 
