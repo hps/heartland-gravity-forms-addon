@@ -732,12 +732,12 @@ class GFSecureSubmit extends GFPaymentAddOn {
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
              * far too many failures have been tried
-             */
+             *//*
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
                 throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
-            }
+            }*/
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
             $token->tokenValue = ($response != null ? $response->token_value : '');
