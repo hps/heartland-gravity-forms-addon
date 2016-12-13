@@ -193,7 +193,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		  $card_name_label       = rgar( $card_name_field_input, 'customLabel' ) != '' ? $card_name_field_input['customLabel'] : esc_html__( 'Cardholder Name', 'gravityforms' );
 		  $card_name_label       = gf_apply_filters( array( 'gform_card_name', $form_id ), $card_name_label, $form_id );
 		  $card_name_placeholder = $this->get_input_placeholder_attribute( $card_name_field_input );
-		  $card_name_field 			 =
+
 
 
 
@@ -202,7 +202,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$html5_output            = ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
 		$card_number_label       = rgar( $card_number_field_input, 'customLabel' ) != '' ? $card_number_field_input['customLabel'] : esc_html__( 'Card Number', 'gravityforms' );
 		$card_number_label       = gf_apply_filters( array( 'gform_card_number', $form_id ), $card_number_label, $form_id );
-		$card_field 						 =
+
 
 
 
@@ -214,7 +214,7 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$expiration_years             = $this->get_expiration_years( $expiration_year );
 		$expiration_label             = rgar( $expiration_month_input, 'customLabel' ) != '' ? $expiration_month_input['customLabel'] : esc_html__( 'Expiration Date', 'gravityforms' );
 		$expiration_label             = gf_apply_filters( array( 'gform_card_expiration', $form_id ), $expiration_label, $form_id );
-		$expiration_field 						=
+
 
 
 
@@ -224,13 +224,14 @@ class GF_Field_HPSCreditCard extends GF_Field {
 		$security_code_label       = gf_apply_filters( array( 'gform_card_security_code', $form_id ), $security_code_label, $form_id );
 		$html5_output              = GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
 		$security_code_placeholder = $this->get_input_placeholder_attribute( $security_code_field_input );
-		$security_field =
 
 
+		ob_start();
+		include dirname(__FILE__) . "/../templates/payment-fields.php";
+		$ss_cc_output = ob_get_clean();
+		return $ss_cc_output;
 
-		return "<div class='ginput_complex{$class_suffix} ginput_container ginput_container_creditcard' id='{$field_id}'>" . $card_name_field . $card_field . $expiration_field . $security_field . ' </div>';
-
-		}
+}
 
 	/**
 	 * @return string
