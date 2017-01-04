@@ -73,7 +73,7 @@
         };
 
         this.secureSubmitResponseHandler = function (response) {
-            console.log(response);
+            
             var $form = this.form;
             var ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
             var ccInputSuffixes = ['1', '2_month', '2_year', '3'];
