@@ -63,15 +63,19 @@ div.gform_card_icon {
     padding:15px !important;
 }
 
-.gform_wrapper input {
+.gform_wrapper input,
+.gform_wrapper select {
   height:48px !important;
   border:1px solid #cecece !important;
   text-transform:uppercase !important;
   background-color:transparent;
+  border-radius:0px;
 }
 
 .gform_wrapper input:hover,
-.gform_wrapper input:focus {
+.gform_wrapper input:focus,
+.gform_wrapper select:hover,
+.gform_wrapper select:focus {
   border:1px solid #3989e3 !important;
   outline:none !important;
 }
@@ -145,6 +149,8 @@ div.gform_card_icon {
 
 .gform_wrapper input[type=submit] {
   background-color:#3989e3;
+  color:white;
+  padding:10px;
 }
 /*error message*/
 .gform_wrapper div.validation_error {
