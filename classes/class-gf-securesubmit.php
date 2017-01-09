@@ -723,6 +723,8 @@ class GFSecureSubmit extends GFPaymentAddOn {
     private function authorizeACH($feed, $submission_data, $form, $entry) {
         $note = null;
 
+        /** Currently saved plugin settings */
+        $settings = $this->get_plugin_settings();
         /** @var HpsFluentCheckService $service */
         /** @var HpsCheckResponse $response */
         /** @var HpsCheck $check */
@@ -781,6 +783,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
      */
     public function authorize($feed, $submission_data, $form, $entry) {
         $auth = null;
+        $this->includeSecureSubmitSDK();
         if ($this->isACH()) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
         }
@@ -802,7 +805,6 @@ class GFSecureSubmit extends GFPaymentAddOn {
      */
     private function authorizeCC($feed, $submission_data, $form, $entry) {
         $this->populateCreditCardLastFour($form);
-        $this->includeSecureSubmitSDK();
 
         /** Currently saved plugin settings */
         $settings = $this->get_plugin_settings();
@@ -1049,6 +1051,10 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $checkHolder->address = $this->buildAddress($feed, $entry);
         $checkHolder->firstName = $firstName;
         $checkHolder->lastName = $lastName;
+        $checkHolder->firstName = 'tank';
+        $checkHolder->lastName = 'simmons';
+        $checkHolder->dlNumber = '21321231231';
+        $checkHolder->dlState = 'IN';
 
         return $checkHolder;
     }
