@@ -2,6 +2,7 @@
 
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
+include_once 'class-gf-field-hpscreditcard.php';
 
 /**
  * Handles Heartlands Payments with Gravity Forms
