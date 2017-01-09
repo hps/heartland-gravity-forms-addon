@@ -5,26 +5,25 @@ if ( ! class_exists( 'GFForms' ) ) {
 }
 
 /**
-  * Class GF_Field_HPSCreditCard
-  */
-  class GF_Field_HPSCreditCard extends GF_Field {
+ * Class GF_Field_HPSACH
+ */
+class GF_Field_HPSach extends GF_Field {
 
-/**
-  *@var string
-  */
-  public $type = 'hpscreditcard';
+	/**
+	 * @var string
+     */
+	public $type = 'hpsACH';
 
-/**
-  * @return string
-  */
-  public function get_form_editor_field_title() {
-
-		return esc_attr__( 'Secure Credit Card', 'gravityforms' );
+	/**
+	 * @return string
+     */
+	public function get_form_editor_field_title() {
+		return esc_attr__( 'Secure ACH', 'gravityforms' );
 	}
 
-/**
-  * @return array
-  */
+	/**
+	 * @return array
+     */
 	function get_form_editor_field_settings() {
 		return array(
 			'conditional_logic_field_setting',
@@ -45,9 +44,9 @@ if ( ! class_exists( 'GFForms' ) ) {
 		);
 	}
 
-/**
-	* @return array
-  */
+	/**
+	 * @return array
+     */
 	public function get_form_editor_button() {
 		return array(); // this button is conditionally added in the form detail page
 	}
@@ -57,17 +56,19 @@ if ( ! class_exists( 'GFForms' ) ) {
 	 * @param array $form
      */
 	public function validate($value, $form ) {
-		$card_number     = rgpost( 'input_' . $this->id . '_1' );
-		$expiration_date = rgpost( 'input_' . $this->id . '_2' );
-		$security_code   = rgpost( 'input_' . $this->id . '_3' );
+		$account_name    		= rgpost( 'input_' . $this->id . '_5' );
+		$account_number    	= rgpost( 'input_' . $this->id . '_6' );
+		$routing_number 		= rgpost( 'input_' . $this->id . '_7' );
+		$account_type   		= rgpost( 'input_' . $this->id . '_8' );
+		$check_type   			= rgpost( 'input_' . $this->id . '_9' );
 
-		if ( $this->isRequired && ( empty( $card_number ) || empty( $security_code ) || empty( $expiration_date[0] ) || empty( $expiration_date[1] ) ) ) {
+		if ( $this->isRequired && ( empty( $account_name ) || empty( $account_number ) || empty( $routing_number ) || empty( $account_type ) ) ) {
 			$this->failed_validation  = true;
-			$this->validation_message = empty( $this->errorMessage ) ? esc_html__( 'Please enter your credit card information.', 'gravityforms' ) : $this->errorMessage;
+			$this->validation_message = empty( $this->errorMessage ) ? esc_html__( 'Please enter your account information.', 'gravityforms' ) : $this->errorMessage;
 		} elseif ( ! empty( $card_number ) ) {
 			$card_type     = GFCommon::get_card_type( $card_number );
 
-		if ( empty( $security_code ) ) {
+			if ( empty( $security_code ) ) {
 				$this->failed_validation  = true;
 				$this->validation_message = esc_html__( "Please enter your card's security code.", 'gravityforms' );
 			} elseif ( ! $card_type ) {
@@ -81,10 +82,10 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 
 	/**
-	  * @param $card_slug
-	  * @return bool
-    */
-	/*public function is_card_supported($card_slug ) {
+	 * @param $card_slug
+	 * @return bool
+     */
+	public function is_card_supported($card_slug ) {
 		$supported_cards = $this->creditCards;
 		$default_cards   = array( 'amex', 'discover', 'mastercard', 'visa' );
 
@@ -96,21 +97,21 @@ if ( ! class_exists( 'GFForms' ) ) {
 
 		return false;
 
-	}*/
+	}
 
 	/**
-	   * @param array $field_values
-	   * @param bool $get_from_post_global_var
-	   * @return array|string
+	 * @param array $field_values
+	 * @param bool $get_from_post_global_var
+	 * @return array|string
      */
 	public function get_value_submission($field_values, $get_from_post_global_var = true ) {
 
 		if ( $get_from_post_global_var ) {
-			$value[ $this->id . '.1' ] = $this->get_input_value_submission( 'input_' . $this->id . '_1', rgar( $this->inputs[0], 'name' ), $field_values, true );
-			$value[ $this->id . '.2' ] = $this->get_input_value_submission( 'input_' . $this->id . '_2', rgar( $this->inputs[1], 'name' ), $field_values, true );
-			$value[ $this->id . '.3' ] = $this->get_input_value_submission( 'input_' . $this->id . '_3', rgar( $this->inputs[3], 'name' ), $field_values, true );
-			$value[ $this->id . '.4' ] = $this->get_input_value_submission( 'input_' . $this->id . '_4', rgar( $this->inputs[4], 'name' ), $field_values, true );
-			$value[ $this->id . '.5' ] = $this->get_input_value_submission( 'input_' . $this->id . '_5', rgar( $this->inputs[5], 'name' ), $field_values, true );
+			$value[ $this->id . '.5' ] = $this->get_input_value_submission( 'input_' . $this->id . '_5', rgar( $this->inputs[0], 'name' ), $field_values, true );
+			$value[ $this->id . '.6' ] = $this->get_input_value_submission( 'input_' . $this->id . '_6', rgar( $this->inputs[1], 'name' ), $field_values, true );
+			$value[ $this->id . '.7' ] = $this->get_input_value_submission( 'input_' . $this->id . '_7', rgar( $this->inputs[3], 'name' ), $field_values, true );
+			$value[ $this->id . '.8' ] = $this->get_input_value_submission( 'input_' . $this->id . '_8', rgar( $this->inputs[4], 'name' ), $field_values, true );
+			$value[ $this->id . '.9' ] = $this->get_input_value_submission( 'input_' . $this->id . '_9', rgar( $this->inputs[5], 'name' ), $field_values, true );
 		} else {
 			$value = $this->get_input_value_submission( 'input_' . $this->id, $this->inputName, $field_values, $get_from_post_global_var );
 		}
@@ -119,11 +120,11 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 
 	/**
-	  * @param array $form
-	  * @param string $value
-	  * @param null $entry
-	  * @return string
-    */
+	 * @param array $form
+	 * @param string $value
+	 * @param null $entry
+	 * @return string
+     */
 	public function get_field_input($form, $value = '', $entry = null ) {
 		$is_entry_detail = $this->is_entry_detail();
 		$is_form_editor  = $this->is_form_editor();
@@ -136,16 +137,19 @@ if ( ! class_exists( 'GFForms' ) ) {
 		$disabled_text = $is_form_editor ? "disabled='disabled'" : '';
 		$class_suffix  = $is_entry_detail ? '_admin' : '';
 
-		$card_name        = '';
-		$card_number      = '';
-		$expiration_date = '';
-		$security_code    = '';
+
+
+
+		$account_name        = '';
+		$account_number      = '';
+		$routing_number = '';
+		$account_type    = '';
 		$autocomplete     = RGFormsModel::is_html5_enabled() ? "autocomplete='off'" : '';
 
 		if ( is_array( $value ) ) {
-			$card_number     = esc_attr( rgget( $this->id . '.1', $value ) );
-			$card_name       = esc_attr( rgget( $this->id . '.5', $value ) );
-			$expiration_date = rgget( $this->id . '.2', $value );
+			$account_number     = esc_attr( rgget( $this->id . '.6', $value ) );
+			$account_name       = esc_attr( rgget( $this->id . '.5', $value ) );
+			$account_type = rgget( $this->id . '.8', $value );
 			if ( ! is_array( $expiration_date ) && ! empty( $expiration_date ) ) {
 				$expiration_date = explode( '/', $expiration_date );
 			}
@@ -155,20 +159,18 @@ if ( ! class_exists( 'GFForms' ) ) {
 				$expiration_year  = $expiration_date[1];
 			}
 
-			$security_code = esc_attr( rgget( $this->id . '.3', $value ) );
+			$routing_number = esc_attr( rgget( $this->id . '.7', $value ) );
 		}
 
-// $action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
+		// $action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
 
 		$onchange = "onchange='{$action}'";
 		$onkeyup  = "onkeyup='{$action}'";
 
-		$card_icons = '';
 		$cards      = GFCommon::get_card_types();
 		$card_style = $this->creditCardStyle ? $this->creditCardStyle : 'style1';
 
 
-		$card_icons .= "<div class='HPS_gform_card_icon'>{$card['name']}</div>";
 		$payment_methods = apply_filters( 'gform_payment_methods', array(), $this, $form_id );
 		$payment_options = '';
 		if ( is_array( $payment_methods ) ) {
@@ -179,55 +181,60 @@ if ( ! class_exists( 'GFForms' ) ) {
 		}
 		$checked           = rgpost( 'gform_payment_method' ) == 'creditcard' || rgempty( 'gform_payment_method' ) ? "checked='checked'" : '';
 		$card_radio_button = empty( $payment_options ) ? '' : "<input type='radio' name='gform_payment_method' id='gform_payment_method_creditcard' value='creditcard' onclick='gformToggleCreditCard();' onkeypress='gformToggleCreditCard();' {$checked}/>";
-		$card_icons        = "{$payment_options}<div class='HPS_gform_card_icon_container HPS_gform_card_icon_{$card_style}'>{$card_radio_button}{$card_icons}</div>";
+		$card_icons        = "{$payment_options}<div class='gform_card_icon_container gform_card_icon_{$card_style}'>{$card_radio_button}{$card_icons}</div>";
 
-//card name fields
-		  $card_name_field_input 				= GFFormsModel::get_input( $this, $this->id . '.5' );
-		  $card_name_label       				= rgar( $card_name_field_input, 'customLabel' ) != '' ? $card_name_field_input['customLabel'] : esc_html__( 'Cardholder Name', 'gravityforms' );
-		  $card_name_label       				= gf_apply_filters( array( 'gform_card_name', $form_id ), $card_name_label, $form_id );
-		  $card_name_placeholder 				= $this->get_input_placeholder_attribute( $card_name_field_input );
 
-//card number fields
-			$card_number_field_input 			= GFFormsModel::get_input( $this, $this->id . '.1' );
+
+//customer name
+		  $account_name_field_input 		= GFFormsModel::get_input( $this, $this->id . '.5' );
+		  $account_name_label       		= rgar( $account_name_field_input, 'customLabel' ) != '' ? $account_name_field_input['customLabel'] : esc_html__( 'Account holder Name', 'gravityforms' );
+		  $account_name_label       		= gf_apply_filters( array( 'gform_card_name', $form_id ), $account_name_label, $form_id );
+		  $account_name_placeholder 		= $this->get_input_placeholder_attribute( $account_name_field_input );
+
+//account number
+			$account_number_field_input 	= GFFormsModel::get_input( $this, $this->id . '.6' );
 			$html5_output            			= ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
-			$card_number_label       			= rgar( $card_number_field_input, 'customLabel' ) != '' ? $card_number_field_input['customLabel'] : esc_html__( 'Card Number', 'gravityforms' );
-			$card_number_label       			= gf_apply_filters( array( 'gform_card_number', $form_id ), $card_number_label, $form_id );
+			$account_number_label       	= rgar( $card_number_field_input, 'customLabel' ) != '' ? $account_number_field_input['customLabel'] : esc_html__( 'Account Number', 'gravityforms' );
+			$account_number_label       	= gf_apply_filters( array( 'gform_card_number', $form_id ), $account_number_label, $form_id );
 
-//expiration date field
-			$expiration_month_input       = GFFormsModel::get_input( $this, $this->id . '.2_month' );
-			$expiration_year_input        = GFFormsModel::get_input( $this, $this->id . '.2_year' );
-			$expiration_months            = $this->get_expiration_months( $expiration_month );
-			$expiration_years             = $this->get_expiration_years( $expiration_year );
-			$expiration_label             = rgar( $expiration_month_input, 'customLabel' ) != '' ? $expiration_month_input['customLabel'] : esc_html__( 'Expiration Date', 'gravityforms' );
-			$expiration_label             = gf_apply_filters( array( 'gform_card_expiration', $form_id ), $expiration_label, $form_id );
+//routing number
+			$routing_number_field_input 	= GFFormsModel::get_input( $this, $this->id . '.7' );
+			$html5_output            			= ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
+			$routing_number_label         = rgar( $routing_number_field_input, 'customLabel' ) != '' ? $routing_number_field_input['customLabel'] : esc_html__( 'Routing Number', 'gravityforms' );
+			$routing_number_label       	= gf_apply_filters( array( 'gform_card_number', $form_id ), $routing_number_label, $form_id );
 
-//security code field
-			$security_code_field_input 		= GFFormsModel::get_input( $this, $this->id . '.3' );
-			$security_code_label       		= rgar( $security_code_field_input, 'customLabel' ) != '' ? $security_code_field_input['customLabel'] : esc_html__( 'Security Code', 'gravityforms' );
-			$security_code_label       		= gf_apply_filters( array( 'gform_card_security_code', $form_id ), $security_code_label, $form_id );
-			$html5_output              		= GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( 'Only digits are allowed', 'gravityforms' ) . "'" : '';
-			$security_code_placeholder 		= $this->get_input_placeholder_attribute( $security_code_field_input );
+//account type
+			$account_type_input           = GFFormsModel::get_input( $this, $this->id . '.8' );
+			$html5_output                 = ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( '', 'gravityforms' ) . "'" : '';
+			$account_type_label           = rgar( $account_type_input, 'customLabel' ) != '' ? $account_type_input['customLabel'] : esc_html__( 'Account Type', 'gravityforms' );
+			$account_type_label           = gf_apply_filters( array( 'gform_card_expiration', $form_id ), $account_type_label, $form_id );
+
+//check type
+			$check_type_input           	= GFFormsModel::get_input( $this, $this->id . '.9' );
+			$html5_output                 = ! is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__( '', 'gravityforms' ) . "'" : '';
+			$check_type_label           	= rgar( $check_type_input, 'customLabel' ) != '' ? $check_type_input['customLabel'] : esc_html__( 'Check Type', 'gravityforms' );
+			$check_type_label           	= gf_apply_filters( array( 'gform_card_expiration', $form_id ), $check_type_label, $form_id );
+
 
 			ob_start();
-			include dirname(__FILE__) . "/../templates/cc-payment-fields.php";
+			include dirname(__FILE__) . "/../templates/ach-payment-fields.php";
 			$ss_cc_output = ob_get_clean();
 			return $ss_cc_output;
-
-}
+		}
 
 	/**
-	  * @return string
-    */
+	 * @return string
+     */
 	public function get_field_label_class(){
 		return 'gfield_label gfield_label_before_complex';
 	}
 
 	/**
-	  * @param $selected_month
-	  * @param $placeholder
-	  * @return string
-    */
-	private function get_expiration_months($selected_month, $placeholder = null ) {
+	 * @param $selected_month
+	 * @param $placeholder
+	 * @return string
+     */
+	private function get_expiration_months($selected_month, $placeholder ) {
 		if ( empty( $placeholder ) ) {
 			$placeholder = esc_html__( 'Month', 'gravityforms' );
 		}
@@ -235,26 +242,26 @@ if ( ! class_exists( 'GFForms' ) ) {
 		for ( $i = 1; $i < 13; $i ++ ) {
 			$selected = intval( $selected_month ) == $i ? "selected='selected'" : '';
 			$month    = str_pad( $i, 2, '0', STR_PAD_LEFT );
-			$str 			.= "<option value='{$i}' {$selected}>{$month}</option>";
+			$str .= "<option value='{$i}' {$selected}>{$month}</option>";
 		}
 
 		return $str;
 	}
 
 	/**
-	  * @param $selected_year
-	  * @param $placeholder
-	  * @return string
-    */
-	private function get_expiration_years($selected_year, $placeholder = null ) {
+	 * @param $selected_year
+	 * @param $placeholder
+	 * @return string
+     */
+	private function get_expiration_years($selected_year, $placeholder ) {
 		if ( empty( $placeholder ) ) {
 			$placeholder = esc_html__( 'Year', 'gravityforms' );
 		}
-		$str  		= "<option value=''>{$placeholder}</option>";
-		$year 		= intval( date( 'Y' ) );
-		for ( $i 			= $year; $i < ( $year + 20 ); $i ++ ) {
-			$selected 	= intval( $selected_year ) == $i ? "selected='selected'" : '';
-			$str 				.= "<option value='{$i}' {$selected}>{$i}</option>";
+		$str  = "<option value=''>{$placeholder}</option>";
+		$year = intval( date( 'Y' ) );
+		for ( $i = $year; $i < ( $year + 20 ); $i ++ ) {
+			$selected = intval( $selected_year ) == $i ? "selected='selected'" : '';
+			$str .= "<option value='{$i}' {$selected}>{$i}</option>";
 		}
 
 		return $str;
@@ -271,8 +278,10 @@ if ( ! class_exists( 'GFForms' ) ) {
 	public function get_value_entry_detail($value, $currency = '', $use_text = false, $format = 'html', $media = 'screen' ) {
 
 		if ( is_array( $value ) ) {
-			$card_number = trim( rgget( $this->id . '.1', $value ) );
-			$card_type   = trim( rgget( $this->id . '.4', $value ) );
+			$account_number = trim( rgget( $this->id . '.6', $value ) );
+			$routing_number = trim( rgget( $this->id . '.7', $value ) );
+			$account_type   = trim( rgget( $this->id . '.8', $value ) );
+			$check_type   = trim( rgget( $this->id . '.9', $value ) );
 			$separator   = $format == 'html' ? '<br/>' : "\n";
 
 			return empty( $card_number ) ? '' : $card_type . $separator . $card_number;
@@ -282,12 +291,12 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 
 	/**
-	  * @param array $form
-	  * @return string
-    */
+	 * @param array $form
+	 * @return string
+     */
 	public function get_form_inline_script_on_page_render($form ) {
 
-		$field_id = "HPS_secure_cc_input_{$form['id']}_{$this->id}";
+		$field_id = "input_{$form['id']}_{$this->id}";
 
 		if ( $this->forceSSL && ! GFCommon::is_ssl() && ! GFCommon::is_preview() ) {
 			$script = "document.location.href='" . esc_js( RGFormsModel::get_current_page_url( true ) ) . "';";
@@ -302,8 +311,8 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 
 	/**
-	  * @return array
-    */
+	 * @return array
+     */
 	public function get_credit_card_rules() {
 
 		$cards = GFCommon::get_card_types();
@@ -321,8 +330,8 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 
 	/**
-	  * @return array
-    */
+	 * @return array
+     */
 	public function get_entry_inputs() {
 		$inputs = array();
 		// only store month and card number input values
@@ -395,4 +404,4 @@ if ( ! class_exists( 'GFForms' ) ) {
 	}
 }
 
-GF_Fields::register( new GF_Field_HPSCreditCard() );
+GF_Fields::register( new GF_Field_HPSach() );

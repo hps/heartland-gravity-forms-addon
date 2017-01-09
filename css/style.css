@@ -1,30 +1,21 @@
 
-/*wp-admin securesubmit styles*/
-.gform_body {
+/*wp-admin securesubmit styles
+#HPS_secure_SCH {
   font-family:sans-serif;
 }
-.wp-admin .card_type_icon {
+.gfield_admin_icons #HPS_secure_ach .card_type_icon {
   background:transparent;
 }
-.wp-admin .ginput_container input {
+.gfield_admin_icons .ginput_container #HPS_secure_ach input {
   border:1px solid #cccccc;
   height:35px;
 }
-.wp-admin .ginput_container input:focus {
+.gfield_admin_icons .ginput_container #HPS_secure_ach input:focus {
   border:1px solid #3989e3;
 }
-.wp-admin .card_type_icon {
-  background:#ffffff url(../images/img/ss-inputcard-blank@2x.png) no-repeat right center;
-  background-size:48px 30px;
-}
-.wp-admin .ginput_container label {
+
+.gfield_admin_icons .ginput_container #HPS_secure_ach label {
   text-transform:uppercase;
-}
-.gform_wrapper .ginput_complex input:not([type=radio]):not([type=checkbox]):not([type=submit]):not([type=image]):not([type=file]) {
-  min-width:100%;
-}
-.gform_wrapper .ginput_complex .ginput_cardinfo_right input.ginput_card_security_code {
-  max-width:100%;
 }
 .wp-admin .ginput_complex .ginput_cardinfo_right {
   width:49% !important;
@@ -35,36 +26,40 @@
 }
 .wp-admin .ginput_complex .ginput_cardinfo_right input.ginput_card_security_code:focus {
 border:1px solid #3989e3;
-}
+}*/
 
 /*securesubmit styles*/
 
-div.gform_card_icon {
+.gform_wrapper .ginput_complex #HPS_secure_ach input {
+  min-width:100%;
+}
+.gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_right input.ginput_card_security_code {
+  max-width:100%;
+}
+
+div.HPS_gform_card_icon {
   background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
   background-size:250px 30px !important;
   width:540px !important;
   height:42px !important;
 }
 
-.field_sublabel_below .ginput_complex.ginput_container label, .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container label {
+.field_sublabel_below .ginput_complex.ginput_container #HPS_secure_ach label,
+.gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container #HPS_secure_ach label {
   margin-top:10px !important;
 }
 
-.gform_card_icon_container {
+.HPS_gform_card_icon_container {
   height:42px !important;
 }
 
-.ginput_complex .ginput_cardinfo_right.cvv-field input.ginput_card_security_code {
-  max-width:100% !important;
-}
-
-.gform_wrapper input:not([type='radio']):not([type='checkbox']):not([type='submit']):not([type='button']):not([type='image']):not([type='file']) {
+.gform_wrapper #HPS_secure_ach input {
     font-size: 14px;
     padding:15px !important;
 }
 
-.gform_wrapper input,
-.gform_wrapper select {
+.gform_wrapper #HPS_secure_ach input,
+.gform_wrapper #HPS_secure_ach select {
   height:48px !important;
   border:1px solid #cecece !important;
   text-transform:uppercase !important;
@@ -72,88 +67,56 @@ div.gform_card_icon {
   border-radius:0px;
 }
 
-.gform_wrapper input:hover,
-.gform_wrapper input:focus,
-.gform_wrapper select:hover,
-.gform_wrapper select:focus {
-  border:1px solid #3989e3 !important;
-  outline:none !important;
+.gform_wrapper #HPS_secure_ach select {
+  border:0 !important;
+  outline:1px solid #cecece;
+  padding:10px;
 }
 
-.gform_wrapper .field_sublabel_below .ginput_complex.ginput_container label, .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container label{
+.gform_wrapper #HPS_secure_ach input:hover,
+.gform_wrapper #HPS_secure_ach input:focus {
+  border:1px solid #3989e3 !important;
+  outline:0 !important;
+  -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
+}
+
+.gform_wrapper #HPS_secure_ach select:hover,
+.gform_wrapper #HPS_secure_ach select:focus {
+  border:0 !important;
+  outline:1px solid #3989e3 !important;
+  -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
+}
+
+.gform_wrapper .field_sublabel_below .ginput_complex.ginput_container #HPS_secure_ach label,
+.gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container #HPS_secure_ach label{
   text-transform:uppercase !important;
   margin:9px 0px 0px 0px !important;
 }
 
-.card_type_icon{
-  background: transparent url(../images/img/ss-inputcard-blank@2x.png) no-repeat right center;
-  background-size:60px 40px;
-}
-
-.ginput_card_security_code_icon {
-  background: transparent url(../images/img/cvv1.png) no-repeat right center;
-  background-size:60px 40px;
-}
-
-.invalid.card-type-visa {
-  background: transparent url(../images/img/visa.png) no-repeat right center;
-  background-size:79px 109px;
-  background-position-y:-56px;
-}
-.invalid.card-type-discover {
-  background: transparent url(../images/img/discover.png) no-repeat right center;
-  background-size:50px 30px;
-  background-position-y:-48px;
-}
-.invalid.card-type-jcb {
-  background: transparent url(../images/img/jcb.png) no-repeat right center;
-  background-size:70px 100px;
-  background-position-y:-3px;
-}
-.invalid.card-type-amex {
-  background: transparent url(../images/img/amex.png) no-repeat right center;
-  background-size:50px 30px;
-  background-position-y:-49px;
-}
-.invalid.card-type-mastercard {
-  background: transparent url(../images/img/mastercard.png) no-repeat right center;
-  background-size:65px 100px;
-  background-position-y:-50px;
-}
-
-.valid.card-type-visa {
-  background: transparent url(../images/img/visa.png) no-repeat right center;
-  background-size:79px 109px;
-  background-position-y:-3px;
-}
-.valid.card-type-discover {
-  background: transparent url(../images/img/discover.png) no-repeat right center;
-  background-size:69px 100px;
-  background-position-y:1px;
-}
-.valid.card-type-jcb {
-  background: transparent url(../images/img/jcb.png) no-repeat right center;
-  background-size:70px 100px;
-  background-position-y:-1px;
-}
-.valid.card-type-amex {
-  background: transparent url(../images/img/amex.png) no-repeat right center;
-  background-size:58px 100px;
-    background-position-y:0px;
-}
-.valid.card-type-mastercard {
-  background: transparent url(../images/img/mastercard.png) no-repeat right center;
-  background-size:65px 100px;
-    background-position-y:-1px;
-}
-
-.gform_wrapper input[type=submit] {
+.gform_wrapper #HPS_secure_ach input[type=submit] {
   background-color:#3989e3;
   color:white;
   padding:10px;
+  font-size:14px;
+  font-weight:400;
+  vertical-align:middle;
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select:none;
+  user-select:none;
+  border-radius:0px;
+  border:1px solid #2e6da4;
 }
+
 /*error message*/
-.gform_wrapper div.validation_error {
+.gform_wrapper #HPS_secure_ach div.validation_error {
   background-color:#ce2027;
   color:#fff;
   border:none;
@@ -161,33 +124,50 @@ div.gform_card_icon {
   font-family:sans-serif;
 }
 
+/*ach*/
+.gform_wrapper #HPS_secure_ach .gform_card_icon_container {
+    height:0px;
+}
 
 @media only screen and (min-width: 641px) {
 
-  .gform_wrapper div.gform_card_icon {
+
+  #HPS_secure_ach .ginput_accountinfo_left {
+    padding-right:10px;
+  }
+
+  #HPS_secure_ach .ginput_accountinfo_left,
+  #HPS_secure_ach .ginput_accountinfo_right {
+    display:inline;
+    width:50%;
+    float:left;
+  }
+
+  .gform_wrapper #HPS_secure_ach div.HPS_gform_card_icon {
     background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
     background-size:320px 40px !important;
     width:540px !important;
     height:42px !important;
   }
 
-  .gform_wrapper .field_sublabel_below .ginput_complex.ginput_container label, .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container label {
+  .gform_wrapper .field_sublabel_below .ginput_complex.ginput_container #HPS_secure_ach label,
+  .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container #HPS_secure_ach label {
     margin-top:15px !important;
     margin-bottom:5px !important;
   }
 
   .gform_wrapper
-  .ginput_container span:not(.ginput_price){
+  .ginput_container #HPS_secure_ach span:not(.ginput_price){
     margin-top:0px;
     margin-bottom: 0px;
   }
 
-  .gform_wrapper .ginput_complex .ginput_cardinfo_right {
+  .gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_right {
     width:50% !important;
     padding-left:5px;
   }
 
-  .gform_wrapper .ginput_complex .ginput_cardinfo_left {
+  .gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_left {
     padding-right:5px;
   }
 
