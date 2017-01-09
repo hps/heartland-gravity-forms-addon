@@ -763,10 +763,12 @@ class GFSecureSubmit extends GFPaymentAddOn {
                 ),
             );
         } catch (HpsCheckException $e) {
-            $auth = $this->authorization_error($e->getMessage());
+            $err = null;
+            foreach($e->details as $error){
+                $err .= $error->message .  "\r\n";
+            }
+            $auth = $this->authorization_error($err);
         }
-
-
         return $auth;
     }
 
@@ -1052,9 +1054,9 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $checkHolder->firstName = $firstName;
         $checkHolder->lastName = $lastName;
         $checkHolder->firstName = 'tank';
-        $checkHolder->lastName = 'simmons';
-        $checkHolder->dlNumber = '21321231231';
-        $checkHolder->dlState = 'IN';
+        //$checkHolder->lastName = 'simmons';
+        //$checkHolder->dlNumber = '21321231231';
+        //$checkHolder->dlState = 'IN';
 
         return $checkHolder;
     }
