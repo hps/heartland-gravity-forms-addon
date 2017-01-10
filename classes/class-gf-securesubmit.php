@@ -575,9 +575,9 @@ class GFSecureSubmit extends GFPaymentAddOn {
         if (!$this->has_feed($form['id'])) {
             return;
         }
-      //  if (!this is an ach transation){
-      //  return;
-      //}
+        if ($this->isAch()) {
+            return;
+        }
 
         $feeds = GFAPI::get_feeds(null, $form['id']);
         $feed = $feeds[0];
@@ -745,7 +745,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $check->accountNumber = '24413815'; // from form
         $check->routingNumber = '490000018'; // from form
 
-        $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);;
+        $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);
         $check->secCode = HpsSECCode::WEB;
         $check->dataEntryMode = HpsDataEntryMode::MANUAL;
         $check->checkType = HpsCheckType::PERSONAL; // drop down choice PERSONAL or BUSINESS
