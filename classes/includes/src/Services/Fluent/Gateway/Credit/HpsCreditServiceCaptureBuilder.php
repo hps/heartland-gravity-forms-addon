@@ -45,14 +45,29 @@ class HpsCreditServiceCaptureBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $captureSvc = new HpsCreditService($this->service->servicesConfig());
-        return $captureSvc->capture(
-            $this->transactionId,
-            $this->amount,
-            $this->gratuity,
-            $this->clientTransactionId,
-            $this->directMarketData
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditAddToBatch = $xml->createElement('hps:CreditAddToBatch');
+
+        $hpsCreditAddToBatch->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        if ($this->amount != null) {
+            $amount = sprintf("%0.2f", round($this->amount, 3));
+            $hpsCreditAddToBatch->appendChild($xml->createElement('hps:Amt', $amount));
+        }
+        if ($this->gratuity != null) {
+            $hpsCreditAddToBatch->appendChild($xml->createElement('hps:GratuityAmtInfo', $this->gratuity));
+        }
+
+        if ($this->directMarketData != null && $this->directMarketData->invoiceNumber != null) {
+            $hpsCreditAddToBatch->appendChild($this->_hydrateDirectMarketData($this->directMarketData, $xml));
+        }
+        $hpsTransaction->appendChild($hpsCreditAddToBatch);
+        $response = $this->service->doRequest($hpsTransaction);
+        $this->_processChargeGatewayResponse($response, 'CreditAddToBatch');
+
+        return $this->service
+            ->get($this->transactionId)
+            ->execute();
     }
 
     /**

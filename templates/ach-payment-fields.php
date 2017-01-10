@@ -38,7 +38,7 @@
 
                         <label for='{$field_id}_8' {$sub_label_class_attribute}>$account_type_label</label>
 
-                            <select tabindex=4>
+                            <select tabindex=4 placeholder='Choose One..'>
                               <option>Checking</option>
                               <option>Savings</option>
                             </select>
@@ -52,7 +52,7 @@
 
                           <label for='{$field_id}_9' {$sub_label_class_attribute}>$check_type_label</label>
 
-                                <select tabindex=6>
+                                <select tabindex=5 placeholder='Choose One..'>
                                   <option>Personal</option>
                                   <option>Business</option>
                                 </select>

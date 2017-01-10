@@ -147,8 +147,12 @@ class GFSecureSubmit extends GFPaymentAddOn {
 
         /* Sets WP to call \GFSecureSubmit::hps_add_cc_field and build our button
         src: wordpress/wp-includes/plugin.php
-         * \GFSecureSubmit::hps_add_cc_field
-         * */
+        * \GFSecureSubmit::hps_add_cc_field
+        * * Sets WP to call \GFSecureSubmit::hps_add_ach_field and build our button
+         src: wordpress/wp-includes/plugin.php
+        * \GFSecureSubmit::hps_add_ach_field
+        */
+
         add_filter('gform_add_field_buttons', array($this, 'hps_add_cc_field') );
         add_filter('gform_add_field_buttons', array($this, 'hps_add_ach_field') );
 
@@ -481,22 +485,21 @@ class GFSecureSubmit extends GFPaymentAddOn {
      */
     public function scripts() {
         $scripts = array(
-
+          array(
+              'handle'    => 'gform_json',
+              'src'       => GFCommon::get_base_url() . '/js/jquery.json-1.3.js',
+              'version'   => $this->_version,
+              'deps'      => array('jquery'),
+              'in_footer' => false,
+              'enqueue'   => array(
+                  array($this, 'hasFeedCallback'),
+              ),
+          ),
             array(
                 'handle'    => 'gforms_securesubmit_frontend',
                 'src'       => $this->get_base_url() . '/../assets/js/securesubmit.js',
                 'version'   => $this->_version,
                 'deps'      => array('jquery', 'securesubmit.js'),
-                'in_footer' => false,
-                'enqueue'   => array(
-                    array($this, 'hasFeedCallback'),
-                ),
-            ),
-            array(
-                'handle'    => 'gform_json',
-                'src'       => GFCommon::get_base_url() . '/js/jquery.json-1.3.js',
-                'version'   => $this->_version,
-                'deps'      => array('jquery'),
                 'in_footer' => false,
                 'enqueue'   => array(
                     array($this, 'hasFeedCallback'),
@@ -572,6 +575,9 @@ class GFSecureSubmit extends GFPaymentAddOn {
         if (!$this->has_feed($form['id'])) {
             return;
         }
+      //  if (!this is an ach transation){
+      //  return;
+      //}
 
         $feeds = GFAPI::get_feeds(null, $form['id']);
         $feed = $feeds[0];
@@ -586,7 +592,12 @@ class GFSecureSubmit extends GFPaymentAddOn {
             'isAjax'    => $is_ajax,
         );
 
-        $script = 'new SecureSubmit(' . json_encode($args) . ');';
+        $script = 'new
+
+
+
+
+        (' . json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
 
@@ -739,8 +750,12 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $check->dataEntryMode = HpsDataEntryMode::MANUAL;
         $check->checkType = HpsCheckType::PERSONAL; // drop down choice PERSONAL or BUSINESS
         $check->accountType = HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS
+        $config = new HpsServicesConfig();
+        $config->secretApiKey = $this->getSecretApiKey($feed);
+        $config->developerId = '002914';
+        $config->versionNumber = '1916';
 
-        $service = new HpsFluentCheckService($this->hpsServices($feed));
+        $service = new HpsFluentCheckService($config);
         try {
             $response = $service
                 ->sale($submission_data['payment_amount'])

@@ -14,16 +14,16 @@ class HpsBatchService extends HpsSoapGatewayService
             $hpsBatchClose = $xml->createElement('hps:BatchClose');
         $hpsTransaction->appendChild($hpsBatchClose);
 
-        $response = $this->doTransaction($hpsTransaction);
+        $response = $this->doRequest($hpsTransaction);
         HpsGatewayResponseValidation::checkResponse($response, 'BatchClose');
 
         //Process the response
         $batchClose = $response->Transaction->BatchClose;
         $result = new HpsBatch();
-        $result->id = (isset($batchClose->BatchId) ? (string)$batchClose->BatchId : null);
-        $result->sequenceNumber = (isset($batchClose->BatchSeqNbr) ? (string)$batchClose->BatchSeqNbr : null);
-        $result->totalAmount = (isset($batchClose->TotalAmt) ? (string)$batchClose->TotalAmt : null);
-        $result->transactionCount = (isset($batchClose->TxnCnt) ? (string)$batchClose->TxnCnt : null);
+        $result->id = (isset($batchClose->BatchId) ? $batchClose->BatchId : null);
+        $result->sequenceNumber = (isset($batchClose->BatchSeqNbr) ? $batchClose->BatchSeqNbr : null);
+        $result->totalAmount = (isset($batchClose->TotalAmt) ? $batchClose->TotalAmt : null);
+        $result->transactionCount = (isset($batchClose->TxnCnt) ? $batchClose->TxnCnt : null);
 
         return $result;
     }

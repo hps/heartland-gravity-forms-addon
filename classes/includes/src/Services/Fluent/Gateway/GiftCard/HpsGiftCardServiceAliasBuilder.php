@@ -37,12 +37,22 @@ class HpsGiftCardServiceAliasBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $aliasSvc = new HpsGiftCardService($this->service->servicesConfig());
-        return $aliasSvc->alias(
-            $this->action,
-            $this->card,
-            $this->alias
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsGiftAlias = $xml->createElement('hps:GiftCardAlias');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        $hpsBlock1->appendChild($xml->createElement('hps:Action', $this->action));
+        $hpsBlock1->appendChild($xml->createElement('hps:Alias', $this->alias));
+
+        if ($this->card != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateGiftCardData($this->card, $xml));
+        }
+
+        $hpsGiftAlias->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsGiftAlias);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'GiftCardAlias');
     }
 
     /**
@@ -67,6 +77,10 @@ class HpsGiftCardServiceAliasBuilder extends HpsBuilderAbstract
      */
     protected function cardNotNull($actionCounts)
     {
+        if ($this->action == 'CREATE') {
+            return $this->card == null;
+        }
+
         return isset($actionCounts['card']);
     }
 
