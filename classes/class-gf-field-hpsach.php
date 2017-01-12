@@ -26,20 +26,14 @@ class GF_Field_HPSach extends GF_Field {
      */
 	function get_form_editor_field_settings() {
 		return array(
-			'conditional_logic_field_setting',
 			'force_ssl_field_setting',
-			'credit_card_style_setting',
 			'error_message_setting',
 			'label_setting',
-			'label_placement_setting',
-			'sub_labels_setting',
-			'sub_label_placement_setting',
 			'label_placement_setting',
 			'admin_label_setting',
 			'rules_setting',
 			'description_setting',
 			'css_class_setting',
-			'credit_card_setting',
 			'input_placeholders_setting',
 		);
 	}
@@ -138,6 +132,10 @@ class GF_Field_HPSach extends GF_Field {
 		$class_suffix  = $is_entry_detail ? '_admin' : '';
 
 
+			$form_sub_label_placement  = rgar( $form, 'subLabelPlacement' );
+			$field_sub_label_placement = $this->subLabelPlacement;
+			$is_sub_label_above        = $field_sub_label_placement == 'above' || ( empty( $field_sub_label_placement ) && $form_sub_label_placement == 'above' );
+			$sub_label_class_attribute = $field_sub_label_placement == 'hidden_label' ? "class='hidden_sub_label screen-reader-text'" : '';
 
 
 		$account_name        = '';
@@ -162,11 +160,12 @@ class GF_Field_HPSach extends GF_Field {
 			$routing_number = esc_attr( rgget( $this->id . '.7', $value ) );
 		}
 
-		// $action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
+		$action = ! ( $is_entry_detail || $is_form_editor ) ? "gformMatchCard(\"{$field_id}_1\");" : '';
 
 		$onchange = "onchange='{$action}'";
 		$onkeyup  = "onkeyup='{$action}'";
 
+		$card_icons = '';
 		$cards      = GFCommon::get_card_types();
 		$card_style = $this->creditCardStyle ? $this->creditCardStyle : 'style1';
 
@@ -329,20 +328,7 @@ class GF_Field_HPSach extends GF_Field {
 		return $rules;
 	}
 
-	/**
-	 * @return array
-     */
-	public function get_entry_inputs() {
-		$inputs = array();
-		// only store month and card number input values
-		foreach ( $this->inputs as $input ) {
-			if ( in_array( $input['id'], array( $this->id . '.1', $this->id . '.4' ) ) ) {
-				$inputs[] = $input;
-			}
-		}
 
-		return $inputs;
-	}
 
 	/**
 	 * @param string $value

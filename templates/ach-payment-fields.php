@@ -1,4 +1,5 @@
 <?php
+
   $wrapper = "<div id='HPS_secure_ach'>";
 
     $account_name_field =
@@ -6,7 +7,7 @@
 
               <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$account_name_label}</label>
 
-                  <input type='text' tabindex=1 name='input_{$id}.5' id='{$field_id}_5' placeholder='ACCOUNT HOLDER NAME' value='{$account_name}'/>
+                  <input type='text' name='input_{$id}.5' id='{$field_id}_5' placeholder='ACCOUNT HOLDER NAME' value='{$account_name}' {$disabled_text}'/>
 
           </span>";
 
@@ -15,7 +16,7 @@
 
                 <label for='{$field_id}_6' id='{$field_id}_6_label' {$sub_label_class_attribute}>{$account_number_label}</label>
 
-                  <input type='tel' tabindex=2 name='input_{$id}.6' class='' id='{$field_id}_6' placeholder='ACCOUNT NUMBER' value='{$account_number_field}'/>
+                  <input type='tel' name='input_{$id}.6' class='' id='{$field_id}_6' placeholder='ACCOUNT NUMBER' value='{$account_number_field}' {$disabled_text}/>
 
             </span>";
 
@@ -26,7 +27,7 @@
 
                         <label for='{$field_id}_7' {$sub_label_class_attribute}>{$routing_number_label}</label>
 
-                        <input type='tel'  tabindex=3 name='input_{$id}.7' id='routing_number' placeholder='ROUTING NUMBER' value='{$routing_number_field}'/>
+                        <input type='tel' name='input_{$id}.7' id='routing_number' placeholder='ROUTING NUMBER' value='{$routing_number_field}' {$disabled_text}/>
 
                     </span>
 
@@ -38,9 +39,10 @@
 
                         <label for='{$field_id}_8' {$sub_label_class_attribute}>$account_type_label</label>
 
-                            <select tabindex=4 placeholder='Choose One..'>
-                              <option>Checking</option>
-                              <option>Savings</option>
+                            <select {$disabled_text}>
+                              <option value='' disabled selected>Choose One..</option>
+                              <option value=''>Checking</option>
+                              <option value=''>Savings</option>
                             </select>
 
 
@@ -52,9 +54,10 @@
 
                           <label for='{$field_id}_9' {$sub_label_class_attribute}>$check_type_label</label>
 
-                                <select tabindex=5 placeholder='Choose One..'>
-                                  <option>Personal</option>
-                                  <option>Business</option>
+                                <select {$disabled_text}>
+                                  <option value='' disabled selected>Choose One..</option>
+                                  <option value=''>Personal</option>
+                                  <option value=''>Business</option>
                                 </select>
 
 

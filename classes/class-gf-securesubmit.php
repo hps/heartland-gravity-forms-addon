@@ -211,14 +211,18 @@ class GFSecureSubmit extends GFPaymentAddOn {
     /**
      * @return bool|false|string
      */
-    public function feed_list_message() {
-        $message = parent::feed_list_message();
-        if ($message !== false) {
-            return $message;
-        }
+     public function feed_list_message() {
 
+        // if ( $this->_requires_credit_card && ! $this->has_credit_card_field( $this->get_current_form() ) ) {
+        //     return $this->requires_credit_card_message();
+        // }
+
+        // from GFFeedAddOn::feed_list_message
+        if ( ! $this->can_create_feed() ) {
+            return $this->configure_addon_message();
+        }
         return false;
-    }
+   }
 
     /**
      * @return array
@@ -742,14 +746,14 @@ class GFSecureSubmit extends GFPaymentAddOn {
         /** @var string $note displayed message for consumer */
 
         $check = new HpsCheck();
-        $check->accountNumber = '24413815'; // from form
-        $check->routingNumber = '490000018'; // from form
+        $check->accountNumber = '24413815'; // from form $account_number_field_input
+        $check->routingNumber = '490000018'; // from form $routing_number_field_input
 
-        $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);
+        $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);//$account_name_field_input
         $check->secCode = HpsSECCode::WEB;
         $check->dataEntryMode = HpsDataEntryMode::MANUAL;
-        $check->checkType = HpsCheckType::PERSONAL; // drop down choice PERSONAL or BUSINESS
-        $check->accountType = HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS
+        $check->checkType = HpsCheckType::PERSONAL; // drop down choice PERSONAL or BUSINESS $check_type_input
+        $check->accountType = HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
         $config = new HpsServicesConfig();
         $config->secretApiKey = $this->getSecretApiKey($feed);
         $config->developerId = '002914';
