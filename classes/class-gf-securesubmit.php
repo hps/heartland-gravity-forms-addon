@@ -2,7 +2,6 @@
 
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
-include_once 'class-gf-field-hpscreditcard.php';
 
 /**
  * Handles Heartlands Payments with Gravity Forms
@@ -99,24 +98,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
      *
      * @return mixed
      */
-    public function hps_add_cc_field($field_groups) {
-        foreach ($field_groups as &$group) {
-            if ($group["name"] == "pricing_fields") {
-                $group["fields"][] = array(
-                    'class'     => 'button',
-                    // this has to match
-                    // \GF_Field_HPSCreditCard::$type
-                    'data-type' => 'hpscreditcard',
-                    // the first param here will be the button text
-                    // leave the second one as gravityforms
-                    'value'     => __('Secure CC', "gravityforms"),
-                );
-                break;
-            }
-        }
 
-        return $field_groups;
-    }
 
     public function hps_add_ach_field($field_groups ) {
         foreach( $field_groups as &$group ){
@@ -153,7 +135,6 @@ class GFSecureSubmit extends GFPaymentAddOn {
         * \GFSecureSubmit::hps_add_ach_field
         */
 
-        add_filter('gform_add_field_buttons', array($this, 'hps_add_cc_field') );
         add_filter('gform_add_field_buttons', array($this, 'hps_add_ach_field') );
 
     }
@@ -1073,7 +1054,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $checkHolder->firstName = $firstName;
         $checkHolder->lastName = $lastName;
         $checkHolder->firstName = 'tank';
-        //$checkHolder->lastName = 'simmons';
+        $checkHolder->lastName = 'simmons';
         //$checkHolder->dlNumber = '21321231231';
         //$checkHolder->dlState = 'IN';
 

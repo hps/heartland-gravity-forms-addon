@@ -34,6 +34,10 @@ div.HPS_gform_card_icon {
     padding:15px !important;
 }
 
+.gform_wrapper #HPS_secure_ach input::placeholder {
+  color:#b5b5b5 !important;
+}
+
 .gform_wrapper #HPS_secure_ach input,
 .gform_wrapper #HPS_secure_ach select {
   font-size: 14px;
