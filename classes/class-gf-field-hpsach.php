@@ -29,12 +29,9 @@ class GF_Field_HPSach extends GF_Field {
 			'force_ssl_field_setting',
 			'error_message_setting',
 			'label_setting',
-			'label_placement_setting',
 			'admin_label_setting',
 			'rules_setting',
-			'description_setting',
 			'css_class_setting',
-			'input_placeholders_setting',
 		);
 	}
 

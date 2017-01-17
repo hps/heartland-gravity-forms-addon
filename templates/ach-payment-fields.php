@@ -7,7 +7,7 @@
 
               <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$account_name_label}</label>
 
-                  <input type='text' name='input_{$id}.5' id='{$field_id}_5' placeholder='ACCOUNT HOLDER NAME' value='{$account_name}' {$disabled_text}'/>
+                  <input type='text' name='input_{$id}.5' id='{$field_id}_5' placeholder='JOHN DOE' value='{$account_name}' {$disabled_text}'/>
 
           </span>";
 
@@ -16,7 +16,7 @@
 
                 <label for='{$field_id}_6' id='{$field_id}_6_label' {$sub_label_class_attribute}>{$account_number_label}</label>
 
-                  <input type='tel' name='input_{$id}.6' class='' id='{$field_id}_6' placeholder='ACCOUNT NUMBER' value='{$account_number_field}' {$disabled_text}/>
+                  <input type='tel' name='input_{$id}.6' class='' id='{$field_id}_6' placeholder='000000000' value='{$account_number_field}' {$disabled_text}/>
 
             </span>";
 
@@ -27,7 +27,7 @@
 
                         <label for='{$field_id}_7' {$sub_label_class_attribute}>{$routing_number_label}</label>
 
-                        <input type='tel' name='input_{$id}.7' id='routing_number' placeholder='ROUTING NUMBER' value='{$routing_number_field}' {$disabled_text}/>
+                        <input type='tel' name='input_{$id}.7' id='routing_number' placeholder='000000000' value='{$routing_number_field}' {$disabled_text}/>
 
                     </span>
 

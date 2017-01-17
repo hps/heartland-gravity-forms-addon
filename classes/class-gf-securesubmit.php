@@ -767,6 +767,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
             foreach($e->details as $error){
                 $err .= $error->message .  "\r\n";
             }
+            var_dump($err);
             $auth = $this->authorization_error($err);
         }
         return $auth;
