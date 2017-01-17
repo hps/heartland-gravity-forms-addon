@@ -1052,10 +1052,11 @@ class GFSecureSubmit extends GFPaymentAddOn {
 
         $checkHolder = new HpsCheckHolder();
         $checkHolder->address = $this->buildAddress($feed, $entry);
-        $checkHolder->firstName = $firstName;
-        $checkHolder->lastName = $lastName;
-        $checkHolder->firstName = 'tank';
-        $checkHolder->lastName = 'simmons';
+        // $checkHolder->firstName = $firstName;
+        // $checkHolder->lastName = $lastName;
+        // $checkHolder->firstName = 'tank';
+        // $checkHolder->lastName = 'simmons';
+        $checkHolder->checkName = 'check holder'; //$submission_data['card_name'];
         //$checkHolder->dlNumber = '21321231231';
         //$checkHolder->dlState = 'IN';
 
