@@ -73,6 +73,7 @@ div.HPS_gform_card_icon {
   -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
   transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
   color:#515151 !important;
+  letter-spacing:1.5 !important;
 }
 
 .gform_wrapper #HPS_secure_ach select:hover,
