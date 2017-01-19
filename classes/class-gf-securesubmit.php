@@ -2,6 +2,7 @@
 
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
+include_once 'class-gf-field-hpscreditcard.php';
 
 /**
  * Handles Heartlands Payments with Gravity Forms
@@ -99,6 +100,24 @@ class GFSecureSubmit extends GFPaymentAddOn {
      * @return mixed
      */
 
+     public function hps_add_cc_field($field_groups) {
+             foreach ($field_groups as &$group) {
+                 if ($group["name"] == "pricing_fields") {
+                     $group["fields"][] = array(
+                         'class'     => 'button',
+                         // this has to match
+                         // \GF_Field_HPSCreditCard::$type
+                         'data-type' => 'hpscreditcard',
+                         // the first param here will be the button text
+                         // leave the second one as gravityforms
+                         'value'     => __('Secure CC', "gravityforms"),
+                     );
+                     break;
+                 }
+             }
+
+             return $field_groups;
+         }
 
     public function hps_add_ach_field($field_groups ) {
         foreach( $field_groups as &$group ){
@@ -136,6 +155,8 @@ class GFSecureSubmit extends GFPaymentAddOn {
         */
 
         add_filter('gform_add_field_buttons', array($this, 'hps_add_ach_field') );
+        add_filter('gform_add_field_buttons', array($this, 'hps_add_cc_field') );
+
 
     }
 
@@ -470,19 +491,10 @@ class GFSecureSubmit extends GFPaymentAddOn {
      */
     public function scripts() {
         $scripts = array(
-          array(
-              'handle'    => 'gform_json',
-              'src'       => GFCommon::get_base_url() . '/js/jquery.json-1.3.js',
-              'version'   => $this->_version,
-              'deps'      => array('jquery'),
-              'in_footer' => false,
-              'enqueue'   => array(
-                  array($this, 'hasFeedCallback'),
-              ),
-          ),
+
             array(
                 'handle'    => 'gforms_securesubmit_frontend',
-                'src'       => $this->get_base_url() . '/../assets/js/securesubmit.js',
+                'src'       => $this->get_base_url() . "/../assets/js/securesubmit.js",
                 'version'   => $this->_version,
                 'deps'      => array('jquery', 'securesubmit.js'),
                 'in_footer' => false,
@@ -491,8 +503,18 @@ class GFSecureSubmit extends GFPaymentAddOn {
                 ),
             ),
             array(
+                'handle'    => 'gform_json',
+                'src'       => GFCommon::get_base_url() . "/js/jquery.json-1.3.js",
+                'version'   => $this->_version,
+                'deps'      => array('jquery'),
+                'in_footer' => false,
+                'enqueue'   => array(
+                    array($this, 'hasFeedCallback'),
+                ),
+            ),
+            array(
                 'handle'    => 'gforms_securesubmit_admin',
-                'src'       => $this->get_base_url() . '/../assets/js/securesubmit-admin.js',
+                'src'       => $this->get_base_url() . "/../assets/js/securesubmit-admin.js",
                 'version'   => $this->_version,
                 'deps'      => array('jquery'),
                 'in_footer' => false,
@@ -560,9 +582,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
         if (!$this->has_feed($form['id'])) {
             return;
         }
-        if ($this->isAch()) {
-            return;
-        }
+
 
         $feeds = GFAPI::get_feeds(null, $form['id']);
         $feed = $feeds[0];
@@ -577,13 +597,9 @@ class GFSecureSubmit extends GFPaymentAddOn {
             'isAjax'    => $is_ajax,
         );
 
-        $script = 'new
-
-
-
-
-        (' . json_encode($args) . ');';
+        $script = 'new SecureSubmit(' . json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
+        error_log("hello");
     }
 
     /**
@@ -739,7 +755,7 @@ class GFSecureSubmit extends GFPaymentAddOn {
         $config->secretApiKey = $this->getSecretApiKey($feed);
         $config->developerId = '002914';
         $config->versionNumber = '1916';
-
+        $service = new HpsFluentCheckService($this->hpsServices($feed));
         $service = new HpsFluentCheckService($config);
         try {
             $response = $service
