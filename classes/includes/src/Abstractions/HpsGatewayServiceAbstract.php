@@ -82,9 +82,9 @@ abstract class HpsGatewayServiceAbstract
             ) {
                 curl_setopt_array($request, $this->_config->curlOptions);
             }
-            $this->writeXML(ABSPATH . '/Req.xml',$data);
+            //$this->writeXML(ABSPATH . '/Req.xml',$data);
             $curlResponse = curl_exec($request);
-            $this->writeXML(ABSPATH . '/Resp.xml',$curlResponse);
+            //$this->writeXML(ABSPATH . '/Resp.xml',$curlResponse);
             $curlInfo = curl_getinfo($request);
             $curlError = curl_errno($request);
 

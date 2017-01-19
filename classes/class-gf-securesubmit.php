@@ -12,7 +12,7 @@ class GFSecureSubmit
     /**
      * @var bool
      */
-    private $isACH = null;
+    private $isCC = null;
     /**
      * @var string
      */
@@ -545,7 +545,7 @@ class GFSecureSubmit
         if (!$this->has_feed($form['id'])) {
             return;
         }
-        if ($this->isAch($form)) {
+        if (!$this->isCC($form)) {
             return;
         }
 
@@ -642,12 +642,13 @@ class GFSecureSubmit
         }
 
         $isACH = false;
+        $isCC = false;
         foreach ($validation_result['form']['fields'] as $field) {
             $current_page         = GFFormDisplay::get_source_page($validation_result['form']['id']);
             $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
 
             if (GFFormsModel::get_input_type($field) == 'hpsACH' && $field_on_curent_page) {
-                $isACH = true;
+                $isACH = $field;
                 if (!$this->hasPayment($validation_result)) {
                     $field['failed_validation']  = true;
                     $field['validation_message'] = 'Please Check your entries and try again';
@@ -656,12 +657,10 @@ class GFSecureSubmit
                     // override validation in case user has marked field as required allowing securesubmit to handle cc validation
                     $field['failed_validation'] = false;
                 }
-
-                // only one cc field per form, break once we've found it
-                break;
             }
 
             if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
+                $isCC = $field;
                 if ($this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation']  = true;
                     $field['validation_message'] = $this->getSecureSubmitJsError();
@@ -670,24 +669,9 @@ class GFSecureSubmit
                     // override validation in case user has marked field as required allowing securesubmit to handle cc validation
                     $field['failed_validation'] = false;
                 }
-
-                // only one cc field per form, break once we've found it
-                break;
             }
         }
 
-        // revalidate the validation result
-        $validation_result['is_valid'] = true;
-
-        foreach ($validation_result['form']['fields'] as $field) {
-            if ($field['failed_validation']) {
-                $validation_result['is_valid'] = false;
-                break;
-            }
-        }
-        if (!$validation_result['is_valid']) {
-            return $validation_result;
-        }
 
         $form  = $validation_result['form'];
         $entry = GFFormsModel::create_lead($form);
@@ -701,6 +685,26 @@ class GFSecureSubmit
         $submission_data = $this->get_submission_data($feed, $form, $entry);
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
 
+        if($isCC && !empty($submission_data['card_number']) && $isACH && !empty($submission_data['ach_number']) ){
+                    $isCC['failed_validation']  = true;
+                    $isCC['validation_message'] = 'You may not submit both Credit Card and Bank Transfer at the same time';
+                    $isACH['failed_validation']  = true;
+                    $isACH['validation_message'] = $isCC['validation_message'];
+        }
+
+
+        // revalidate the validation result
+        $validation_result['is_valid'] = true;
+
+        foreach ($validation_result['form']['fields'] as $field) {
+            if ($field['failed_validation']) {
+                $validation_result['is_valid'] = false;
+                break;
+            }
+        }
+        if (!$validation_result['is_valid']) {
+            return $validation_result;
+        }
         //Do not process payment if payment amount is 0
         if (floatval($submission_data['payment_amount']) <= 0) {
 
@@ -753,20 +757,20 @@ else
      * @return bool
      */
     private
-    function isACH($form)
+    function isCC($form)
     {
-        if  (empty($this->isACH)){
+        if  (empty($this->isCC)){
             foreach ($form['fields'] as $field) {
                 $current_page         = GFFormDisplay::get_source_page($form['id']);
                 $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
 
-                if (GFFormsModel::get_input_type($field) == 'hpsACH' && $field_on_curent_page) {
-                    $this->isACH = true;
+                if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
+                    $this->isCC = true;
                     break;
                 }
             }
         }
-        return $this->isACH;
+        return $this->isCC;
     }
 
     /**
