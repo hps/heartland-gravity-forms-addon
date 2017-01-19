@@ -169,7 +169,7 @@ class GFSecureSubmit
         case "hpsACH" :
         field.label = "Bank Transfer"; //setting the default field label
         break;
-        <?php
+        <?php //////
     }
 
     /**
