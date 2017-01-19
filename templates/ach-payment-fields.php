@@ -39,10 +39,11 @@
 
                         <label for='{$field_id}_8' {$sub_label_class_attribute}>$account_type_label</label>
 
-                            <select {$disabled_text}>
+                            <select {$disabled_text}  name='input_{$id}.8' class=''
+                            id='{$field_id}_8'>
                               <option value='' disabled selected>Choose One..</option>
-                              <option value=''>Checking</option>
-                              <option value=''>Savings</option>
+                              <option value='0'>Checking</option>
+                              <option value='1'>Savings</option>
                             </select>
 
 
@@ -54,10 +55,11 @@
 
                           <label for='{$field_id}_9' {$sub_label_class_attribute}>$check_type_label</label>
 
-                                <select {$disabled_text}>
+                                <select {$disabled_text} name='input_{$id}.9' class=''
+                                id='{$field_id}_9'>
                                   <option value='' disabled selected>Choose One..</option>
-                                  <option value=''>Personal</option>
-                                  <option value=''>Business</option>
+                                  <option value='0'>Personal</option>
+                                  <option value='1'>Business</option>
                                 </select>
 
 
