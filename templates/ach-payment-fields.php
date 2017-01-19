@@ -2,6 +2,17 @@
 
   $wrapper = "<div id='HPS_secure_ach'>";
 
+if (!isset($class_suffix)) {$class_suffix = '';}
+if (!isset($field_id)) {$field_id = '';}
+if (!isset($card_icons)) {$card_icons = '';}
+if (!isset($sub_label_class_attribute)) {$sub_label_class_attribute = '';}
+if (!isset($account_name_label)) {$account_name_label = '';}
+if (!isset($account_name)) {$account_name = '';}
+if (!isset($disabled_text)) {$disabled_text = '';}
+if (!isset($account_number_label)) {$account_number_label = '';}
+if (!isset($routing_number_label)) {$routing_number_label = '';}
+if (!isset($account_type_label)) {$account_type_label = '';}
+if (!isset($check_type_label)) {$check_type_label = '';}
     $account_name_field =
         "  <span class='ginput_full{$class_suffix}' id='{$field_id}_5_container'>{$card_icons}
 
@@ -10,6 +21,7 @@
                   <input type='text' name='hps_cardholder' id='{$field_id}_5' placeholder='JOHN DOE' value='{$account_name}' {$disabled_text}'/>
 
           </span>";
+
 
      $account_number_field	=
           "  <span class='ginput_full{$class_suffix}' id='{$field_id}_6_container' >
