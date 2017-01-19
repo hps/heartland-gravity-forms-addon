@@ -7,7 +7,7 @@
 
               <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$account_name_label}</label>
 
-                  <input type='text' name='input_{$id}.5' id='{$field_id}_5' placeholder='JOHN DOE' value='{$account_name}' {$disabled_text}'/>
+                  <input type='text' name='hps_cardholder' id='{$field_id}_5' placeholder='JOHN DOE' value='{$account_name}' {$disabled_text}'/>
 
           </span>";
 
@@ -16,7 +16,7 @@
 
                 <label for='{$field_id}_6' id='{$field_id}_6_label' {$sub_label_class_attribute}>{$account_number_label}</label>
 
-                  <input type='tel' name='input_{$id}.6' class='' id='{$field_id}_6' placeholder='000000000' value='{$account_number_field}' {$disabled_text}/>
+                  <input type='tel' name='hps_account' class='' id='{$field_id}_6' placeholder='000000000' value='{$account_number_field}' {$disabled_text}/>
 
             </span>";
 
@@ -27,7 +27,7 @@
 
                         <label for='{$field_id}_7' {$sub_label_class_attribute}>{$routing_number_label}</label>
 
-                        <input type='tel' name='input_{$id}.7' id='routing_number' placeholder='000000000' value='{$routing_number_field}' {$disabled_text}/>
+                        <input type='tel' name='hps_routing' id='routing_number' placeholder='000000000' value='{$routing_number_field}' {$disabled_text}/>
 
                     </span>
 
@@ -39,7 +39,7 @@
 
                         <label for='{$field_id}_8' {$sub_label_class_attribute}>$account_type_label</label>
 
-                            <select {$disabled_text}  name='input_{$id}.8' class=''
+                            <select {$disabled_text}  name='hps_ach_type' class=''
                             id='{$field_id}_8'>
                               <option value='' disabled selected>Choose One..</option>
                               <option value='0'>Checking</option>
@@ -55,7 +55,7 @@
 
                           <label for='{$field_id}_9' {$sub_label_class_attribute}>$check_type_label</label>
 
-                                <select {$disabled_text} name='input_{$id}.9' class=''
+                                <select {$disabled_text} name='hps_ach_check' class=''
                                 id='{$field_id}_9'>
                                   <option value='' disabled selected>Choose One..</option>
                                   <option value='0'>Personal</option>

@@ -886,11 +886,11 @@ else
         $submission_data               = $this->current_submission_data;
 
 
-        $submission_data['ach_number'] = $this->validateACH($this_id);
-        $submission_data['ach_route']  = $this->remove_spaces_from_card_number(rgpost("input_{$this_id}_7"));
+        $submission_data['ach_number'] = $this->validateACH();
+        $submission_data['ach_route']  = $this->remove_spaces_from_card_number(rgpost("hps_routing"));
 
-        $accountType        = rgpost("input_{$this_id}_8");
-        $checkType          = rgpost("input_{$this_id}_9");
+        $accountType        = rgpost("hps_ach_type");
+        $checkType          = rgpost("hps_ach_check");
         $accountTypeOptions = array(HpsAccountType::CHECKING,
                                HpsAccountType::SAVINGS);
         $checkTypeOptions   = array(HpsCheckType::PERSONAL,
@@ -902,13 +902,13 @@ else
                 = $checkTypeOptions[ $checkType ];//HpsCheckType::BUSINESS; drop down choice PERSONAL or BUSINESS $check_type_input
 
         }
-        $submission_data['ach_check_holder'] = rgpost("input_{$this_id}_5");
+        $submission_data['ach_check_holder'] = rgpost("hps_cardholder");
 
 
         return gf_apply_filters( array( 'gform_submission_data_pre_process_payment', $form['id'] ), $submission_data, $feed, $form, $entry );;
     }
-    private function validateACH($this_id){
-        $value = $this->remove_spaces_from_card_number(rgpost("input_{$this_id}_6"));
+    private function validateACH(){
+        $value = $this->remove_spaces_from_card_number(rgpost("hps_account"));
         $isValid = preg_match('/^[\d]{4,17}$/',$value) === 1;
         return $isValid ? $value : null;
 
