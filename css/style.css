@@ -1,6 +1,4 @@
 
-
-
 /*securesubmit styles*/
 
 .gform_wrapper .ginput_complex #HPS_secure_ach input {
@@ -26,7 +24,11 @@ div.HPS_gform_card_icon {
   text-transform:uppercase !important;
   color: #515151 !important;
   font-family:sans-serif !important;
-  font-size:14px !important;
+  font-size:13px !important;
+  text-align:left;
+  display:inline-block;
+  display:-webkit-inline-box;
+  height:18px !important;
 }
 
 .HPS_gform_card_icon_container {
@@ -56,6 +58,7 @@ div.HPS_gform_card_icon {
   border-radius:0px;
   color:#8c8c8c !important;
   font-family:sans-serif !important;
+  letter-spacing:1.5 !important;
 }
 
 .gform_wrapper #HPS_secure_ach select {
@@ -105,13 +108,32 @@ div.HPS_gform_card_icon {
 }
 
 /*error message*/
-.gform_wrapper #HPS_secure_ach div.validation_error {
-  background-color:#ce2027;
-  color:#fff;
-  border:none;
-  font-weight:100;
-  font-family:sans-serif;
+.gform_wrapper .validation_message,
+.gform_wrapper div.validation_error,
+.gfield_error
+ {
+  font-family:sans-serif !important;
+  font-weight:400 !important;
+  font-size:17px !important;
+  padding:10px !important;
+  background-color:transparent !important;
 }
+
+
+div.gfield_description.validation_message {
+  background-color:#ce1025 !important;
+  color:white !important;
+  border:1px solid #9f0123;
+}
+
+.red {
+  color:#ce1025 !important;
+  padding-left:3px;
+  font-size:20px !important;
+  font-weight:700 !important;
+}
+
+
 
 /*ach*/
 #HPS_secure_ach .gform_card_icon_container {
@@ -153,5 +175,11 @@ div.HPS_gform_card_icon {
   .gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_left {
     padding-right:5px;
   }
-
+  
+  .ginput_complex #HPS_secure_ach label {
+    font-size:14px !important;
+    height:25px !important;
+  }
+  
 }
+
