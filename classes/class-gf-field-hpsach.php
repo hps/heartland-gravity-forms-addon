@@ -9,9 +9,9 @@ if (!class_exists('GFForms')) {
  */
 class GF_Field_HPSach extends GF_Field {
     /**ACH element names*/
-    const HPS_ACH_CHECK_HOLDER_FIELD_NAME     = 'ach_check_holder';
-    const HPS_ACH_ACCOUNT_FIELD_NAME          = 'hps_account';
-    const HPS_ACH_ROUTING_FIELD_NAME          = 'hps_routing';
+    const HPS_ACH_CHECK_HOLDER_FIELD_NAME     = 'hps_ach_check_holder';
+    const HPS_ACH_ACCOUNT_FIELD_NAME          = 'hps_ach_account';
+    const HPS_ACH_ROUTING_FIELD_NAME          = 'hps_ach_routing';
     const HPS_ACH_TYPE_FIELD_NAME             = 'hps_ach_type';
     const HPS_ACH_CHECK_FIELD_NAME            = 'hps_ach_check';
     /**
@@ -59,46 +59,33 @@ class GF_Field_HPSach extends GF_Field {
         $account_type = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $check_type = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
 
-        if ($this->isRequired && (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type))) {
+        if (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type) || empty($check_type)) {
             $this->failed_validation = true;
             $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information.', 'gravityforms') : $this->errorMessage;
         }
-        elseif (!empty($card_number)) {
-            $card_type = GFCommon::get_card_type($card_number);
+        else {
 
-            if (empty($security_code)) {
+            if (!filter_var($account_name,FILTER_SANITIZE_STRING)) {
                 $this->failed_validation = true;
-                $this->validation_message = esc_html__("Please enter your card's security code.", 'gravityforms');
+                $this->validation_message = esc_html__("Please enter your account holder name and avoid special characters.", 'gravityforms');
+        }
+            elseif (!filter_var($account_number,FILTER_VALIDATE_INT,array('min_range'=>1000,'default'=>0))) {
+                $this->failed_validation = true;
+                $this->validation_message = esc_html__('Invalid account number.', 'gravityforms');
             }
-            elseif (!$card_type) {
+            elseif (!filter_var($routing_number,FILTER_VALIDATE_INT,array('min_range'=>99999999,'max_range'=>999999999,'default'=>0))) {
                 $this->failed_validation = true;
-                $this->validation_message = esc_html__('Invalid credit card number.', 'gravityforms');
+                $this->validation_message = esc_html__('Invalid routing number must be exactly 9 digits.', 'gravityforms');
             }
-            elseif (!$this->is_card_supported($card_type['slug'])) {
+            elseif ($account_type !== 0 && $account_type !== 1  ) {
                 $this->failed_validation = true;
-                $this->validation_message = $card_type['name'] . ' ' . esc_html__('is not supported. Please enter one of the supported credit cards.', 'gravityforms');
+                $this->validation_message = esc_html__('Please select the type of account.', 'gravityforms');
+            }
+            elseif ($check_type !== 0 && $check_type !== 1  ) {
+                $this->failed_validation = true;
+                $this->validation_message = esc_html__('Please select the check type.', 'gravityforms');
             }
         }
-    }
-
-    /**
-     * @param $card_slug
-     *
-     * @return bool
-     */
-    public function is_card_supported($card_slug) {
-        $supported_cards = $this->creditCards;
-        $default_cards = array('amex', 'discover', 'mastercard', 'visa');
-
-        if (!empty($supported_cards) && in_array($card_slug, $supported_cards)) {
-            return true;
-        }
-        elseif (empty($supported_cards) && in_array($card_slug, $default_cards)) {
-            return true;
-        }
-
-        return false;
-
     }
 
 
@@ -236,45 +223,6 @@ class GF_Field_HPSach extends GF_Field {
         return 'gfield_label gfield_label_before_complex';
     }
 
-    /**
-     * @param $selected_month
-     * @param $placeholder
-     *
-     * @return string
-     */
-    private function get_expiration_months($selected_month, $placeholder) {
-        if (empty($placeholder)) {
-            $placeholder = esc_html__('Month', 'gravityforms');
-        }
-        $str = "<option value=''>{$placeholder}</option>";
-        for ($i = 1; $i < 13; $i++) {
-            $selected = intval($selected_month) == $i ? "selected='selected'" : '';
-            $month = str_pad($i, 2, '0', STR_PAD_LEFT);
-            $str .= "<option value='{$i}' {$selected}>{$month}</option>";
-        }
-
-        return $str;
-    }
-
-    /**
-     * @param $selected_year
-     * @param $placeholder
-     *
-     * @return string
-     */
-    private function get_expiration_years($selected_year, $placeholder) {
-        if (empty($placeholder)) {
-            $placeholder = esc_html__('Year', 'gravityforms');
-        }
-        $str = "<option value=''>{$placeholder}</option>";
-        $year = intval(date('Y'));
-        for ($i = $year; $i < ($year + 20); $i++) {
-            $selected = intval($selected_year) == $i ? "selected='selected'" : '';
-            $str .= "<option value='{$i}' {$selected}>{$i}</option>";
-        }
-
-        return $str;
-    }
 
     /**
      * @param array|string $value
@@ -294,8 +242,8 @@ class GF_Field_HPSach extends GF_Field {
                     hps_routing
                     hps_ach_type
                     hps_ach_check*/
-            $account_number = trim(rgget('ach_check_holder', $value));
-            $routing_number = trim(rgget('hps_routing', $value));
+            $account_number = trim(rgget(GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME, $value));
+            $routing_number = trim(rgget(GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME, $value));
             $account_type = trim(rgget(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME, $value));
             $check_type = trim(rgget(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME, $value));
             $separator = $format == 'html' ? '<br/>' : "\n";
@@ -307,110 +255,6 @@ class GF_Field_HPSach extends GF_Field {
         }
     }
 
-    /**
-     * @param array $form
-     *
-     * @return string
-     */
-    public function get_form_inline_script_on_page_render($form) {
-
-        $field_id = "input_{$form['id']}_{$this->id}";
-
-        if ($this->forceSSL && !GFCommon::is_ssl() && !GFCommon::is_preview()) {
-            $script = "document.location.href='" . esc_js(RGFormsModel::get_current_page_url(true)) . "';";
-        }
-        else {
-            $script = ""; // "jQuery(document).ready(function(){ { gformMatchCard(\"{$field_id}_1\"); } } );";
-        }
-
-        $card_rules = $this->get_credit_card_rules();
-        $script = "if(!window['gf_cc_rules']){window['gf_cc_rules'] = new Array(); } window['gf_cc_rules'] = " . GFCommon::json_encode($card_rules) . "; $script";
-
-        return $script;
-    }
-
-    /**
-     * @return array
-     */
-    public function get_credit_card_rules() {
-
-        $cards = GFCommon::get_card_types();
-        //$supported_cards = //TODO: Only include enabled cards
-        $rules = array();
-
-        foreach ($cards as $card) {
-            $prefixes = explode(',', $card['prefixes']);
-            foreach ($prefixes as $prefix) {
-                $rules[ $card['slug'] ][] = $prefix;
-            }
-        }
-
-        return $rules;
-    }
-
-
-    /**
-     * @param string $value
-     * @param array  $form
-     * @param string $input_name
-     * @param int    $lead_id
-     * @param array  $lead
-     *
-     * @return string
-     */
-    public function get_value_save_entry($value, $form, $input_name, $lead_id, $lead) {
-
-        //saving last 4 digits of credit card
-        list($input_token, $field_id_token, $input_id) = rgexplode('_', $input_name, 3);
-        if ($input_id == '1') {
-            $value = str_replace(' ', '', $value);
-            $card_number_length = strlen($value);
-            $value = substr($value, -4, 4);
-            $value = str_pad($value, $card_number_length, 'X', STR_PAD_LEFT);
-        }
-        elseif ($input_id == '4') {
-
-            $value = rgpost("input_{$field_id_token}_4");
-
-            if (!$value) {
-                $card_number = rgpost("input_{$field_id_token}_1");
-                $card_type = GFCommon::get_card_type($card_number);
-                $value = $card_type ? $card_type['name'] : '';
-            }
-        }
-        else {
-            $value = '';
-        }
-
-        return $this->sanitize_entry_value($value, $form['id']);
-    }
-
-    /**
-     * GF1.8 and earlier used 5 inputs (1 input for the expiration date); GF1.9 changed to 6 inputs (the expiration
-     * month and year now separate); upgrade those fields still using the older configuration.
-     */
-    public function maybe_upgrade_inputs() {
-        $inputs = $this->inputs;
-        $exp_input = $inputs[1];
-        $exp_id = $this->id . '.2';
-
-        if (count($inputs) == 5 && $exp_input['id'] == $exp_id) {
-            $new_inputs = array(
-                array(
-                    'id'           => $exp_id . '_month',
-                    'label'        => esc_html__('Expiration Month', 'gravityforms'),
-                    'defaultLabel' => $exp_input['label'],
-                ),
-                array(
-                    'id'    => $exp_id . '_year',
-                    'label' => esc_html__('Expiration Year', 'gravityforms'),
-                ),
-            );
-
-            array_splice($inputs, 1, 1, $new_inputs);
-            $this->inputs = $inputs;
-        }
-    }
 }
 
 GF_Fields::register(new GF_Field_HPSach());

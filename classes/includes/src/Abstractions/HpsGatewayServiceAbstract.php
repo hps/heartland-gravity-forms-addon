@@ -82,9 +82,7 @@ abstract class HpsGatewayServiceAbstract
             ) {
                 curl_setopt_array($request, $this->_config->curlOptions);
             }
-            //$this->writeXML(ABSPATH . '/Req.xml',$data);
             $curlResponse = curl_exec($request);
-            //$this->writeXML(ABSPATH . '/Resp.xml',$curlResponse);
             $curlInfo = curl_getinfo($request);
             $curlError = curl_errno($request);
 
@@ -113,12 +111,6 @@ abstract class HpsGatewayServiceAbstract
                 $e
             );
         }
-    }
-    function writeXML($name,$xml1){
-        $xml = new \DOMDocument();
-        $xml->loadXML($xml1);
-        $xml->formatOutput = true;
-        file_put_contents($name,$xml->saveXML());
     }
     protected function _isConfigInvalid()
     {
