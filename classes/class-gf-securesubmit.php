@@ -1,6 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
 
