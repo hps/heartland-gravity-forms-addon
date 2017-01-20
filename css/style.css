@@ -124,8 +124,17 @@ div.gfield_description.validation_message {
   background-color:#ce1025 !important;
   color:white !important;
   border:1px solid #9f0123;
+  margin:120px 0px 10px 0px;
+  line-height:25px;
 }
 
+.gform_wrapper .gfield_error .gfield_label {
+  color:#ce1025 !important;
+}
+
+.gform_wrapper li.gfield.gfield_error {
+  border:0px;
+}
 .red {
   color:#ce1025 !important;
   padding-left:3px;
