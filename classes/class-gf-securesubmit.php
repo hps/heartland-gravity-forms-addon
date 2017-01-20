@@ -722,34 +722,35 @@ class GFSecureSubmit
         $performed_authorization = false;
         $is_subscription         = $feed['meta']['transactionType'] == 'subscription';
 
+        $this->authorization = ['is_authorized'    => false,
+                 'captured_payment' => ['is_success'                  => false,],];
+        $nomethodProcessed = '';
         if ($isACH) {
             $this->authorization = $this->authorizeACH($feed, $submission_data, $form, $entry);
         }
-        else {
+        elseif ($isCC) {
             $this->authorization = $this->authorizeCC($feed, $submission_data, $form, $entry);
         }
-
-        if ($performed_authorization) {
-            $this->log_debug(__METHOD__ . "(): Authorization result for form #{$form['id']} submission => " . print_r($this->authorization,
-                                                                                                                      1));
+        else{
+            $nomethodProcessed = ' No ACH data Processed. Please check your form configuration';
         }
+
         if (!rgar($this->authorization, 'is_authorized')) {
             $validation_result = $this->get_validation_result($validation_result, $this->authorization);
-
             foreach ($validation_result['form']['fields'] as $field) {
                 if (GFFormsModel::get_input_type($field) == 'hpsACH') {
                     $validation_result['is_valid'] = false;
                     $field['failed_validation'] = true;
-                    $field['validation_message'] = $this->authorization['error_message'];
+                    $field['validation_message'] = !rgar($this->authorization, 'error_message') . $nomethodProcessed;
                 }
-
-
             }
             //Setting up current page to point to the credit card page since that will be the highlighted field
             GFFormDisplay::set_current_page($validation_result['form']['id'], $validation_result['credit_card_page']);
         }
-else
-        $performed_authorization = true;
+        else{
+            $this->log_debug(__METHOD__ . "(): Authorization result for form #{$form['id']} submission => " . print_r($this->authorization,
+                    1));
+        }
         return $validation_result;
     }
 
