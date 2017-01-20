@@ -128,9 +128,6 @@ div.gfield_description.validation_message {
   line-height:25px;
 }
 
-.gform_wrapper .gfield_error .gfield_label {
-  color:#ce1025 !important;
-}
 
 .gform_wrapper li.gfield.gfield_error {
   border:0px;
