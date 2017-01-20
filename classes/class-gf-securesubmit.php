@@ -1,5 +1,6 @@
 <?php
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
 
@@ -891,10 +892,13 @@ else
 
 
         $submission_data['ach_number'] = $this->validateACH();
-        $submission_data['ach_route']  = $this->remove_spaces_from_card_number(rgpost("hps_routing"));
+        $submission_data['ach_route']  = $this->remove_spaces_from_card_number(rgpost(GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME));
+        $submission_data['ach_account_type'] = '';
+        $submission_data['ach_check_type'] = '';
+        $submission_data['ach_check_holder'] = '';
 
-        $accountType        = rgpost("hps_ach_type");
-        $checkType          = rgpost("hps_ach_check");
+        $accountType        = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
+        $checkType          = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
         $accountTypeOptions = array(HpsAccountType::CHECKING,
                                HpsAccountType::SAVINGS);
         $checkTypeOptions   = array(HpsCheckType::PERSONAL,
@@ -906,13 +910,11 @@ else
                 = $checkTypeOptions[ $checkType ];//HpsCheckType::BUSINESS; drop down choice PERSONAL or BUSINESS $check_type_input
 
         }
-        $submission_data['ach_check_holder'] = rgpost("hps_cardholder");
-
-
+        $submission_data['ach_check_holder'] = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
         return gf_apply_filters( array( 'gform_submission_data_pre_process_payment', $form['id'] ), $submission_data, $feed, $form, $entry );;
     }
     private function validateACH(){
-        $value = $this->remove_spaces_from_card_number(rgpost("hps_account"));
+        $value = $this->remove_spaces_from_card_number(rgpost(GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME));
         $isValid = preg_match('/^[\d]{4,17}$/',$value) === 1;
         return $isValid ? $value : null;
 
@@ -1233,11 +1235,16 @@ else
     function buildAddress($feed, $entry)
     {
         $address          = new HpsAddress();
+        if(in_array('billingInformation_address',$feed['meta']))
         $address->address
                           = $entry[ $feed['meta']['billingInformation_address'] ] . $entry[ $feed['meta']['billingInformation_address2'] ];
+        if(in_array('billingInformation_city',$feed['meta']))
         $address->city    = $entry[ $feed['meta']['billingInformation_city'] ];
+        if(in_array('billingInformation_state',$feed['meta']))
         $address->state   = $entry[ $feed['meta']['billingInformation_state'] ];
+        if(in_array('billingInformation_zip',$feed['meta']))
         $address->zip     = $entry[ $feed['meta']['billingInformation_zip'] ];
+        if(in_array('billingInformation_country',$feed['meta']))
         $address->country = $entry[ $feed['meta']['billingInformation_country'] ];
 
         return $address;

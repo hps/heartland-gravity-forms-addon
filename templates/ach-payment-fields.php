@@ -2,23 +2,17 @@
 
   $wrapper = "<div id='HPS_secure_ach'>";
 
-if (!isset($class_suffix)) {$class_suffix = '';}
-if (!isset($field_id)) {$field_id = '';}
-if (!isset($card_icons)) {$card_icons = '';}
-if (!isset($sub_label_class_attribute)) {$sub_label_class_attribute = '';}
-if (!isset($account_name_label)) {$account_name_label = '';}
-if (!isset($account_name)) {$account_name = '';}
-if (!isset($disabled_text)) {$disabled_text = '';}
-if (!isset($account_number_label)) {$account_number_label = '';}
-if (!isset($routing_number_label)) {$routing_number_label = '';}
-if (!isset($account_type_label)) {$account_type_label = '';}
-if (!isset($check_type_label)) {$check_type_label = '';}
+$hps_ach_check_holder_field_name = GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME;
+$hps_ach_account_field_name = GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME;
+$hps_ach_routing_field_name = GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME;
+$hps_ach_type_field_name = GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME;
+$hps_ach_check_field_name = GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME;
     $account_name_field =
         "  <span class='ginput_full{$class_suffix}' id='{$field_id}_5_container'>{$card_icons}
 
               <label for='{$field_id}_5' id='{$field_id}_5_label' {$sub_label_class_attribute}>{$account_name_label}</label>
 
-                  <input type='text' name='hps_cardholder' id='{$field_id}_5' placeholder='JOHN DOE' value='{$account_name}' {$disabled_text}'/>
+                  <input type='text' name='{$hps_ach_check_holder_field_name}' id='{$field_id}_5' placeholder='JON DOE' value='{$account_name_field_input}' {$disabled_text}'/>
 
           </span>";
 
@@ -28,7 +22,7 @@ if (!isset($check_type_label)) {$check_type_label = '';}
 
                 <label for='{$field_id}_6' id='{$field_id}_6_label' {$sub_label_class_attribute}>{$account_number_label}</label>
 
-                  <input type='tel' name='hps_account' class='' id='{$field_id}_6' placeholder='000000000' value='{$account_number_field}' {$disabled_text}/>
+                  <input type='tel' name='{$hps_ach_account_field_name}' class='' id='{$field_id}_6' placeholder='000000000' value='{$account_number_field_input}' {$disabled_text}/>
 
             </span>";
 
@@ -39,7 +33,7 @@ if (!isset($check_type_label)) {$check_type_label = '';}
 
                         <label for='{$field_id}_7' {$sub_label_class_attribute}>{$routing_number_label}</label>
 
-                        <input type='tel' name='hps_routing' id='routing_number' placeholder='000000000' value='{$routing_number_field}' {$disabled_text}/>
+                        <input type='tel' name='{$hps_ach_routing_field_name}' id='routing_number' placeholder='000000000' value='{$routing_number_field_input}' {$disabled_text}/>
 
                     </span>
 
@@ -51,7 +45,7 @@ if (!isset($check_type_label)) {$check_type_label = '';}
 
                         <label for='{$field_id}_8' {$sub_label_class_attribute}>$account_type_label</label>
 
-                            <select {$disabled_text}  name='hps_ach_type' class=''
+                            <select {$disabled_text}  name='{$hps_ach_type_field_name}' class=''
                             id='{$field_id}_8'>
                               <option value='' disabled selected>Choose One..</option>
                               <option value='0'>Checking</option>
@@ -67,7 +61,7 @@ if (!isset($check_type_label)) {$check_type_label = '';}
 
                           <label for='{$field_id}_9' {$sub_label_class_attribute}>$check_type_label</label>
 
-                                <select {$disabled_text} name='hps_ach_check' class=''
+                                <select {$disabled_text} name='{$hps_ach_check_field_name}' class=''
                                 id='{$field_id}_9'>
                                   <option value='' disabled selected>Choose One..</option>
                                   <option value='0'>Personal</option>
