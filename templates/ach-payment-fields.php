@@ -33,7 +33,7 @@ $hps_ach_check_field_name = GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME;
 
                         <label for='{$field_id}_7' {$sub_label_class_attribute}>{$routing_number_label}<span class='red'>*</span></label>
 
-                        <input type='tel' name='{$hps_ach_routing_field_name}' id='routing_number' placeholder='000000000' value='{$routing_number_field_input}' {$disabled_text}/>
+                        <input type='tel' name='{$hps_ach_routing_field_name}' id='{$field_id}_7' placeholder='000000000' value='{$routing_number_field_input}' {$disabled_text}/>
 
                     </span>
 

@@ -638,6 +638,9 @@ class GFSecureSubmit
     public
     function validation($validation_result)
     {
+        if (!rgar($validation_result['form'],'id',false)) {
+            return $validation_result;
+        }
         if (!$this->has_feed($validation_result['form']['id'], true)) {
             return $validation_result;
         }
@@ -741,7 +744,7 @@ class GFSecureSubmit
                 if (GFFormsModel::get_input_type($field) == 'hpsACH') {
                     $validation_result['is_valid'] = false;
                     $field['failed_validation'] = true;
-                    $field['validation_message'] = !rgar($this->authorization, 'error_message') . $nomethodProcessed;
+                    $field['validation_message'] = rgar($this->authorization, 'error_message') . $nomethodProcessed;
                 }
             }
             //Setting up current page to point to the credit card page since that will be the highlighted field
