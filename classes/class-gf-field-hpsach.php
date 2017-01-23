@@ -61,27 +61,27 @@ class GF_Field_HPSach extends GF_Field {
 
         if (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type) || empty($check_type)) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information.', 'gravityforms') : $this->errorMessage;
-        }
-        else {
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } else {
 
-            if (!filter_var($account_name,FILTER_SANITIZE_STRING)) {
+            if (!filter_var($account_name, FILTER_SANITIZE_STRING)) {
                 $this->failed_validation = true;
-                $this->validation_message = esc_html__("Please enter your account holder name and avoid special characters.", 'gravityforms');
-        }
-            elseif (!filter_var($account_number,FILTER_VALIDATE_INT,array('min_range'=>1000,'default'=>0))) {
+                $this->validation_message = esc_html__("Please enter your account holder name and avoid special characters.",
+                    'gravityforms');
+            } elseif (!filter_var($account_number, FILTER_VALIDATE_INT, array('min_range' => 1000, 'default' => 0))) {
                 $this->failed_validation = true;
                 $this->validation_message = esc_html__('Invalid account number.', 'gravityforms');
-            }
-            elseif (!filter_var($routing_number,FILTER_VALIDATE_INT,array('min_range'=>99999999,'max_range'=>999999999,'default'=>0))) {
+            } elseif (!filter_var($routing_number, FILTER_VALIDATE_INT,
+                array('min_range' => 99999999, 'max_range' => 999999999, 'default' => 0))
+            ) {
                 $this->failed_validation = true;
-                $this->validation_message = esc_html__('Invalid routing number must be exactly 9 digits.', 'gravityforms');
-            }
-            elseif ($account_type !== 0 && $account_type !== 1  ) {
+                $this->validation_message = esc_html__('Invalid routing number must be exactly 9 digits.',
+                    'gravityforms');
+            } elseif ($account_type !== '2' && $account_type !== '1') {
                 $this->failed_validation = true;
                 $this->validation_message = esc_html__('Please select the type of account.', 'gravityforms');
-            }
-            elseif ($check_type !== 0 && $check_type !== 1  ) {
+            } elseif ($check_type !== '2' && $check_type !== '1') {
                 $this->failed_validation = true;
                 $this->validation_message = esc_html__('Please select the check type.', 'gravityforms');
             }
@@ -115,58 +115,14 @@ class GF_Field_HPSach extends GF_Field {
         $sub_label_class_attribute = $field_sub_label_placement == 'hidden_label' ? "class='hidden_sub_label screen-reader-text'" : '';
 
 
-        $account_name = '';
-        $account_number = '';
-        $routing_number = '';
-        $account_type = '';
         $autocomplete = RGFormsModel::is_html5_enabled() ? "autocomplete='off'" : '';
 
-        if (is_array($value)) {
-            $account_number = esc_attr(rgget(GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME, $value));
-            $account_name = esc_attr(rgget(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME, $value));
-            $account_type = rgget(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME, $value);
-
-            if (!empty($expiration_date) && !is_array($expiration_date)) {
-                $expiration_date = explode('/', $expiration_date);
-            }
-
-            if (is_array($expiration_date) && count($expiration_date) == 2) {
-                $expiration_month = $expiration_date[0];
-                $expiration_year = $expiration_date[1];
-            }
-
-            $routing_number = esc_attr(rgget('hps_routing', $value));
-        }
 
         $action = !($is_entry_detail || $is_form_editor) ? "gformMatchCard(\"{$field_id}_1\");" : '';
 
-        $onchange = "onchange='{$action}'";
-        $onkeyup = "onkeyup='{$action}'";
 
-        $card_icons = '';
-        $cards = GFCommon::get_card_types();
-        $card_style = $this->creditCardStyle ? $this->creditCardStyle : 'style1';
+        $onlyDigits = !is_admin() ? " title='" . esc_attr__('Only digits are allowed', 'gravityforms') . "'" : '';
 
-
-        $payment_methods = apply_filters('gform_payment_methods', array(), $this, $form_id);
-        $payment_options = '';
-        if (is_array($payment_methods)) {
-            foreach ($payment_methods as $payment_method) {
-                $checked = rgpost('gform_payment_method') == $payment_method['key'] ? "checked='checked'" : '';
-                $payment_options .= "<div class='gform_payment_option gform_payment_{$payment_method['key']}'><input type='radio' name='gform_payment_method' value='{$payment_method['key']}' id='gform_payment_method_{$payment_method['key']}' onclick='gformToggleCreditCard();' onkeypress='gformToggleCreditCard();' {$checked}/> {$payment_method['label']}</div>";
-            }
-        }
-        $checked = rgpost('gform_payment_method') == 'creditcard' || rgempty('gform_payment_method') ? "checked='checked'" : '';
-        $card_radio_button = empty($payment_options) ? '' : "<input type='radio' name='gform_payment_method' id='gform_payment_method_creditcard' value='creditcard' onclick='gformToggleCreditCard();' onkeypress='gformToggleCreditCard();' {$checked}/>";
-        $card_icons = "{$payment_options}<div class='gform_card_icon_container gform_card_icon_{$card_style}'>{$card_radio_button}{$card_icons}</div>";
-
-
-        /*
-                    ach_check_holder
-                hps_account
-                hps_routing
-                hps_ach_type
-                hps_ach_check*/
 
 //customer name
         $account_name_field_input = GFFormsModel::get_input($this, GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
@@ -175,25 +131,21 @@ class GF_Field_HPSach extends GF_Field {
 
 //account number
         $account_number_field_input = GFFormsModel::get_input($this, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME);
-        $html5_output = !is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__('Only digits are allowed', 'gravityforms') . "'" : '';
         $account_number_label = rgar($account_number_field_input, 'customLabel') != '' ? $account_number_field_input['customLabel'] : esc_html__('Account Number', 'gravityforms');
         $account_number_label = gf_apply_filters(array('gform_card_number', $form_id), $account_number_label, $form_id);
 
 //routing number
         $routing_number_field_input = GFFormsModel::get_input($this, GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME);
-        $html5_output = !is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__('Only digits are allowed', 'gravityforms') . "'" : '';
         $routing_number_label = rgar($routing_number_field_input, 'customLabel') != '' ? $routing_number_field_input['customLabel'] : esc_html__('Routing Number', 'gravityforms');
         $routing_number_label = gf_apply_filters(array('gform_card_number', $form_id), $routing_number_label, $form_id);
 
 //account type
         $account_type_input = GFFormsModel::get_input($this, GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
-        $html5_output = !is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__('', 'gravityforms') . "'" : '';
         $account_type_label = rgar($account_type_input, 'customLabel') != '' ? $account_type_input['customLabel'] : esc_html__('Account Type', 'gravityforms');
         $account_type_label = gf_apply_filters(array('gform_card_expiration', $form_id), $account_type_label, $form_id);
 
 //check type
         $check_type_input = GFFormsModel::get_input($this, GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
-        $html5_output = !is_admin() && GFFormsModel::is_html5_enabled() ? "pattern='[0-9]*' title='" . esc_attr__('', 'gravityforms') . "'" : '';
         $check_type_label = rgar($check_type_input, 'customLabel') != '' ? $check_type_input['customLabel'] : esc_html__('Check Type', 'gravityforms');
         $check_type_label = gf_apply_filters(array('gform_card_expiration', $form_id), $check_type_label, $form_id);
 
@@ -203,7 +155,6 @@ class GF_Field_HPSach extends GF_Field {
         if (!isset($card_icons)) {$card_icons = '';}
         if (!isset($sub_label_class_attribute)) {$sub_label_class_attribute = '';}
         if (!isset($account_name_label)) {$account_name_label = '';}
-        if (!isset($account_name)) {$account_name = '';}
         if (!isset($disabled_text)) {$disabled_text = '';}
         if (!isset($account_number_label)) {$account_number_label = '';}
         if (!isset($routing_number_label)) {$routing_number_label = '';}
@@ -211,9 +162,9 @@ class GF_Field_HPSach extends GF_Field {
         if (!isset($check_type_label)) {$check_type_label = '';}
         ob_start();
         include dirname(__FILE__) . "/../templates/ach-payment-fields.php";
-        $ss_cc_output = ob_get_clean();
+        $ss_ach_output = ob_get_clean();
 
-        return $ss_cc_output;
+        return $ss_ach_output;
     }
 
     /**
@@ -222,8 +173,6 @@ class GF_Field_HPSach extends GF_Field {
     public function get_field_label_class() {
         return 'gfield_label gfield_label_before_complex';
     }
-
-
     /**
      * @param array|string $value
      * @param string       $currency

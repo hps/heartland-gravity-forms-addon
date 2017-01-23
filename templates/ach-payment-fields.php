@@ -21,7 +21,7 @@
       </label>
       
       <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_6"
-             placeholder="• • • • • • • • •" value="<?php echo $account_number_field_input; ?>" <?php echo $disabled_text; ?>/>
+             placeholder="• • • • • • • • •" value="<?php echo $account_number_field_input; ?>" <?php echo $disabled_text; ?> <?php echo $onlyDigits; ?>/>
     </span>
     <!-- routing number -->
     <span class="ginput_full<?php echo $class_suffix; ?> ginput_cardextras" id="<?php echo $field_id; ?>_7_container">
@@ -32,7 +32,7 @@
         </label>
         
         <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_7"
-               placeholder="• • • • • • • • •" value="<?php echo $routing_number_field_input; ?>" <?php echo $disabled_text; ?>/>
+               placeholder="• • • • • • • • •" value="<?php echo $routing_number_field_input; ?>" <?php echo $onlyDigits; ?> <?php echo $disabled_text; ?>/>
       </span>
     </span>
     <!-- account type -->
@@ -44,8 +44,8 @@
 
       <select <?php echo $disabled_text; ?>  name="<?php echo GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_8">
         <option value="" disabled selected>Choose One..</option>
-        <option value="0">Checking</option>
-        <option value="1">Savings</option>
+        <option value="1">Checking</option>
+        <option value="2">Savings</option>
       </select>
     </span>
     <!-- check name -->
@@ -57,9 +57,11 @@
 
       <select <?php echo $disabled_text; ?> name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_9">
         <option value="" disabled selected>Choose One..</option>
-        <option value="0">Personal</option>
-        <option value="1">Business</option>
+        <option value="1">Personal</option>
+        <option value="2">Business</option>
       </select>
     </span>
   </div>
 </div>
+
+

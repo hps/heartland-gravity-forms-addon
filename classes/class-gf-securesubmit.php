@@ -885,10 +885,10 @@ class GFSecureSubmit
 
         $accountType = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $checkType = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
-        $accountTypeOptions = array(
+        $accountTypeOptions = array( 1=>
             HpsAccountType::CHECKING,
             HpsAccountType::SAVINGS);
-        $checkTypeOptions = array(
+        $checkTypeOptions = array(1=>
             HpsCheckType::PERSONAL,
             HpsCheckType::BUSINESS);
         if (key_exists($accountType, $accountTypeOptions) && key_exists($checkType, $checkTypeOptions)) {
