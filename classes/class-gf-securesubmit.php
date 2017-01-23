@@ -805,6 +805,41 @@ class GFSecureSubmit
 
         /** Currently saved plugin settings */
         $settings = $this->get_plugin_settings();
+
+        /** Currently saved plugin settings */
+        $settings = $this->get_plugin_settings();
+
+        /** This is the message show to the consumer if the rule is flagged */
+        $fraud_message = (string)$this->get_setting("fraud_message",
+            'Please contact us to complete the transaction.',
+            $settings);
+
+        /** Maximum number of failures allowed before rule is triggered */
+        $fraud_velocity_attempts = (int)$this->get_setting("fraud_velocity_attempts", '3', $settings);
+
+        /** Maximum amount of time in minutes to track failures. If this amount of time elapse between failures then the counter($HeartlandHPS_FailCount) will reset */
+        $fraud_velocity_timeout = (int)$this->get_setting("fraud_velocity_timeout", '10', $settings);
+
+        /** Variable name with hash of IP address to identify uniqe transient values         */
+        $HPS_VarName = (string)"HeartlandHPS_Velocity_" . md5($this->getRemoteIP());
+
+        /** Running count of failed transactions from the current IP*/
+        $HeartlandHPS_FailCount = (int)get_transient($HPS_VarName);
+
+        /** Defaults to true or checks actual settings for this plugin from $settings. If true the following settings are applied:
+         *
+         * $fraud_message
+         *
+         * $fraud_velocity_attempts
+         *
+         * $fraud_velocity_timeout
+         *
+         */
+        $enable_fraud = (bool)($this->get_setting("enable_fraud", 'true', $settings) === 'true');
+
+
+
+
         /** @var HpsFluentCheckService $service */
         /** @var HpsCheckResponse $response */
         /** @var HpsCheck $check */
@@ -828,6 +863,15 @@ class GFSecureSubmit
 
         $service = new HpsFluentCheckService($config);
         try {
+            /**
+             * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
+             * far too many failures have been tried
+             */
+            if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
+                sleep(5);
+                $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
+                throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+            }
             $response = $service->sale($submission_data['payment_amount'])
                 ->withCheck($check)/**@throws HpsCheckException on error */
                 ->execute();
@@ -848,6 +892,10 @@ class GFSecureSubmit
                     'securesubmit_payment_action' => 'checkSale',
                     'note' => $note,],];
         } catch (HpsCheckException $e) {
+
+
+
+
             $err = null;
             if (is_array($e->details)) {
                 foreach ($e->details as $error) {
@@ -859,7 +907,19 @@ class GFSecureSubmit
             else {
                 $err .= $e->details->message . "\r\n";
             }
-            $auth = $this->authorization_error($err);
+            // if advanced fraud is enabled, increment the error count
+            if ($enable_fraud) {
+                if (empty($HeartlandHPS_FailCount)) {
+                    $HeartlandHPS_FailCount = 0;
+                }
+                set_transient($HPS_VarName, $HeartlandHPS_FailCount + 1, MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                if ($HeartlandHPS_FailCount < $fraud_velocity_attempts) {
+                    set_transient($HPS_VarName . 'IssuerResponse',
+                        $err,
+                        MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                }
+            }
+            $auth = $this->authorization_error($HeartlandHPS_FailCount . $err);
             $auth['transaction_id'] = (string)$e->transactionId;
         }
 
