@@ -1,5 +1,5 @@
 
-<div class="ginput_complex<?php echo $class_suffix; ?> ginput_container ginput_container_creditcard" id="<?php echo $field_id; ?>">
+<div class="ginput_complex<?php echo $class_suffix; ?> ginput_container ginput_container_creditcard hps_secure_ach" id="<?php echo $field_id; ?>">
   <div id="HPS_secure_ach">
     <div class="ss-shield"></div>
     <!-- account name -->
