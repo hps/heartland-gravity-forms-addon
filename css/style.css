@@ -154,9 +154,6 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
   line-height:25px;
 }
 
-.gform_wrapper li.gfield.gfield_error {
-  border:0px;
-}
 .red {
   color:#ce1025 !important;
   padding-left:3px;
@@ -164,7 +161,6 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
   font-weight:700 !important;
 }
 
-/*ach*/
 #HPS_secure_ach .gform_card_icon_container {
     height:0px !important;
     margin:0px !important;
