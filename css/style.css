@@ -191,11 +191,6 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
     height:42px !important;
   }
 
-  #HPS_secure_ach span:not(.ginput_price){
-    margin-top:0px;
-    margin-bottom: 0px;
-  }
-
   #HPS_secure_ach .ginput_cardinfo_right {
     width:50% !important;
     padding-left:5px;
