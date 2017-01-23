@@ -1,4 +1,7 @@
 /*securesubmit styles*/
+.HPS_secure_ach {
+  background-color:white !important;
+}
 #HPS_secure_ach input,
 #HPS_secure_ach textarea,
 #HPS_secure_ach select {
@@ -10,11 +13,11 @@
   background-size:40px 40px;
 }
 
-.gform_wrapper .ginput_complex #HPS_secure_ach input {
+#HPS_secure_ach input {
   min-width:100%;
   font-size:small !important;
 }
-.gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_right input.ginput_card_security_code {
+#HPS_secure_ach .ginput_cardinfo_right input.ginput_card_security_code {
   max-width:100%;
 }
 
@@ -25,7 +28,7 @@ div.HPS_gform_card_icon {
   height:42px !important;
 }
 
-.ginput_complex #HPS_secure_ach label,
+#HPS_secure_ach label,
 .gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container #HPS_secure_ach label {
   margin-top:13px !important;
   margin-bottom:4px !important;
@@ -36,9 +39,10 @@ div.HPS_gform_card_icon {
   display:inline-block;
   display:-webkit-inline-box;
   height:18px !important;
+  font-weight:500 !important;
 }
 
-.ginput_complex #HPS_secure_ach label:first-of-type {
+#HPS_secure_ach label:first-of-type {
   margin-top:0px !important;
 }
 
@@ -46,18 +50,18 @@ div.HPS_gform_card_icon {
   height:42px !important;
 }
 
-.gform_wrapper #HPS_secure_ach input {
+#HPS_secure_ach input {
     padding:15px !important;
 }
 
-.gform_wrapper #HPS_secure_ach input::-webkit-input-placeholder,
-.gform_wrapper #HPS_secure_ach input::-moz-placeholder,
-.gform_wrapper #HPS_secure_ach input:-ms-input-placeholder,
-.gform_wrapper #HPS_secure_ach input:-moz-placeholder {
+#HPS_secure_ach input::-webkit-input-placeholder,
+#HPS_secure_ach input::-moz-placeholder,
+#HPS_secure_ach input:-ms-input-placeholder,
+#HPS_secure_ach input:-moz-placeholder {
   font-family:sans-serif !important;
 }
 
-.gform_wrapper #HPS_secure_ach input{
+#HPS_secure_ach input{
   font-size: small;
   height:48px !important;
   border:1px solid #b5b5b5 !important;
@@ -70,7 +74,7 @@ div.HPS_gform_card_icon {
   box-shadow:none;
 }
 
-.gform_wrapper #HPS_secure_ach select {
+#HPS_secure_ach select {
   -webkit-appearance:none;
   -moz-appearance:none;
   -o-appearance:none;
@@ -88,16 +92,16 @@ div.HPS_gform_card_icon {
   font-size:small !important;
 }
 
-.gform_wrapper #HPS_secure_ach input:hover,
-.gform_wrapper #HPS_secure_ach input:focus {
+#HPS_secure_ach input:hover,
+#HPS_secure_ach input:focus {
   border:1px solid #3989e3 !important;
   -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
   -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
   transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
   letter-spacing:1.5 !important;
 }
-.gform_wrapper #HPS_secure_ach select:hover,
-.gform_wrapper #HPS_secure_ach select:focus {
+#HPS_secure_ach select:hover,
+#HPS_secure_ach select:focus {
   -webkit-appearance:none;
   -moz-appearance:none;
   -o-appearance:none;
@@ -108,7 +112,7 @@ div.HPS_gform_card_icon {
   transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
 }
 
-.gform_wrapper #HPS_secure_ach input[type=submit] {
+#HPS_secure_ach input[type=submit] {
   background-color:#3989e3;
   color:white;
   padding:10px;
@@ -127,26 +131,28 @@ div.HPS_gform_card_icon {
 }
 
 /*error message*/
-.gform_wrapper .validation_message,
-.gform_wrapper div.validation_error,
-.gfield_error
+li div.hps_secure_ach ~ div.validation_message,
+li div.hps_secure_ach  div.validation_error,
+li.gfield_error
  {
   font-family:sans-serif !important;
   font-weight:500 !important;
   font-size:15px !important;
   padding:10px !important;
-  background-color:transparent !important;
+  background-color:white !important;
 }
 
+li.gfield_error div.ginput_complex.ginput_container.ginput_container_creditcard.hps_secure_ach label {
+  color:#333333 !important;
+}
 
-div.gfield_description.validation_message {
+li div.hps_secure_ach ~ div.gfield_description.validation_message {
   background-color:#ce1025 !important;
   color:white !important;
   border:1px solid #9f0123;
   margin:10px 0px 10px 0px;
   line-height:25px;
 }
-
 
 .gform_wrapper li.gfield.gfield_error {
   border:0px;
@@ -157,8 +163,6 @@ div.gfield_description.validation_message {
   font-size:20px !important;
   font-weight:700 !important;
 }
-
-
 
 /*ach*/
 #HPS_secure_ach .gform_card_icon_container {
@@ -180,33 +184,32 @@ div.gfield_description.validation_message {
     float:left;
   }
   
-  div.gfield_description.validation_message {
-    margin:120px 0px 10px 0px;
+  li div.hps_secure_ach ~ div.gfield_description.validation_message {
+    margin:100px 0px 10px 0px;
   }
 
-  .gform_wrapper #HPS_secure_ach div.HPS_gform_card_icon {
+  #HPS_secure_ach div.HPS_gform_card_icon {
     background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
     background-size:320px 40px !important;
     width:540px !important;
     height:42px !important;
   }
 
-  .gform_wrapper
-  .ginput_container #HPS_secure_ach span:not(.ginput_price){
+  #HPS_secure_ach span:not(.ginput_price){
     margin-top:0px;
     margin-bottom: 0px;
   }
 
-  .gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_right {
+  #HPS_secure_ach .ginput_cardinfo_right {
     width:50% !important;
     padding-left:5px;
   }
 
-  .gform_wrapper .ginput_complex #HPS_secure_ach .ginput_cardinfo_left {
+  #HPS_secure_ach .ginput_cardinfo_left {
     padding-right:5px;
   }
   
-  .ginput_complex #HPS_secure_ach label {
+  #HPS_secure_ach label {
     font-size:14px !important;
     height:25px !important;
   }
