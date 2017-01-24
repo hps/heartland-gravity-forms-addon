@@ -58,7 +58,7 @@ class GF_Field_HPSach extends GF_Field {
         $routing_number = rgpost(GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME);
         $account_type = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $check_type = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
-
+        $this->failed_validation = false;
         if (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type) || empty($check_type)) {
             $this->failed_validation = true;
             $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information. All feilds required.',

@@ -217,8 +217,8 @@ class GFSecureSubmit
      * @return bool|false|string
      */
     public function feed_list_message() {
-
-         if ( $this->_requires_credit_card && ! $this->has_credit_card_field( $this->get_current_form() ) ) {
+        //
+         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form() &&! $this->has_ach_field( $this->get_current_form() )) ) ) {
              return $this->requires_credit_card_message();
          }
 
@@ -229,6 +229,13 @@ class GFSecureSubmit
 
         return false;
     }
+
+
+
+    public function has_ach_field( $form ) {
+        return $this->get_ach_field( $form ) !== false;
+    }
+
     /**
      * @return array
      */
@@ -625,7 +632,7 @@ class GFSecureSubmit
                 continue;
             }
 
-            if ($this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
+            if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
                 $field['failed_validation'] = true;
                 $field['validation_message'] = $this->getSecureSubmitJsError();
             }
@@ -674,7 +681,7 @@ class GFSecureSubmit
 
             if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
                 $this->isCC = $field;
-                if ($this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
+                if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
                     $field['validation_message'] = $this->getSecureSubmitJsError();
                 }
@@ -714,11 +721,14 @@ class GFSecureSubmit
     public function authorize($feed, $submission_data, $form, $entry) {
 
 
+        $auth = array(
+            'is_authorized' => false,
+            'captured_payment' => array('is_success' => false,),);
         $this->includeSecureSubmitSDK();
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
-
-        if (false !== $this->isCC && !empty($submission_data['card_number']) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
+        $isCCData = $this->getSecureSubmitJsResponse();
+        if (false !== $this->isCC && !empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $isCC['failed_validation'] = true;
             $isCC['validation_message'] = 'You may not submit both Credit Card and Bank Transfer at the same time';
             $isACH['failed_validation'] = true;
@@ -728,41 +738,39 @@ class GFSecureSubmit
         // revalidate the validation result
         $validation_result['is_valid'] = true;
 
-        foreach ($validation_result['form']['fields'] as $field) {
+        foreach ($form['fields'] as $field) {
             if ($field['failed_validation']) {
                 $validation_result['is_valid'] = false;
                 break;
             }
         }
-        if (!$validation_result['is_valid']) {
-            return $validation_result;
-        }
+        $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
+        if ($validation_result['is_valid']) {
 
-        $this->is_payment_gateway = true;
-        $this->current_feed = $this->_single_submission_feed = $feed;
-        $this->current_submission_data = $submission_data;
-
-        $auth = array(
-            'is_authorized' => false,
-            'captured_payment' => array('is_success' => false,),);
-        if (false !== $this->isACH) {
-            $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
-            if(! rgar( $auth, 'is_authorized' )){
-                /**  override type so that the response error will display correctly */
-                $this->isACH->type = 'creditcard';
+            if (false !== $this->isACH && !empty($submission_data['ach_number'])) {
+                $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
+                if (!rgar($auth, 'is_authorized')) {
+                    /**  override type so that the response error will display correctly */
+                    $this->isACH->type = 'creditcard';
+                }
+            } elseif (false !== $this->isCC && !empty($isCCData->token_value)) {
+                $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
+                if (!rgar($auth, 'is_authorized')) {
+                    /**  override type so that the response error will display correctly */
+                    $this->isCC->type = 'creditcard';
+                }
+            }
+            else{
+                $auth = $this->authorization_error($failMessage);
             }
         }
-        elseif (false !== $this->isCC) {
-            $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
-            if(! rgar( $auth, 'is_authorized' )){
-                /**  override type so that the response error will display correctly */
-                $this->isCC->type = 'creditcard';
-            }
+        else{
+            $auth = $this->authorization_error($failMessage);
         }
+
         return $auth;
     }
-    /** 
-     *
+    /**
      * @return bool
      */
     private function isCC($form) {
