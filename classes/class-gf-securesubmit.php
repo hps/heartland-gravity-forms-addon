@@ -13,6 +13,10 @@ class GFSecureSubmit
      */
     private $isCC = false;
     /**
+     * @var bool|\GF_Field_HPSach
+     */
+    private $isACH = false;
+    /**
      * @var string
      */
     protected $_version = GF_SECURESUBMIT_VERSION;
@@ -641,7 +645,8 @@ class GFSecureSubmit
      *
      * @return mixed
      */
-    public function validation($validation_result) {
+    public function validation($validation_result)
+    {
         if (!rgar($validation_result['form'], 'id', false)) {
             return $validation_result;
         }
@@ -649,14 +654,14 @@ class GFSecureSubmit
             return $validation_result;
         }
 
-        $isACH = false;
-        $isCC = false;
+        $this->isACH = false;
+        $this->isCC = false;
         foreach ($validation_result['form']['fields'] as $field) {
             $current_page = GFFormDisplay::get_source_page($validation_result['form']['id']);
             $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
 
             if (GFFormsModel::get_input_type($field) == 'hpsACH' && $field_on_curent_page) {
-                $isACH = $field;
+                $this->isACH = $field;
                 if (!$this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
                     $field['validation_message'] = 'Please Check your entries and try again';
@@ -668,7 +673,7 @@ class GFSecureSubmit
             }
 
             if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
-                $isCC = $field;
+                $this->isCC = $field;
                 if ($this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
                     $field['validation_message'] = $this->getSecureSubmitJsError();
@@ -679,20 +684,41 @@ class GFSecureSubmit
                 }
             }
         }
-
-        $form = $validation_result['form'];
-        $entry = GFFormsModel::create_lead($form);
-        $feed = $this->get_payment_feed($entry, $form);
-
-        if (!$feed) {
-            return $validation_result;
+        // revalidate the validation result
+        $validation_result['is_valid'] = true;
+        foreach ($validation_result['form']['fields'] as $field) {
+            if ($field['failed_validation']) {
+                $validation_result['is_valid'] = false;
+                break;
+            }
         }
+        return parent::validation($validation_result);
+    }
+    /**
+ *
+ * @param $feed - Current configured payment feed
+ * @param $submission_data - Contains form field data submitted by the user as well as payment information (i.e. payment amount, setup fee, line items, etc...)
+ * @param $form - Current form array containing all form settings
+ * @param $entry - Current entry array containing entry information (i.e data submitted by users). NOTE: the entry hasn't been saved to the database at this point, so this $entry object does not have the 'ID' property and is only a memory representation of the entry.
+ *
+ * @return array - Return an $authorization array in the following format:
+ * [
+ *  'is_authorized' => true|false,
+ *  'error_message' => 'Error message',
+ *  'transaction_id' => 'XXX',
+ *
+ *  //If the payment is captured in this method, return a 'captured_payment' array with the following information about the payment
+ *  'captured_payment' => ['is_success'=>true|false, 'error_message' => 'error message', 'transaction_id' => 'xxx', 'amount' => 20]
+ * ]
+ */
+    public function authorize($feed, $submission_data, $form, $entry) {
+
+
         $this->includeSecureSubmitSDK();
 
-        $submission_data = $this->get_submission_data($feed, $form, $entry);
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
 
-        if (false !== $isCC && !empty($submission_data['card_number']) && false !== $isACH && !empty($submission_data['ach_number'])) {
+        if (false !== $this->isCC && !empty($submission_data['card_number']) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $isCC['failed_validation'] = true;
             $isCC['validation_message'] = 'You may not submit both Credit Card and Bank Transfer at the same time';
             $isACH['failed_validation'] = true;
@@ -711,53 +737,29 @@ class GFSecureSubmit
         if (!$validation_result['is_valid']) {
             return $validation_result;
         }
-        //Do not process payment if payment amount is 0
-        if (floatval($submission_data['payment_amount']) <= 0) {
-
-            $this->log_debug(__METHOD__ . '(): Payment amount is zero or less. Not sending to payment gateway.');
-
-            return $validation_result;
-        }
 
         $this->is_payment_gateway = true;
         $this->current_feed = $this->_single_submission_feed = $feed;
         $this->current_submission_data = $submission_data;
 
-        $performed_authorization = false;
-        $is_subscription = $feed['meta']['transactionType'] == 'subscription';
-
-        $this->authorization = [
+        $auth = array(
             'is_authorized' => false,
-            'captured_payment' => ['is_success' => false,],];
-        $nomethodProcessed = '';
-        if ($isACH) {
-            $this->authorization = $this->authorizeACH($feed, $submission_data, $form, $entry);
-        }
-        elseif ($isCC) {
-            $this->authorization = $this->authorizeCC($feed, $submission_data, $form, $entry);
-        }
-        else {
-            $nomethodProcessed = ' No ACH data Processed. Please check your form configuration';
-        }
-
-        if (!rgar($this->authorization, 'is_authorized')) {
-            $validation_result = $this->get_validation_result($validation_result, $this->authorization);
-            foreach ($validation_result['form']['fields'] as $field) {
-                if (GFFormsModel::get_input_type($field) == 'hpsACH') {
-                    $validation_result['is_valid'] = false;
-                    $field['failed_validation'] = true;
-                    $field['validation_message'] = rgar($this->authorization, 'error_message') . $nomethodProcessed;
-                }
+            'captured_payment' => array('is_success' => false,),);
+        if (false !== $this->isACH) {
+            $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
+            if(! rgar( $auth, 'is_authorized' )){
+                /**  override type so that the response error will display correctly */
+                $this->isACH->type = 'creditcard';
             }
-            //Setting up current page to point to the credit card page since that will be the highlighted field
-            GFFormDisplay::set_current_page($validation_result['form']['id'], $validation_result['credit_card_page']);
         }
-        else {
-            $this->log_debug(__METHOD__ . "(): Authorization result for form #{$form['id']} submission => " . print_r($this->authorization,
-                                                                                                                      1));
+        elseif (false !== $this->isCC) {
+            $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
+            if(! rgar( $auth, 'is_authorized' )){
+                /**  override type so that the response error will display correctly */
+                $this->isCC->type = 'creditcard';
+            }
         }
-
-        return $validation_result;
+        return $auth;
     }
     /** 
      *
@@ -791,20 +793,26 @@ class GFSecureSubmit
 
         return $config;
     }
-    /** 
+
+    /**
      *
-     * @param $feed
-     * @param $submission_data
-     * @param $form
-     * @param $entry
+     * @param $feed - Current configured payment feed
+     * @param $submission_data - Contains form field data submitted by the user as well as payment information (i.e. payment amount, setup fee, line items, etc...)
+     * @param $form - Current form array containing all form settings
+     * @param $entry - Current entry array containing entry information (i.e data submitted by users). NOTE: the entry hasn't been saved to the database at this point, so this $entry object does not have the 'ID' property and is only a memory representation of the entry.
      *
-     * @return array
+     * @return array - Return an $authorization array in the following format:
+     * [
+     *  'is_authorized' => true|false,
+     *  'error_message' => 'Error message',
+     *  'transaction_id' => 'XXX',
+     *
+     *  //If the payment is captured in this method, return a 'captured_payment' array with the following information about the payment
+     *  'captured_payment' => ['is_success'=>true|false, 'error_message' => 'error message', 'transaction_id' => 'xxx', 'amount' => 20]
+     * ]
      */
     private function authorizeACH($feed, $submission_data, $form, $entry) {
         $note = null;
-
-        /** Currently saved plugin settings */
-        $settings = $this->get_plugin_settings();
 
         /** Currently saved plugin settings */
         $settings = $this->get_plugin_settings();
@@ -870,7 +878,8 @@ class GFSecureSubmit
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
-                throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $response = $service->sale($submission_data['payment_amount'])
                 ->withCheck($check)/**@throws HpsCheckException on error */
@@ -919,10 +928,9 @@ class GFSecureSubmit
                         MINUTE_IN_SECONDS * $fraud_velocity_timeout);
                 }
             }
-            $auth = $this->authorization_error($HeartlandHPS_FailCount . $err);
+            $auth = $this->authorization_error($err);
             $auth['transaction_id'] = (string)$e->transactionId;
         }
-
         return $auth;
     }
     public function get_ach_field($form) {
@@ -969,14 +977,23 @@ class GFSecureSubmit
         return $isValid ? $value : null;
 
     }
-    /** 
+
+    /**
      *
-     * @param $feed
-     * @param $submission_data
-     * @param $form
-     * @param $entry
+     * @param $feed - Current configured payment feed
+     * @param $submission_data - Contains form field data submitted by the user as well as payment information (i.e. payment amount, setup fee, line items, etc...)
+     * @param $form - Current form array containing all form settings
+     * @param $entry - Current entry array containing entry information (i.e data submitted by users). NOTE: the entry hasn't been saved to the database at this point, so this $entry object does not have the 'ID' property and is only a memory representation of the entry.
      *
-     * @return array
+     * @return array - Return an $authorization array in the following format:
+     * [
+     *  'is_authorized' => true|false,
+     *  'error_message' => 'Error message',
+     *  'transaction_id' => 'XXX',
+     *
+     *  //If the payment is captured in this method, return a 'captured_payment' array with the following information about the payment
+     *  'captured_payment' => ['is_success'=>true|false, 'error_message' => 'error message', 'transaction_id' => 'xxx', 'amount' => 20]
+     * ]
      */
     private function authorizeCC($feed, $submission_data, $form, $entry) {
         $this->populateCreditCardLastFour($form);
@@ -1035,7 +1052,8 @@ class GFSecureSubmit
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
-                throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
@@ -1150,7 +1168,7 @@ class GFSecureSubmit
                                   MINUTE_IN_SECONDS * $fraud_velocity_timeout);
                 }
             }
-            $auth = $this->authorization_error($HeartlandHPS_FailCount . $e->getMessage());
+            $auth = $this->authorization_error($e->getMessage());
         }
 
         return $auth;
