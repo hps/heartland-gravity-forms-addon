@@ -747,13 +747,13 @@ class GFSecureSubmit
         $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
         if ($validation_result['is_valid']) {
 
-            if (false !== $this->isACH && !empty($submission_data['ach_number'])) {
+            if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
                 $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
                 if (!rgar($auth, 'is_authorized')) {
                     /**  override type so that the response error will display correctly */
                     $this->isACH->type = 'creditcard';
                 }
-            } elseif (false !== $this->isCC && !empty($isCCData->token_value)) {
+            } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
                 $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
                 if (!rgar($auth, 'is_authorized')) {
                     /**  override type so that the response error will display correctly */
