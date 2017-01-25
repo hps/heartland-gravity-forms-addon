@@ -59,9 +59,25 @@ class GF_Field_HPSach extends GF_Field {
         $account_type = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $check_type = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
         $this->failed_validation = false;
-        if (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type) || empty($check_type)) {
+        if (empty($account_name) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account holder name. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($account_number) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account number. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($routing_number) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your rounting number. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($account_type) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select an account type. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($check_type)) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select the type of checkgit commit. All feilds required.',
                 'gravityforms') : $this->errorMessage;
         } else {
 
