@@ -1,6 +1,7 @@
 <?php
 GFForms::include_payment_addon_framework();
 include_once 'class-gf-field-hpsach.php';
+include_once 'class-gf-field-hpssecurecc.php';
 
 /**
  * Handles Heartlands Payments with Gravity Forms
@@ -155,6 +156,9 @@ class GFSecureSubmit
                        'hps_add_ach_field'));
         add_action('gform_editor_js_set_default_values', array($this, 'set_defaults'));
     }
+    /**
+     *
+     */
     public function set_defaults() {
         ?>
         //this hook is fired in the middle of a switch statement,
@@ -229,9 +233,11 @@ class GFSecureSubmit
 
         return false;
     }
-
-
-
+    /**
+     * @param $form
+     *
+     * @return bool
+     */
     public function has_ach_field( $form ) {
         return $this->get_ach_field( $form ) !== false;
     }
@@ -487,7 +493,7 @@ class GFSecureSubmit
             ),
             array(
                 'handle' => 'gforms_securesubmit_frontend',
-                'src' => $this->get_base_url() . '/../assets/js/securesubmit.js',
+                'src' => $this->get_base_url() . '/../assets/js/iframe-securesubmit.js',
                 'version' => $this->_version,
                 'deps' => array('jquery', 'securesubmit.js'),
                 'in_footer' => false,
@@ -525,6 +531,9 @@ class GFSecureSubmit
 
 
     }
+    /**
+     * @return array
+     */
     public function styles() {
         $styles = [
             [
@@ -538,6 +547,9 @@ class GFSecureSubmit
 
         return array_merge(parent::styles(), $styles);
     }
+    /**
+     *
+     */
     public function add_theme_scripts() {
 
         wp_enqueue_style('style', $this->get_base_url() . '/../css/style.css', [], '1.1', 'all');
@@ -583,15 +595,25 @@ class GFSecureSubmit
         $feed = $feeds[0];
 
         $cc_field = $this->get_credit_card_field($form);
+        $oldCCForm = false;
+        if($oldCCForm){
+            $args = [
+                'apiKey' => $this->getPublicApiKey($feed),
+                'formId' => $form['id'],
+                'ccFieldId' => $cc_field['id'],
+                'ccPage' => rgar($cc_field, 'pageNumber'),
+                'isAjax' => $is_ajax,];
+            $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
+        }else{
+            $pubKey = $this->getPublicApiKey($feed);
+            $is_form_editor  = $this->is_form_editor();
+            $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
-        $args = [
-            'apiKey' => $this->getPublicApiKey($feed),
-            'formId' => $form['id'],
-            'ccFieldId' => $cc_field['id'],
-            'ccPage' => rgar($cc_field, 'pageNumber'),
-            'isAjax' => $is_ajax,];
+            ob_start();
+            include dirname(__FILE__) . "/../assets/js/iframe-securesubmit.php";
+            $script = ob_get_clean();
+        }
 
-        $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
     /**
@@ -941,6 +963,11 @@ class GFSecureSubmit
         }
         return $auth;
     }
+    /**
+     * @param $form
+     *
+     * @return bool|\GF_Field
+     */
     public function get_ach_field($form) {
         $fields = GFAPI::get_fields_by_type($form, ['ach']);
 
@@ -948,6 +975,13 @@ class GFSecureSubmit
             ? false
             : $fields[0];
     }
+    /**
+     * @param $feed
+     * @param $form
+     * @param $entry
+     *
+     * @return mixed
+     */
     public function get_submission_dataACH($feed, $form, $entry) {
         $this_id = $feed['id'];
 
@@ -978,6 +1012,9 @@ class GFSecureSubmit
 
         return gf_apply_filters(array('gform_submission_data_pre_process_payment', $form['id']), $submission_data, $feed, $form, $entry);;
     }
+    /**
+     * @return mixed|null
+     */
     private function validateACH() {
         $value = $this->remove_spaces_from_card_number(rgpost(GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME));
         $isValid = preg_match('/^[\d]{4,17}$/', $value) === 1;
