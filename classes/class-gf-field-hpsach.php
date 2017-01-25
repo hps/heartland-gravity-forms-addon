@@ -176,6 +176,10 @@ class GF_Field_HPSach extends GF_Field {
         if (!isset($routing_number_label)) {$routing_number_label = '';}
         if (!isset($account_type_label)) {$account_type_label = '';}
         if (!isset($check_type_label)) {$check_type_label = '';}
+
+        $account_name_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
+        $account_type_value = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
+        $check_type_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
         ob_start();
         include dirname(__FILE__) . "/../templates/ach-payment-fields.php";
         $ss_ach_output = ob_get_clean();
