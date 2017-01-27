@@ -222,7 +222,7 @@ class GFSecureSubmit
      */
     public function feed_list_message() {
         //
-         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form() &&! $this->has_ach_field( $this->get_current_form() )) ) ) {
+         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form()) &&! $this->has_ach_field( $this->get_current_form() ))  ) {
              return $this->requires_credit_card_message();
          }
 
@@ -246,152 +246,152 @@ class GFSecureSubmit
      * @return array
      */
     public function vmcSettingsFields() {
-        return [
-            [
+        return array(
+            array(
                 'name' => 'enable_fraud',
                 'label' => __('Velocity Settings', $this->_slug),
                 'type' => 'select',
                 'default_value' => 'Enabled',
                 'tooltip' => __('Choose whether you wish to limit failed attempts', $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('Enabled', $this->_slug),
                         'value' => 'true',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                    array(
                         'label' => __('Disabled', $this->_slug),
-                        'value' => 'false',],],],
-            [
+                        'value' => 'false',),),),
+            array(
                 'name' => 'fraud_message',
                 'label' => __('Displayed Message', $this->_slug),
                 'type' => 'text',
                 'tooltip' => __('Text entered here will be displayed to your consumer if they exceed the failures within the timeframe.',
                                 $this->_slug),
                 'default_value' => 'Please contact us to complete the transaction.',
-                'class' => 'medium',],
-            [
+                'class' => 'medium',),
+            array(
                 'name' => 'fraud_velocity_attempts',
                 'label' => __('How many failed attempts before blocking?', $this->_slug),
                 'type' => 'text',
                 'default_value' => '3',
-                'class' => 'small',],
-            [
+                'class' => 'small',),
+            array(
                 'name' => 'fraud_velocity_timeout',
                 'label' => __('How long (in minutes) should we keep a tally of recent failures?',
                               $this->_slug),
                 'type' => 'text',
                 'default_value' => '10',
-                'class' => 'small',],];
+                'class' => 'small',),);
     }
     /**
      * @return array
      */
     public function sdkSettingsFields() {
-        return [
-            [
+        return array(
+            array(
                 'name' => 'public_api_key',
                 'label' => __('Public Key', $this->_slug),
                 'type' => 'text',
                 'class' => 'medium',
-                'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",],
-            [
+                'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",),
+            array(
                 'name' => 'secret_api_key',
                 'label' => __('Secret Key', $this->_slug),
                 'type' => 'text',
                 'class' => 'medium',
-                'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",],
-            [
+                'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",),
+            array(
                 'name' => 'authorize_or_charge',
                 'label' => __('Payment Action', $this->_slug),
                 'type' => 'select',
                 'default_value' => 'capture',
                 'tooltip' => __('Choose whether you wish to capture funds immediately or authorize payment only.',
                                 $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('Capture', $this->_slug),
                         'value' => 'capture',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                   array(
                         'label' => __('Authorize', $this->_slug),
-                        'value' => 'authorize',],],],
-            [
+                        'value' => 'authorize',),),),
+            array(
                 'name' => 'allow_payment_action_override',
                 'label' => __('Allow Payment Action Override', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'no',
                 'tooltip' => __('Allows a SecureSubmit Feed to override the default payment action (authorize / capture).',
                                 $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('No', $this->_slug),
                         'value' => 'no',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                    array(
                         'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',],],
-                'horizontal' => true,],
-            [
+                        'value' => 'yes',),),
+                'horizontal' => true,),
+            array(
                 'name' => 'allow_level_ii',
                 'label' => __('Allow Level II Processing', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'no',
                 'tooltip' => __('If you need Level II Processing, enable this field.', $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('No', $this->_slug),
                         'value' => 'no',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                    array(
                         'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',],],
-                'horizontal' => true,],
-            [
+                        'value' => 'yes',),),
+                'horizontal' => true,),
+            array(
                 'name' => 'allow_api_keys_override',
                 'label' => __('Allow API Keys Override', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'no',
                 'tooltip' => __('Allows a SecureSubmit Feed to override the default set of API keys.',
                                 $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('No', $this->_slug),
                         'value' => 'no',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                    array(
                         'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',],],
-                'horizontal' => true,],
-            [
+                        'value' => 'yes',),),
+                'horizontal' => true,),
+            array(
                 'name' => 'send_email',
                 'label' => __('Send Email', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'no',
                 'tooltip' => __('Sends email with transaction details independent of GF notification system.',
                                 $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                    array(
                         'label' => __('No', $this->_slug),
                         'value' => 'no',
-                        'selected' => true,],
-                    [
+                        'selected' => true,),
+                    array(
                         'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',],],
+                        'value' => 'yes',),),
                 'horizontal' => true,
-                'onchange' => "SecureSubmitAdmin.toggleSendEmailFields(this.value);",],
-            [
+                'onchange' => "SecureSubmitAdmin.toggleSendEmailFields(this.value);",),
+            array(
                 'name' => 'send_email_recipient_address',
                 'label' => __('Email Recipient', $this->_slug),
                 'type' => 'text',
-                'class' => 'medium',],
-            [
+                'class' => 'medium',),
+            array(
                 'label' => 'hidden',
                 'name' => 'public_api_key_is_valid',
-                'type' => 'hidden',],
-            [
+                'type' => 'hidden',),
+            array(
                 'label' => 'hidden',
                 'name' => 'secret_api_key_is_valid',
-                'type' => 'hidden',],];
+                'type' => 'hidden',),);
     }
     /**
      * @return array
@@ -400,20 +400,20 @@ class GFSecureSubmit
         $default_settings = parent::feed_settings_fields();
 
         if ($this->getAllowPaymentActionOverride() == 'yes') {
-            $authorize_or_charge_field = [
+            $authorize_or_charge_field = array(
                 'name' => 'authorize_or_charge',
                 'label' => __('Payment Action', $this->_slug),
                 'type' => 'select',
                 'default_value' => 'capture',
                 'tooltip' => __('Choose whether you wish to capture funds immediately or authorize payment only.',
                                 $this->_slug),
-                'choices' => [
-                    [
+                'choices' => array(
+                                  array(
                         'label' => __('Capture', $this->_slug),
-                        'value' => 'capture',],
-                    [
+                        'value' => 'capture',),
+                array(
                         'label' => __('Authorize', $this->_slug),
-                        'value' => 'authorize',],],];
+                        'value' => 'authorize',),),);
             if ($this->getAuthorizeOrCharge() == 'capture') {
                 $authorize_or_charge_field['choices'][0]['selected'] = true;
             }
@@ -423,31 +423,31 @@ class GFSecureSubmit
             $default_settings = $this->add_field_after('paymentAmount', $authorize_or_charge_field, $default_settings);
         }
         if ($this->getAllowAPIKeysOverride() == 'yes') {
-            $public_api_key_field = [
+            $public_api_key_field = array(
                 'name' => 'public_api_key',
                 'label' => __('Public Key', $this->_slug),
                 'type' => 'text',
                 'class' => 'medium',
-                'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",];
-            $secret_api_key_field = [
+                'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",);
+            $secret_api_key_field = array(
                 'name' => 'secret_api_key',
                 'label' => __('Secret Key', $this->_slug),
                 'type' => 'text',
                 'class' => 'medium',
-                'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",];
+                'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",);
             $default_settings = $this->add_field_after('paymentAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
         }
 
         if ($this->getAllowLevelII() == 'yes') {
-            $tax_type_field = [
+            $tax_type_field = array(
                 'name' => 'mappedFields',
                 'label' => esc_html__('Level II Mapping', $this->_slug),
                 'type' => 'field_map',
                 'field_map' => $this->get_level_ii_fields(),
                 'tooltip' => '<h6>' . esc_html__('Map Fields',
                                                  $this->_slug) . '</h6>' . esc_html__('This is only required if you plan to do Level II Processing.',
-                                                                                      $this->_slug),];
+                                                                                      $this->_slug),);
 
             $default_settings = $this->add_field_after('paymentAmount', $tax_type_field, $default_settings);
         }
@@ -458,19 +458,19 @@ class GFSecureSubmit
      * @return array
      */
     protected function get_level_ii_fields() {
-        $fields = [
-            [
+        $fields = array(
+            array(
                 "name" => "customerpo",
                 "label" => __("Customer PO", "gravityforms"),
-                "required" => false],
-            [
+                "required" => false),
+            array(
                 "name" => "taxtype",
                 "label" => __("Tax Type", "gravityforms"),
-                "required" => false],
-            [
+                "required" => false),
+            array(
                 "name" => "taxamount",
                 "label" => __("Tax Amount", "gravityforms"),
-                "required" => false],];
+                "required" => false),);
 
         return $fields;
     }
@@ -535,15 +535,15 @@ class GFSecureSubmit
      * @return array
      */
     public function styles() {
-        $styles = [
-            [
+        $styles = array(
+            array(
                 'handle' => 'securesubmit_css',
                 'src' => $this->get_base_url() . "/../css/style.css",
                 'version' => $this->_version,
-                'enqueue' => [
-                    [
+                'enqueue' => array(
+                    array(
                         $this,
-                        'hasFeedCallback'],],],];
+                        'hasFeedCallback'),),),);
 
         return array_merge(parent::styles(), $styles);
     }
@@ -552,7 +552,7 @@ class GFSecureSubmit
      */
     public function add_theme_scripts() {
 
-        wp_enqueue_style('style', $this->get_base_url() . '/../css/style.css', [], '1.1', 'all');
+        wp_enqueue_style('style', $this->get_base_url() . '/../css/style.css', array(), '1.1', 'all');
 
         if (is_singular() && comments_open() && get_option('thread_comments')) {
             wp_enqueue_script('comment-reply');
@@ -564,15 +564,15 @@ class GFSecureSubmit
 
     public function init_frontend() {
         add_filter('gform_register_init_scripts',
-                   [
+            array(
                        $this,
-                       'registerInitScripts'],
+                       'registerInitScripts'),
                    10,
                    3);
         add_filter('gform_field_content',
-                   [
+            array(
                        $this,
-                       'addSecureSubmitInputs'],
+                       'addSecureSubmitInputs'),
                    10,
                    5);
         parent::init_frontend();
@@ -614,6 +614,17 @@ class GFSecureSubmit
             $script = ob_get_clean();
         }
 
+<<<<<<< HEAD
+=======
+        $args = array(
+            'apiKey' => $this->getPublicApiKey($feed),
+            'formId' => $form['id'],
+            'ccFieldId' => $cc_field['id'],
+            'ccPage' => rgar($cc_field, 'pageNumber'),
+            'isAjax' => $is_ajax,);
+
+        $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
+>>>>>>> ee921440f3e59ef6e1374109d5a37ec2ba786793
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
     /**
@@ -626,12 +637,20 @@ class GFSecureSubmit
      * @return string
      */
     public function addSecureSubmitInputs($content, $field, $value, $lead_id, $form_id) {
-        if (!$this->has_feed($form_id) || GFFormsModel::get_input_type($field) != 'creditcard') {
+        $type = GFFormsModel::get_input_type($field);
+       $secureSubmitFeildFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
+        $hasFeed = $this->has_feed($form_id);
+        if (! $secureSubmitFeildFound) {
             return $content;
         }
-
-        if ($this->getSecureSubmitJsResponse()) {
-            $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
+        else{
+            if ($this->getSecureSubmitJsResponse()) {
+                $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
+            }
+            if (!$hasFeed && $secureSubmitFeildFound) { // Style sheet wont have loaded
+                $feildLabel = $field->label;
+                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$feildLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
+            }
         }
 
         return $content;
@@ -908,7 +927,7 @@ class GFSecureSubmit
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
-                return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                //return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $response = $service->sale($submission_data['payment_amount'])

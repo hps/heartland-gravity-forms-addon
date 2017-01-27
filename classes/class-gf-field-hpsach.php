@@ -59,9 +59,25 @@ class GF_Field_HPSach extends GF_Field {
         $account_type = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $check_type = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
         $this->failed_validation = false;
-        if (empty($account_name) || empty($account_number) || empty($routing_number) || empty($account_type) || empty($check_type)) {
+        if (empty($account_name) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account information. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account holder name. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($account_number) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account number. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($routing_number) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your rounting number. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($account_type) ) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select an account type. All feilds required.',
+                'gravityforms') : $this->errorMessage;
+        } elseif (empty($check_type)) {
+            $this->failed_validation = true;
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select the type of checkgit commit. All feilds required.',
                 'gravityforms') : $this->errorMessage;
         } else {
 
@@ -100,6 +116,9 @@ class GF_Field_HPSach extends GF_Field {
         $is_entry_detail = $this->is_entry_detail();
         $is_form_editor = $this->is_form_editor();
 
+       /* if (!$this->has_feed($form['id'], true)) {
+            return $validation_result;
+        }*/
         $form_id = $form['id'];
         $id = intval($this->id);
         $field_id = $is_entry_detail || $is_form_editor || $form_id == 0 ? "input_$id" : 'input_' . $form_id . "_$id";
@@ -160,6 +179,16 @@ class GF_Field_HPSach extends GF_Field {
         if (!isset($routing_number_label)) {$routing_number_label = '';}
         if (!isset($account_type_label)) {$account_type_label = '';}
         if (!isset($check_type_label)) {$check_type_label = '';}
+
+        $account_name_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
+        $account_type_value = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
+        $check_type_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
+        $this->get_tabindex();
+        $account_name_tabindex = $this->get_tabindex();
+        $account_number_tabindex = $this->get_tabindex();
+        $routing_number_tabindex = $this->get_tabindex();
+        $account_type_tabindex = $this->get_tabindex();
+        $check_type_tabindex = $this->get_tabindex();
         ob_start();
         include dirname(__FILE__) . "/../templates/ach-payment-fields.php";
         $ss_ach_output = ob_get_clean();
