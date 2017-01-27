@@ -218,7 +218,7 @@ class GFSecureSubmit
      */
     public function feed_list_message() {
         //
-         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form() &&! $this->has_ach_field( $this->get_current_form() )) ) ) {
+         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form()) &&! $this->has_ach_field( $this->get_current_form() ))  ) {
              return $this->requires_credit_card_message();
          }
 
@@ -604,12 +604,20 @@ class GFSecureSubmit
      * @return string
      */
     public function addSecureSubmitInputs($content, $field, $value, $lead_id, $form_id) {
-        if (!$this->has_feed($form_id) || GFFormsModel::get_input_type($field) != 'creditcard') {
+        $type = GFFormsModel::get_input_type($field);
+       $secureSubmitFeildFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
+        $hasFeed = $this->has_feed($form_id);
+        if (! $secureSubmitFeildFound) {
             return $content;
         }
-
-        if ($this->getSecureSubmitJsResponse()) {
-            $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
+        else{
+            if ($this->getSecureSubmitJsResponse()) {
+                $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
+            }
+            if (!$hasFeed && $secureSubmitFeildFound) { // Style sheet wont have loaded
+                $feildLabel = $field->label;
+                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$feildLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
+            }
         }
 
         return $content;
@@ -886,7 +894,7 @@ class GFSecureSubmit
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
-                return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                //return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $response = $service->sale($submission_data['payment_amount'])

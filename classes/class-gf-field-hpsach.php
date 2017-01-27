@@ -116,6 +116,9 @@ class GF_Field_HPSach extends GF_Field {
         $is_entry_detail = $this->is_entry_detail();
         $is_form_editor = $this->is_form_editor();
 
+       /* if (!$this->has_feed($form['id'], true)) {
+            return $validation_result;
+        }*/
         $form_id = $form['id'];
         $id = intval($this->id);
         $field_id = $is_entry_detail || $is_form_editor || $form_id == 0 ? "input_$id" : 'input_' . $form_id . "_$id";
@@ -180,6 +183,12 @@ class GF_Field_HPSach extends GF_Field {
         $account_name_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
         $account_type_value = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $check_type_value = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
+        $this->get_tabindex();
+        $account_name_tabindex = $this->get_tabindex();
+        $account_number_tabindex = $this->get_tabindex();
+        $routing_number_tabindex = $this->get_tabindex();
+        $account_type_tabindex = $this->get_tabindex();
+        $check_type_tabindex = $this->get_tabindex();
         ob_start();
         include dirname(__FILE__) . "/../templates/ach-payment-fields.php";
         $ss_ach_output = ob_get_clean();

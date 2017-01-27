@@ -11,7 +11,7 @@
       </label>
 
       <input type="text" name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_5"
-             placeholder="JON DOE" value="<?php echo $account_name_value; ?>" <?php echo $disabled_text; ?>/>
+             placeholder="JON DOE" value="<?php echo $account_name_value; ?>" <?php echo $account_name_tabindex; ?> <?php echo $disabled_text; ?>/>
     </span>
     <!-- account number -->
     <span class="ginput_full<?php echo $class_suffix; ?>" id="<?php echo $field_id; ?>_6_container" >
@@ -21,7 +21,7 @@
       </label>
       
       <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_6"
-             placeholder="• • • • • • • • •" value="<?php echo $account_number_field_input; ?>" <?php echo $disabled_text; ?> <?php echo $onlyDigits; ?>/>
+             placeholder="• • • • • • • • •" value="<?php echo $account_number_field_input; ?>" <?php echo $account_number_tabindex; ?> <?php echo $disabled_text; ?> <?php echo $onlyDigits; ?>/>
     </span>
     <!-- routing number -->
     <span class="ginput_full<?php echo $class_suffix; ?> ginput_cardextras" id="<?php echo $field_id; ?>_7_container">
@@ -30,9 +30,9 @@
           <?php echo $routing_number_label; ?>
           <span class="red">*</span>
         </label>
-        
+
         <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_7"
-               placeholder="• • • • • • • • •" value="<?php echo $routing_number_field_input; ?>" <?php echo $onlyDigits; ?> <?php echo $disabled_text; ?>/>
+               placeholder="• • • • • • • • •" value="<?php echo $routing_number_field_input; ?>" <?php echo $routing_number_tabindex; ?> <?php echo $onlyDigits; ?> <?php echo $disabled_text; ?>/>
       </span>
     </span>
     <!-- account type -->
@@ -42,20 +42,21 @@
         <span class="red">*</span>
       </label>
 
-      <select <?php echo $disabled_text; ?>  name="<?php echo GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_8">
+      <select <?php echo $disabled_text; ?>  name="<?php echo GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_8" <?php echo $account_type_tabindex; ?>>
         <option value="" disabled<?php $account_type_value === '' ? ' selected':''?>>Choose One..</option>
-        <option value="1"<?php $account_type_value === '' ? ' selected':''?>>Checking</option>
-        <option value="2"<?php $account_type_value === '' ? ' selected':''?>>Savings</option>
+        <option value="1"<?php $account_type_value === '1' ? ' selected':''?>>Checking</option>
+        <option value="2"<?php $account_type_value === '2' ? ' selected':''?>>Savings</option>
       </select>
     </span>
     <!-- check name -->
+
     <span class="ginput_accountinfo_right<?php echo $class_suffix; ?>" id="<?php echo $field_id; ?>_9_accountinfo_right">
       <label for="<?php echo $field_id; ?>_9" <?php echo $sub_label_class_attribute; ?>>
         <?php echo $check_type_label; ?>
         <span class="red">*</span>
       </label>
 
-      <select <?php echo $disabled_text; ?> name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_9">
+      <select <?php echo $disabled_text; ?> name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_9" <?php echo $check_type_tabindex; ?>>
         <option value="" disabled<?php $check_type_value === '' ? ' selected':''?>>Choose One..</option>
         <option value="1"<?php $check_type_value === '1' ? ' selected':''?>>Personal</option>
         <option value="2"<?php $check_type_value === '2' ? ' selected':''?>>Business</option>
