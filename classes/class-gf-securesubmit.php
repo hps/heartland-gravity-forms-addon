@@ -123,6 +123,33 @@ class GFSecureSubmit
 
         return $field_groups;
     }
+    /** Add our Secure CC button to the pricing fields.
+     * I found this tutorial very helpful
+     * http://wpsmith.net/2011/how-to-create-a-custom-form-field-in-gravity-forms-with-a-terms-of-service-form-field-example/
+     *
+     * @param $field_groups
+     *
+     * @return mixed
+     */
+
+    public function hps_add_cc_field($field_groups) {
+        foreach ($field_groups as &$group) {
+            if ($group["name"] == "pricing_fields") {
+                $group["fields"][] = array(
+                    'class' => 'button',
+                    // this has to match
+                    // \GF_Field_HPSACH::$type
+                    'data-type' => 'hpscreditcard',
+                    // the first param here will be the button text
+                    // leave the second one as gravityforms
+                    'value' => __('Secure CC', "gravityforms"),
+                    "onclick" => "StartAddField('hpscreditcard');");
+                break;
+            }
+        }
+
+        return $field_groups;
+    }
     /**
      *
      */
@@ -151,9 +178,13 @@ class GFSecureSubmit
         * \GFSecureSubmit::hps_add_ach_field
         */
         add_filter('gform_add_field_buttons',
-                   array(
-                       $this,
-                       'hps_add_ach_field'));
+            array(
+                $this,
+                'hps_add_ach_field'));
+        add_filter('gform_add_field_buttons',
+            array(
+                $this,
+                'hps_add_cc_field'));
         add_action('gform_editor_js_set_default_values', array($this, 'set_defaults'));
     }
     /**
@@ -165,6 +196,9 @@ class GFSecureSubmit
         //so we need to add a case for our new field type
         case "hpsACH" :
         field.label = "Bank Transfer"; //setting the default field label
+        break;
+        case "hpscreditcard" :
+        field.label = "Secure Credit Card"; //setting the default field label
         break;
         <?php //////
     }
@@ -223,7 +257,7 @@ class GFSecureSubmit
     public function feed_list_message() {
         //
          if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form()) &&! $this->has_ach_field( $this->get_current_form() ))  ) {
-             return $this->requires_credit_card_message();
+             //return $this->requires_credit_card_message();
          }
 
         // from GFFeedAddOn::feed_list_message
@@ -614,17 +648,7 @@ class GFSecureSubmit
             $script = ob_get_clean();
         }
 
-<<<<<<< HEAD
-=======
-        $args = array(
-            'apiKey' => $this->getPublicApiKey($feed),
-            'formId' => $form['id'],
-            'ccFieldId' => $cc_field['id'],
-            'ccPage' => rgar($cc_field, 'pageNumber'),
-            'isAjax' => $is_ajax,);
 
-        $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
->>>>>>> ee921440f3e59ef6e1374109d5a37ec2ba786793
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
     /**

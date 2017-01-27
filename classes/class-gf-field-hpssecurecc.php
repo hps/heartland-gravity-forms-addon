@@ -24,8 +24,9 @@ class GF_Field_HPSCreditCard extends GF_Field
      */
     function get_form_editor_field_settings() {
         return array(
-            'conditional_logic_field_setting',
-            'force_ssl_field_setting',
+            'label_setting',
+        );/*
+        return array(
             'credit_card_style_setting',
             'error_message_setting',
             'label_setting',
@@ -33,13 +34,12 @@ class GF_Field_HPSCreditCard extends GF_Field
             'sub_labels_setting',
             'sub_label_placement_setting',
             'label_placement_setting',
-            'admin_label_setting',
             'rules_setting',
             'description_setting',
             'css_class_setting',
             'credit_card_setting',
             'input_placeholders_setting',
-        );
+        );*/
     }
 
     /**
@@ -142,9 +142,9 @@ class GF_Field_HPSCreditCard extends GF_Field
      */
     public function get_field_input($form, $value = '', $entry = null)
     {
-
         $is_entry_detail = $this->is_entry_detail();
         $is_form_editor  = $this->is_form_editor();
+
         $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
         $form_id  = $form['id'];
@@ -155,7 +155,7 @@ class GF_Field_HPSCreditCard extends GF_Field
         $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
         $settings = get_option( 'gravityformsaddon_' . $this->_slug . '_settings' );;
-
+        $baseURL = plugins_url( '', dirname(__FILE__) . '../' );
         $pubKey = (string)trim(rgar($settings, "public_api_key"));
         ob_start();
         include dirname(__FILE__) . "/../templates/cc-payment-fields.php";
