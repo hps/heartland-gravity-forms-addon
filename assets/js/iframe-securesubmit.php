@@ -197,7 +197,7 @@
             }
         });
         // Attach a handler to interrupt the form submission
-        Heartland.Events.addHandler(document.getElementById('iframes'), 'submit', function (e) {
+        Heartland.Events.addHandler(document.getElementById('gform_3'), 'submit', function (e) {
             // Prevent the form from continuing to the `action` address
             e.preventDefault();
             // Tell the iframes to tokenize the data

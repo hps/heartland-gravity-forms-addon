@@ -78,6 +78,7 @@
                 }
             }
 
+            $('#securesubmit_response').remove();
             $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(response)));
             $form.submit();
         };

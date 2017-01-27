@@ -107,6 +107,9 @@ class GF_Field_HPSCreditCard extends GF_Field
             $token_type = rgget('token_type' ,$ssTokenData );
             $token_expire = rgget('token_expire' ,$ssTokenData );
             $number = rgget('number' ,rgget('card' ,$ssTokenData ) );
+            $cardType = rgget('card_type' ,$ssTokenData  );
+            $expMonth = rgget('exp_month' ,$ssTokenData  );
+            $expYear = rgget('exp_year' ,$ssTokenData  );
             if ( $this->isRequired && ( empty( $token_value ) || empty( $token_type ) || empty( $token_expire ) || empty( $number ) ) ) {
                 $this->failed_validation  = true;
                 $this->validation_message = empty( $this->errorMessage ) ? esc_html__( 'Please enter your credit card information.', 'gravityforms' ) : $this->errorMessage;
@@ -144,7 +147,6 @@ class GF_Field_HPSCreditCard extends GF_Field
     {
         $is_entry_detail = $this->is_entry_detail();
         $is_form_editor  = $this->is_form_editor();
-
         $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
         $form_id  = $form['id'];

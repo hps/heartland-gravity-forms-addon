@@ -4,7 +4,7 @@
         <div class="ss-shield"></div>
 
         <!-- The Payment Form -->
-        <form id="iframes" action="" method="GET">
+        <div id="iframes">
             <div id="ss-card" class="form-group">
                 <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
                 <div class="iframeholder" id="iframesCardNumber"></div>
@@ -18,15 +18,15 @@
                 <div class="iframeholder" id="iframesCardCvv"></div>
             </div>
 
-        </form>
+        </div>
     </div>
 </div>
 
 <script type="text/javascript">
-    (function (document, Heartland) {
+    (function (document, Heartland,$) {
         // Create a new `HPS` object with the necessary configuration
         var hps = new Heartland.HPS({
-            publicKey: '<?php $pubKey?>',
+            publicKey: '<?php echo $pubKey?>',
             type:      'iframe',
             // Configure the iframe fields to tell the library where
             // the iframe should be inserted into the DOM and some
@@ -171,8 +171,11 @@
                 }
             },
             // Callback when a token is received from the service
-            onTokenSuccess: function (resp) {
-                alert('Here is a single-use token: ' + resp.token_value);
+            onTokenSuccess: function (response) {
+                jQuery("#<?php echo $field_id; ?> #securesubmit_response").remove();
+                jQuery("#<?php echo $field_id; ?>").append(jQuery('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val(jQuery.toJSON(response)));
+                jQuery("#gform_<?php echo $form_id ?>").unbind('submit'); // unbind event handler
+                document.getElementById('gform_<?php echo $form_id ?>').submit();
             },
             // Callback when an error is received from the service
             onTokenError: function (resp) {
@@ -180,7 +183,7 @@
             }
         });
         // Attach a handler to interrupt the form submission
-        Heartland.Events.addHandler(document.getElementById('iframes'), 'submit', function (e) {
+        Heartland.Events.addHandler(document.getElementById('gform_<?php echo $form_id ?>'), 'submit', function (e) {
             // Prevent the form from continuing to the `action` address
             e.preventDefault();
             // Tell the iframes to tokenize the data
@@ -188,10 +191,10 @@
                 {
                     accumulateData: true,
                     action: 'tokenize',
-                    message: '<?php $pubKey?>'
+                    message: '<?php echo $pubKey?>'
                 },
                 'cardNumber'
             );
         });
-    }(document, Heartland));
+    }(document, Heartland,jQuery));
 </script>

@@ -644,7 +644,7 @@ class GFSecureSubmit
             $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
             ob_start();
-            include dirname(__FILE__) . "/../assets/js/iframe-securesubmit.php";
+            //include dirname(__FILE__) . "/../assets/js/iframe-securesubmit.php";
             $script = ob_get_clean();
         }
 
@@ -744,7 +744,7 @@ class GFSecureSubmit
                 }
             }
 
-            if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
+            if ((preg_match('/(hps|)creditcard/', GFFormsModel::get_input_type($field)) === 1 )&& $field_on_curent_page) {
                 $this->isCC = $field;
                 if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
