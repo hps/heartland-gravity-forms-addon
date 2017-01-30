@@ -9,6 +9,8 @@ include_once 'class-gf-field-hpssecurecc.php';
  */
 class GFSecureSubmit
     extends GFPaymentAddOn {
+    private $processPaymentsFor = array( 'creditcard','hpscreditcard','hpsACH' );
+    private $ccFields = array( 'creditcard','hpscreditcard' );
     /**
      * @var bool
      */
@@ -255,9 +257,8 @@ class GFSecureSubmit
      * @return bool|false|string
      */
     public function feed_list_message() {
-        //
-         if ( $this->_requires_credit_card && (! $this->has_credit_card_field( $this->get_current_form()) &&! $this->has_ach_field( $this->get_current_form() ))  ) {
-             //return $this->requires_credit_card_message();
+         if ( $this->_requires_credit_card && (! $this->has_hps_payment_fields())  ) {
+             return $this->requires_credit_card_message();
          }
 
         // from GFFeedAddOn::feed_list_message
@@ -268,14 +269,31 @@ class GFSecureSubmit
         return false;
     }
     /**
+     * @return bool
+     */
+    private function has_hps_payment_fields(){
+        $fields = GFAPI::get_fields_by_type( $this->get_current_form(), $this->processPaymentsFor );
+        return empty( $fields ) ? false : true;
+    }
+    /**
      * @param $form
      *
      * @return bool
      */
-    public function has_ach_field( $form ) {
+    private function has_ach_field( $form ) {
         return $this->get_ach_field( $form ) !== false;
     }
 
+    /**
+     * @return bool
+     */
+    private function has_credit_card_fields($form) {
+        if (empty($this->isCC)) {
+            $fields = GFAPI::get_fields_by_type( $form, $this->ccFields );
+            $this->isCC = empty( $fields ) ? false : true;
+        }
+        return $this->isCC;
+    }
     /**
      * @return array
      */
@@ -527,7 +545,7 @@ class GFSecureSubmit
             ),
             array(
                 'handle' => 'gforms_securesubmit_frontend',
-                'src' => $this->get_base_url() . '/../assets/js/iframe-securesubmit.js',
+                'src' => $this->get_base_url() . '/../assets/js/securesubmit.js',
                 'version' => $this->_version,
                 'deps' => array('jquery', 'securesubmit.js'),
                 'in_footer' => false,
@@ -621,36 +639,41 @@ class GFSecureSubmit
         if (!$this->has_feed($form['id'])) {
             return;
         }
-        if (!$this->isCC($form)) {
+        if (!$this->has_credit_card_fields($form)) {
             return;
         }
 
         $feeds = GFAPI::get_feeds(null, $form['id']);
         $feed = $feeds[0];
 
+        $pubKey = $this->getPublicApiKey($feed);
         $cc_field = $this->get_credit_card_field($form);
-        $oldCCForm = false;
-        if($oldCCForm){
-            $args = [
-                'apiKey' => $this->getPublicApiKey($feed),
+        if($cc_field !== false){
+            $args = array(
+                'apiKey' => $pubKey,
                 'formId' => $form['id'],
                 'ccFieldId' => $cc_field['id'],
                 'ccPage' => rgar($cc_field, 'pageNumber'),
-                'isAjax' => $is_ajax,];
+                'isAjax' => $is_ajax,);
             $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
+            GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
         }else{
-            $pubKey = $this->getPublicApiKey($feed);
-            $is_form_editor  = $this->is_form_editor();
-            $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
-
-            ob_start();
-            //include dirname(__FILE__) . "/../assets/js/iframe-securesubmit.php";
-            $script = ob_get_clean();
+            $cc_field = $this->get_hpscredit_card_field($form);
+            $args = array(
+                'apiKey' => $pubKey,
+                'formId' => $form['id'],
+                'ccFieldId' => $cc_field['id'],
+                'ccPage' => rgar($cc_field, 'pageNumber'),
+                'isAjax' => $is_ajax,
+                'assetFolder' => plugins_url( '', dirname(__FILE__) . '../' ),);
+            //TODO: figure out why when we do it this way the onsuccess is not triggered
+            $script = 'new window.SecureSubmitIframe(' . json_encode($args) . ');';
         }
 
 
-        GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
+
+
     /**
      * @param $content
      * @param $field
@@ -662,18 +685,18 @@ class GFSecureSubmit
      */
     public function addSecureSubmitInputs($content, $field, $value, $lead_id, $form_id) {
         $type = GFFormsModel::get_input_type($field);
-       $secureSubmitFeildFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
+        $secureSubmitFieldFound = $this->has_hps_payment_fields();
         $hasFeed = $this->has_feed($form_id);
-        if (! $secureSubmitFeildFound) {
+        if (! $secureSubmitFieldFound) {
             return $content;
         }
         else{
             if ($this->getSecureSubmitJsResponse()) {
                 $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
             }
-            if (!$hasFeed && $secureSubmitFeildFound) { // Style sheet wont have loaded
-                $feildLabel = $field->label;
-                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$feildLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
+            if (!$hasFeed && $secureSubmitFieldFound) { // Style sheet wont have loaded
+                $fieldLabel = $field->label;
+                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$fieldLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
             }
         }
 
@@ -693,13 +716,13 @@ class GFSecureSubmit
             $currentPage = GFFormDisplay::get_source_page($validationResult['form']['id']);
             $fieldOnCurrentPage = $currentPage > 0 && $field['pageNumber'] == $currentPage;
 
-            if (GFFormsModel::get_input_type($field) != 'creditcard' || !$fieldOnCurrentPage) {
+            if ((preg_match('/^(hpsACH|(hps|)creditcard)$/', GFFormsModel::get_input_type($field)) !== 1 ) || !$fieldOnCurrentPage) {
                 continue;
             }
 
             if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
                 $field['failed_validation'] = true;
-                $field['validation_message'] = $this->getSecureSubmitJsError();
+                $field['validation_message'] = "The following error occured: [".$this->getSecureSubmitJsError() . "]";
             }
             else {
                 $field['failed_validation'] = false;
@@ -708,7 +731,7 @@ class GFSecureSubmit
             break;
         }
 
-        $validationResult['is_valid'] = true;
+        $validationResult['is_valid'] = !$field['failed_validation'];
 
         return parent::maybe_validate($validationResult);
     }
@@ -743,8 +766,7 @@ class GFSecureSubmit
                     $field['failed_validation'] = false;
                 }
             }
-
-            if ((preg_match('/(hps|)creditcard/', GFFormsModel::get_input_type($field)) === 1 )&& $field_on_curent_page) {
+            if ((preg_match('/(hps|)creditcard/', GFFormsModel::get_input_type($field)) === 1 )) {
                 $this->isCC = $field;
                 if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
@@ -834,24 +856,6 @@ class GFSecureSubmit
         }
 
         return $auth;
-    }
-    /**
-     * @return bool
-     */
-    private function isCC($form) {
-        if (empty($this->isCC)) {
-            foreach ($form['fields'] as $field) {
-                $current_page = GFFormDisplay::get_source_page($form['id']);
-                $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
-
-                if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
-                    $this->isCC = true;
-                    break;
-                }
-            }
-        }
-
-        return $this->isCC;
     }
     /**
      * @param $feed
@@ -1011,12 +1015,18 @@ class GFSecureSubmit
      *
      * @return bool|\GF_Field
      */
-    public function get_ach_field($form) {
+    private function get_ach_field($form) {
         $fields = GFAPI::get_fields_by_type($form, ['ach']);
-
-        return empty($fields)
-            ? false
-            : $fields[0];
+        return empty($fields) ? false : $fields[0];
+    }
+    /**
+     * @param $form
+     *
+     * @return bool|\GF_Field
+     */
+    private function get_hpscredit_card_field($form){
+        $fields = GFAPI::get_fields_by_type( $form, array( 'hpscreditcard' ) );
+        return empty( $fields ) ? false : $fields[0];
     }
     /**
      * @param $feed
