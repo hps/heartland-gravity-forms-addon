@@ -2,7 +2,108 @@
 <div class="ginput_complex<?php echo $class_suffix; ?> ginput_container ginput_container_creditcard hps_secure_cc" id="<?php echo $field_id; ?>">
     <div id="HPS_secure_cc">
         <div class="ss-shield"></div>
-
+        <!-- make iframes styled like other form -->
+        <style type="text/css">
+        	#iframes iframe{
+        		float:left;
+        		width:100%;
+        	}
+          .iframeholder {
+            height:50px;
+            width:100%;
+          }
+          .ie8 form .iframeholder {
+            padding:10px;
+          }
+        	.iframeholder::after{
+        		content:'';
+        		display:block;
+        		width:100%;
+        		height:0px;
+        		clear:both;
+        		position:relative;
+        	}
+          .ie8 form .form-group {
+            margin-bottom:5px;
+          }
+          #iframesCardExpiration,
+          #iframesCardCvv{
+            margin-bottom:14px;
+          }
+          label[for=iframesCardNumber],
+          label[for=iframesCardExpiration],
+          label[for=iframesCardCvv]{
+            text-transform:uppercase !important;
+            font-weight:500 !important;
+            font-size:14px !important;
+            color:#000000 !important;
+            margin-bottom:0px !important;
+            font-family:sans-serif !important;
+          }
+          .ie8 form label {
+            padding-left:10px;
+            margin:0px;
+          }
+          #heartland-frame-cardExpiration,
+          #heartland-frame-cardCvv,
+          #heartland-frame-cardNumber,
+          .ie8 #heartland-frame-cardExpiration,
+          .ie8 #heartland-frame-cardCvv,
+          .ie8 #heartland-frame-cardNumber  {
+            width:100%;
+          }
+          #ss-banner {
+            background:transparent url(assets/images/ss-shield@2x.png) no-repeat left center;
+            height:40px;
+            background-size:280px 34px;
+            margin-bottom:10px;
+          }
+          .ie8 #ss-banner {
+            background:transparent url(assets/images/ss-shield-ie.png) no-repeat left center;
+          }
+          .btn-primary{
+            display:block;
+            border-radius:0px;
+            font-size:18px;
+            float:right;
+            background-color:#36b46e;
+            border:1px solid #2a8d56;
+            margin-bottom:10px;
+            width:100%;
+          }
+          .btn-primary:hover,
+          .btn-primary:focus{
+            color: #fff;
+            background-color: #2a8d56;
+          }
+          .ie8 .btn-primary {
+            width:15%;
+          }
+          .red {
+            margin-left:2px;
+            font-size:17px !important;
+          }
+          @media screen and (min-width:767px) {
+            #ss-date.form-group,
+            #ss-cvv.form-group{
+              display:inline-block;
+              width:48%;
+            }
+            #ss-cvv.form-group {
+              float:right;
+            }
+            #heartland-frame-cardNumber {
+              width : 100%;
+            }
+          }
+          @media screen and (min-width:450px) {
+            .btn-primary,
+            .ie8 .btn-primary {
+              width:10em;
+            }
+          }
+        }
+        </style>
         <!-- The Payment Form -->
         <div id="iframes">
             <div id="ss-card" class="form-group">
@@ -49,55 +150,44 @@
             // These properties can match the site's styles
             // to create a seamless experience.
             style: {
-                'input[type=text]': {
+              '#ss-cvv':{
+                'width':'50%'
+              },
+              '#ss-date':{
+                'width':'50%'
+              },
+                'iframe' : {
+                    'width':'100%'
+                },
+                '#heartland-field': {
                     'box-sizing':'border-box',
                     'display': 'block',
                     'width': '100%',
-                    'height': '34px',
+                    'height': '48px',
                     'padding': '6px 12px',
                     'font-size': '14px',
                     'line-height': '1.42857143',
                     'color': '#555',
                     'background-color': '#fff',
                     'background-image': 'none',
-                    'border': '1px solid #ccc',
-                    'border-radius': '4px',
+                    'border': '1px solid #b5b5b5',
                     '-webkit-box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
                     'box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
                     '-webkit-transition': 'border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s',
                     '-o-transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s',
                     'transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s'
                 },
-                'input[type=text]:focus, input[type=tel].focus':{
+                '#heartland-field:focus':{
                     'border-color': '#3989e3',
                     'outline': '0',
                     '-webkit-box-shadow': 'none',
                     'box-shadow': 'none'
                 },
-                'input:nth-child(n+1), .ie8 input:nth-child(n+1)' :{
-                    'height':'40px',
-                    'border':'1px solid #ccc',
-                    'width':'95%'
-                },
-                'input:nth-child(n+1):hover, input:nth-child(n+1):focus' :{
-                    'border':'1px solid transparent',
-                    'border-color':'#3989e3',
-                    'outline': '0',
-                    '-webkit-box-shadow': 'none',
-                    'box-shadow': 'none'
-                },
-                '.ie8 input:nth-child(n+1):hover, input:nth-child(n+1):focus' :{
-                    'border':'1px solid transparent',
-                    'border-color':'#3989e3',
-                    'outline': '0',
-                    '-webkit-box-shadow': 'none',
-                    'box-shadow': 'none'
-                },
-                '#heartland-field' :{
-                    'padding-left':'10px'
-                },
                 '#heartland-field[placeholder]' :{
-                    'letter-spacing':'3px'
+                    'letter-spacing':'3px',
+                    'font-size':'small !important',
+                    'text-transform':'uppercase !important',
+                    'color':'#333333'
                 },
                 'input#heartland-field[name=cardCvv]' : {
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/cvv1.png) no-repeat right',
@@ -105,10 +195,8 @@
                 },
                 'input#heartland-field[name=cardNumber]' : {
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-inputcard-blank@2x.png) no-repeat right',
-                    'background-size' :'55px 35px',
-                    'height':'40px',
-                    'width':'95%'
-                },
+                    'background-size' :'55px 35px'
+                },               
                 '#heartland-field.invalid.card-type-visa' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-visa@2x.png) no-repeat right',
                     'background-size' :'83px 88px',
@@ -120,16 +208,17 @@
                 },
                 '#heartland-field.invalid.card-type-discover' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-discover@2x.png) no-repeat right bottom',
-                    'background-size' :'85px 85px'
+                    'background-size' :'85px',
+                    'background-position-y':'-44px'
                 },
                 '#heartland-field.valid.card-type-discover' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-discover@2x.png) no-repeat right top',
-                    'background-size' :'85px 83px'
+                    'background-size' :'85px'
                 },
                 '#heartland-field.invalid.card-type-amex' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-savedcards-amex@2x.png) no-repeat right',
                     'background-size' :'50px 90px',
-                    'background-position-y':'-44'
+                    'background-position-y':'-44px'
                 },
                 '#heartland-field.valid.card-type-amex' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-savedcards-amex@2x.png) no-repeat right top',
@@ -137,7 +226,7 @@
                 },
                 '#heartland-field.invalid.card-type-mastercard' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-mastercard.png) no-repeat right',
-                    'background-size' :'85px 81px',
+                    'background-size' :'62px 105px',
                     'background-position-y':'-55px'
                 },
                 '#heartland-field.valid.card-type-mastercard' :{
@@ -147,27 +236,23 @@
                 },
                 '#heartland-field.invalid.card-type-jcb' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-jcb@2x.png) no-repeat right',
-                    'background-size' :'75px 78px',
-                    'background-position-y':'-38px'
+                    'background-size' :'65px 98px',
+                    'background-position-y':'-47px'
                 },
                 '#heartland-field.valid.card-type-jcb' :{
                     'background':'transparent url(<?php echo $baseURL ?>/assets/images/ss-saved-jcb@2x.png) no-repeat right top',
-                    'background-size' :'75px 78px',
+                    'background-size' :'65px 98px',
                     'background-position-y':'1px'
                 },
                 'input#heartland-field[name=cardNumber]::-ms-clear' : {
                     'display':'none'
                 },
-                '#heartland-field-body' : {
-                    'width':'100%'
-                },
                 '#heartland-field-wrapper' : {
                     'width':'100%'
                 },
+                
                 '@media only screen and (min-width:767px)': {
-                    'input:nth-child(n+1)#heartland-field' :{
-                        'width':'97.5%'
-                    }
+                  
                 }
             },
             // Callback when a token is received from the service
