@@ -20,7 +20,7 @@
         <span class="red">*</span>
       </label>
       
-      <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_6"
+      <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_6" autocomplete="off"
              placeholder="• • • • • • • • •" value="<?php echo $account_number_field_input; ?>" <?php echo $account_number_tabindex; ?> <?php echo $disabled_text; ?> <?php echo $onlyDigits; ?>/>
     </span>
     <!-- routing number -->
@@ -31,7 +31,7 @@
           <span class="red">*</span>
         </label>
 
-        <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_7"
+        <input type="tel" name="<?php echo GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_7" autocomplete="off"
                placeholder="• • • • • • • • •" value="<?php echo $routing_number_field_input; ?>" <?php echo $routing_number_tabindex; ?> <?php echo $onlyDigits; ?> <?php echo $disabled_text; ?>/>
       </span>
     </span>
