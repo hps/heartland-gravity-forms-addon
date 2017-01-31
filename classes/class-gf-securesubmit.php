@@ -605,18 +605,18 @@ class GFSecureSubmit
      */
     public function addSecureSubmitInputs($content, $field, $value, $lead_id, $form_id) {
         $type = GFFormsModel::get_input_type($field);
-       $secureSubmitFeildFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
+       $secureSubmitFieldFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
         $hasFeed = $this->has_feed($form_id);
-        if (! $secureSubmitFeildFound) {
+        if (! $secureSubmitFieldFound) {
             return $content;
         }
         else{
             if ($this->getSecureSubmitJsResponse()) {
                 $content .= '<input type=\'hidden\' name=\'securesubmit_response\' id=\'gf_securesubmit_response\' value=\'' . rgpost('securesubmit_response') . '\' />';
             }
-            if (!$hasFeed && $secureSubmitFeildFound) { // Style sheet wont have loaded
-                $feildLabel = $field->label;
-                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$feildLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
+            if (!$hasFeed && $secureSubmitFieldFound) { // Style sheet wont have loaded
+                $fieldLabel = $field->label;
+                $content = '<span style="color:#ce1025 !important;padding-left:3px;font-size:20px !important;font-weight:700 !important;">Your ['.$fieldLabel.'] seems to be missing a feed. Please check your configuration!!</span>';
             }
         }
 
@@ -677,14 +677,6 @@ class GFSecureSubmit
 
             if (GFFormsModel::get_input_type($field) == 'hpsACH' && $field_on_curent_page) {
                 $this->isACH = $field;
-                if (!$this->hasPayment($validation_result)) {
-                    $field['failed_validation'] = true;
-                    $field['validation_message'] = 'Please Check your entries and try again';
-                }
-                else {
-                    // override validation in case user has marked field as required allowing securesubmit to handle cc validation
-                    $field['failed_validation'] = false;
-                }
             }
 
             if (GFFormsModel::get_input_type($field) == 'creditcard' && $field_on_curent_page) {
@@ -702,11 +694,20 @@ class GFSecureSubmit
         // revalidate the validation result
         $validation_result['is_valid'] = true;
         foreach ($validation_result['form']['fields'] as $field) {
+            if ($field['type'] === 'hpsACH'
+                && false !== $this->isACH
+                && false !== $this->isCC
+                && false === $this->isCC->failed_validation
+            ) {
+                continue;
+            }
+
             if ($field['failed_validation']) {
                 $validation_result['is_valid'] = false;
                 break;
             }
         }
+
         return parent::validation($validation_result);
     }
     /**
@@ -731,48 +732,19 @@ class GFSecureSubmit
 
         $auth = array(
             'is_authorized' => false,
-            'captured_payment' => array('is_success' => false,),);
+            'captured_payment' => array('is_success' => false),
+        );
         $this->includeSecureSubmitSDK();
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
-        if (false !== $this->isCC && !empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
-            $isCC['failed_validation'] = true;
-            $isCC['validation_message'] = 'You may not submit both Credit Card and Bank Transfer at the same time';
-            $isACH['failed_validation'] = true;
-            $isACH['validation_message'] = $isCC['validation_message'];
-        }
 
-        // revalidate the validation result
-        $validation_result['is_valid'] = true;
-
-        foreach ($form['fields'] as $field) {
-            if ($field['failed_validation']) {
-                $validation_result['is_valid'] = false;
-                break;
-            }
-        }
-        $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
-        if ($validation_result['is_valid']) {
-
-            if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
-                $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
-                if (!rgar($auth, 'is_authorized')) {
-                    /**  override type so that the response error will display correctly */
-                    $this->isACH->type = 'creditcard';
-                }
-            } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
-                $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
-                if (!rgar($auth, 'is_authorized')) {
-                    /**  override type so that the response error will display correctly */
-                    $this->isCC->type = 'creditcard';
-                }
-            }
-            else{
-                $auth = $this->authorization_error($failMessage);
-            }
-        }
-        else{
+        if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
+            $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
+        } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
+            $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
+        } else {
+            $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
             $auth = $this->authorization_error($failMessage);
         }
 
@@ -1573,4 +1545,33 @@ class GFSecureSubmit
 
         return $remoteIP;
     }
+
+   	/**
+	 * Gets the payment validation result.
+	 *
+	 * @since  Unknown
+	 * @access public
+	 *
+	 * @used-by GFPaymentAddOn::validation()
+	 *
+	 * @param array $validationResult    Contains the form validation results.
+	 * @param array $authorizationResult Contains the form authorization results.
+	 *
+	 * @return array The validation result for the credit card field.
+	 */
+	public function get_validation_result($validationResult, $authorizationResult)
+    {
+		$ach_page = 0;
+		foreach ($validationResult['form']['fields'] as $field) {
+			if ($field->type == 'hpsACH') {
+				$field->failed_validation  = true;
+				$field->validation_message = $authorizationResult['error_message'];
+				$ach_page                  = $field->pageNumber;
+				break;
+			}
+		}
+		$validationResult['credit_card_page'] = $ach_page;
+		$validationResult['is_valid']         = false;
+        return parent::get_validation_result($validationResult, $authorizationResult);
+	}
 }

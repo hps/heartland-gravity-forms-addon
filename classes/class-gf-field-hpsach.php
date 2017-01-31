@@ -61,46 +61,43 @@ class GF_Field_HPSach extends GF_Field {
         $this->failed_validation = false;
         if (empty($account_name) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account holder name. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account holder name. All fields required.',
                 'gravityforms') : $this->errorMessage;
         } elseif (empty($account_number) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account number. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your account number. All fields required.',
                 'gravityforms') : $this->errorMessage;
         } elseif (empty($routing_number) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your rounting number. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please enter your rounting number. All fields required.',
                 'gravityforms') : $this->errorMessage;
         } elseif (empty($account_type) ) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select an account type. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select an account type. All fields required.',
                 'gravityforms') : $this->errorMessage;
         } elseif (empty($check_type)) {
             $this->failed_validation = true;
-            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select the type of checkgit commit. All feilds required.',
+            $this->validation_message = empty($this->errorMessage) ? esc_html__('Please select the type of check. All fields required.',
                 'gravityforms') : $this->errorMessage;
-        } else {
-
-            if (!filter_var($account_name, FILTER_SANITIZE_STRING)) {
-                $this->failed_validation = true;
-                $this->validation_message = esc_html__("Please enter your account holder name and avoid special characters.",
-                    'gravityforms');
-            } elseif (!filter_var($account_number, FILTER_VALIDATE_INT, array('min_range' => 1000, 'default' => 0))) {
-                $this->failed_validation = true;
-                $this->validation_message = esc_html__('Invalid account number.', 'gravityforms');
-            } elseif (!filter_var($routing_number, FILTER_VALIDATE_INT,
-                array('min_range' => 99999999, 'max_range' => 999999999, 'default' => 0))
-            ) {
-                $this->failed_validation = true;
-                $this->validation_message = esc_html__('Invalid routing number must be exactly 9 digits.',
-                    'gravityforms');
-            } elseif ($account_type !== '2' && $account_type !== '1') {
-                $this->failed_validation = true;
-                $this->validation_message = esc_html__('Please select the type of account.', 'gravityforms');
-            } elseif ($check_type !== '2' && $check_type !== '1') {
-                $this->failed_validation = true;
-                $this->validation_message = esc_html__('Please select the check type.', 'gravityforms');
-            }
+        } elseif (!filter_var($account_name, FILTER_SANITIZE_STRING)) {
+            $this->failed_validation = true;
+            $this->validation_message = esc_html__("Please enter your account holder name and avoid special characters.",
+                'gravityforms');
+        } elseif (!filter_var($account_number, FILTER_VALIDATE_INT, array('min_range' => 1000, 'default' => 0))) {
+            $this->failed_validation = true;
+            $this->validation_message = esc_html__('Invalid account number.', 'gravityforms');
+        } elseif (!filter_var($routing_number, FILTER_VALIDATE_INT,
+            array('min_range' => 99999999, 'max_range' => 999999999, 'default' => 0))
+        ) {
+            $this->failed_validation = true;
+            $this->validation_message = esc_html__('Invalid routing number must be exactly 9 digits.',
+                'gravityforms');
+        } elseif ($account_type !== '2' && $account_type !== '1') {
+            $this->failed_validation = true;
+            $this->validation_message = esc_html__('Please select the type of account.', 'gravityforms');
+        } elseif ($check_type !== '2' && $check_type !== '1') {
+            $this->failed_validation = true;
+            $this->validation_message = esc_html__('Please select the check type.', 'gravityforms');
         }
     }
 
