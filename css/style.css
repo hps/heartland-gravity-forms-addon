@@ -1,0 +1,209 @@
+/*securesubmit styles*/
+.HPS_secure_ach {
+  background-color:white !important;
+}
+#HPS_secure_ach input,
+#HPS_secure_ach textarea,
+#HPS_secure_ach select {
+  color:#333333;
+}
+.ss-shield {
+  background: transparent url(../images/img/ss-shield@2x.png) no-repeat top left;
+  height:50px;
+  background-size:40px 40px;
+}
+
+#HPS_secure_ach input {
+  min-width:100%;
+  font-size:small !important;
+}
+#HPS_secure_ach .ginput_cardinfo_right input.ginput_card_security_code {
+  max-width:100%;
+}
+
+div.HPS_gform_card_icon {
+  background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
+  background-size:250px 30px !important;
+  width:540px !important;
+  height:42px !important;
+}
+
+#HPS_secure_ach label,
+.gform_wrapper .field_sublabel_below div[class*=gfield_time_].ginput_container #HPS_secure_ach label {
+  margin-top:13px !important;
+  margin-bottom:4px !important;
+  text-transform:uppercase !important;
+  font-family:sans-serif !important;
+  font-size:13px !important;
+  text-align:left;
+  display:inline-block;
+  display:-webkit-inline-box;
+  height:18px !important;
+  font-weight:500 !important;
+}
+
+#HPS_secure_ach label:first-of-type {
+  margin-top:0px !important;
+}
+
+.HPS_gform_card_icon_container {
+  height:42px !important;
+}
+
+#HPS_secure_ach input {
+    padding:15px !important;
+}
+
+#HPS_secure_ach input::-webkit-input-placeholder,
+#HPS_secure_ach input::-moz-placeholder,
+#HPS_secure_ach input:-ms-input-placeholder,
+#HPS_secure_ach input:-moz-placeholder {
+  font-family:sans-serif !important;
+}
+
+#HPS_secure_ach input{
+  font-size: small;
+  height:48px !important;
+  border:1px solid #b5b5b5 !important;
+  text-transform:uppercase !important;
+  background-color:transparent;
+  border-radius:0px;
+  font-family:sans-serif !important;
+  letter-spacing:1.5 !important;
+  outline:0;
+  box-shadow:none;
+}
+
+#HPS_secure_ach select {
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  -o-appearance:none;
+  outline:1px solid transparent;
+  background:transparent url(../images/img/down.png) no-repeat right;
+  background-position-x:95%;
+  background-size:16px;
+  border:1px solid #b5b5b5;
+  height:48px !important;
+  padding:10px;
+  text-transform:uppercase !important;
+  background-color:transparent;
+  font-family:sans-serif !important;
+  letter-spacing:1.5 !important;
+  font-size:small !important;
+}
+
+#HPS_secure_ach input:hover,
+#HPS_secure_ach input:focus {
+  border:1px solid #3989e3 !important;
+  -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
+  letter-spacing:1.5 !important;
+}
+#HPS_secure_ach select:hover,
+#HPS_secure_ach select:focus {
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  -o-appearance:none;
+  outline:1px solid transparent;
+  border:1px solid #3989e3;
+  -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+  -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+  transition: border-color ease-in-out .15s,box-shadow ease-in-out .15;
+}
+
+#HPS_secure_ach input[type=submit] {
+  background-color:#3989e3;
+  color:white;
+  padding:10px;
+  font-size:14px;
+  font-weight:400;
+  vertical-align:middle;
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select:none;
+  user-select:none;
+  border-radius:0px;
+  border:1px solid #2e6da4;
+}
+
+/*error message*/
+li div.hps_secure_ach ~ div.validation_message,
+li div.hps_secure_ach  div.validation_error,
+li.gfield_error
+ {
+  font-family:sans-serif !important;
+  font-weight:500 !important;
+  font-size:15px !important;
+  padding:10px !important;
+  background-color:white !important;
+}
+
+li.gfield_error div.ginput_complex.ginput_container.ginput_container_creditcard.hps_secure_ach label {
+  color:#333333 !important;
+}
+
+li div.hps_secure_ach ~ div.gfield_description.validation_message {
+  background-color:#ce1025 !important;
+  color:white !important;
+  border:1px solid #9f0123;
+  margin:10px 0px 10px 0px;
+  line-height:25px;
+}
+
+.red {
+  color:#ce1025 !important;
+  padding-left:3px;
+  font-size:20px !important;
+  font-weight:700 !important;
+}
+
+#HPS_secure_ach .gform_card_icon_container {
+    height:0px !important;
+    margin:0px !important;
+}
+
+@media only screen and (min-width: 641px) {
+
+
+  #HPS_secure_ach .ginput_accountinfo_left {
+    padding-right:10px;
+  }
+
+  #HPS_secure_ach .ginput_accountinfo_left,
+  #HPS_secure_ach .ginput_accountinfo_right {
+    display:inline;
+    width:50%;
+    float:left;
+  }
+  
+  li div.hps_secure_ach ~ div.gfield_description.validation_message {
+    margin:100px 0px 10px 0px;
+  }
+
+  #HPS_secure_ach div.HPS_gform_card_icon {
+    background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
+    background-size:320px 40px !important;
+    width:540px !important;
+    height:42px !important;
+  }
+
+  #HPS_secure_ach .ginput_cardinfo_right {
+    width:50% !important;
+    padding-left:5px;
+  }
+
+  #HPS_secure_ach .ginput_cardinfo_left {
+    padding-right:5px;
+  }
+  
+  #HPS_secure_ach label {
+    font-size:14px !important;
+    height:25px !important;
+  }
+  
+}
+

@@ -45,14 +45,33 @@ class HpsGiftCardServiceSaleBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $saleSvc = new HpsGiftCardService($this->service->servicesConfig());
-        return $saleSvc->sale(
-            $this->card,
-            $this->amount,
-            $this->currency,
-            $this->gratuity,
-            $this->tax
-        );
+        HpsInputValidation::checkAmount($this->amount);
+        $this->currency = strtolower($this->currency);
+
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsGiftSale = $xml->createElement('hps:GiftCardSale');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        $hpsBlock1->appendChild($xml->createElement('hps:Amt', $this->amount));
+        $hpsBlock1->appendChild($this->service->_hydrateGiftCardData($this->card, $xml));
+
+        if (in_array($this->currency, array('points', 'usd'))) {
+            $hpsBlock1->appendChild($xml->createElement('hps:Currency', strtoupper($this->currency)));
+        }
+
+        if ($this->gratuity != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:GratuityAmtInfo', $this->gratuity));
+        }
+
+        if ($this->tax != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:TaxAmtInfo', $this->tax));
+        }
+
+        $hpsGiftSale->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsGiftSale);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'GiftCardSale');
     }
 
     /**

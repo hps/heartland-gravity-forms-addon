@@ -7,6 +7,8 @@
  * @method HpsCheckServiceSaleBuilder withCheck(HpsCheck $check)
  * @method HpsCheckServiceSaleBuilder withAmount(double $amount)
  * @method HpsCheckServiceSaleBuilder withClientTransactionId(string $clientTransactionId)
+ * @method HpsCheckServiceSaleBuilder withCheckVerify(bool $checkVerify)
+ * @method HpsCheckServiceSaleBuilder withACHVerify(bool $achVerify)
  */
 class HpsCheckServiceSaleBuilder extends HpsBuilderAbstract
 {
@@ -18,6 +20,12 @@ class HpsCheckServiceSaleBuilder extends HpsBuilderAbstract
 
     /** @var string|null */
     protected $clientTransactionId = null;
+
+    /** @var bool */
+    protected $checkVerify         = false;
+
+    /** @var bool */
+    protected $achVerify           = false;
 
     /**
      * Instatiates a new HpsCheckServiceSaleBuilder
@@ -37,11 +45,13 @@ class HpsCheckServiceSaleBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $saleSvc = new HpsCheckService($this->service->servicesConfig());
-        return $saleSvc->sale(
+        return $this->service->_buildTransaction(
+            'SALE',
             $this->check,
             $this->amount,
-            $this->clientTransactionId
+            $this->clientTransactionId,
+            $this->checkVerify,
+            $this->achVerify
         );
     }
 
@@ -66,6 +76,9 @@ class HpsCheckServiceSaleBuilder extends HpsBuilderAbstract
      */
     protected function amountNotNull($actionCounts)
     {
+        if ($this->checkVerify || $this->achVerify) {
+            return true;
+        }
         return isset($actionCounts['amount']);
     }
 

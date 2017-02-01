@@ -37,8 +37,8 @@ class HpsCheckServiceReturnBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $returnSvc = new HpsCheckService($this->service->servicesConfig());
-        return $returnSvc->returnCheck(
+        return $this->service->_buildTransaction(
+            'RETURN',
             $this->check,
             $this->amount,
             $this->clientTransactionId

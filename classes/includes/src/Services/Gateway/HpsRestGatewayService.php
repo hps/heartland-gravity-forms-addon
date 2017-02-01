@@ -2,8 +2,8 @@
 
 class HpsRestGatewayService extends HpsGatewayServiceAbstract
 {
-    const CERT_URL = '';
-    const PROD_URL = '';
+    const CERT_URL = 'https://cert.api2.heartlandportico.com/Portico.PayPlan.v2';
+    const PROD_URL = 'https://api.heartlandportico.com/payplan.v2';
     const UAT_URL  = 'https://api-uat.heartlandportico.com/payplan.v2';
     protected $limit = null;
     protected $offset = null;
@@ -22,8 +22,10 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
         return $this;
     }
 
-    protected function doRequest($verb, $endpoint, $data = null)
+    protected function doRequest($data = null, $options = array())
     {
+        $endpoint = isset($options['endpoint']) ? $options['endpoint'] : '';
+        $verb = isset($options['verb']) ? $options['verb'] : 'GET';
         $url = $this->_gatewayUrlForKey() . '/' . $endpoint;
 
         if (isset($this->limit) && isset($this->offset)) {
@@ -64,11 +66,13 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
             $header[] = 'HPS-Identity: '.implode(',', $identity);
         }
         $keyType = HpsServicesConfig::KEY_TYPE_SECRET;
+        // print "\n" . $encodedData;
         return $this->submitRequest($url, $header, $encodedData, $verb, $keyType);
     }
 
     protected function processResponse($curlResponse, $curlInfo, $curlError)
     {
+        // print "\n" . $curlResponse;
         $response = json_decode($curlResponse);
 
         switch ($curlInfo['http_code']) {
@@ -87,7 +91,7 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
 
     protected function hydrateObject($result, $type)
     {
-        return $type->fromStdClass($result);
+        return call_user_func(array($type, 'fromStdClass'), $result);
     }
 
     protected function hydrateSearchResults($resultSet, $type)
