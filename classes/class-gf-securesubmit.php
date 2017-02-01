@@ -571,8 +571,7 @@ class GFSecureSubmit
                 'deps' => array('jquery'),
                 'in_footer' => false,
                 'enqueue' => array(
-                    array('admin_page' => array('plugin_settings', 'form_editor')),
-                    array('tab' => array($this->_slug, $this->get_short_title())),
+                    array('admin_page' => array('plugin_settings', 'form_editor'), 'tab' => array($this->_slug, $this->get_short_title())),
                 ),
                 'strings' => array(
                     'spinner' => GFCommon::get_base_url() . '/images/spinner.gif',
