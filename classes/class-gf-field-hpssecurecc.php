@@ -16,6 +16,20 @@ class GF_Field_HPSCreditCard extends GF_Field
     public $type = 'hpscreditcard';
     protected $_slug = 'gravityforms-securesubmit';
 
+    /**
+     * @return string
+     */
+    public function get_form_editor_field_title() {
+
+        return esc_attr__('Secure CC', 'gravityforms');
+    }
+
+    /**
+     * @return array
+     */
+    public function get_form_editor_button() {
+        return array(); // this button is conditionally added in the form detail page
+    }
 
     /**
      * Returns the class names of the settings which should be available on the field in the form editor.

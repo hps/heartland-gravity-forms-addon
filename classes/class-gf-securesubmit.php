@@ -193,16 +193,16 @@ class GFSecureSubmit
      *
      */
     public function set_defaults() {
+        // this hook is fired in the middle of a JavaScript switch statement,
+        // so we need to add a case for our new field types
         ?>
-        //this hook is fired in the middle of a switch statement,
-        //so we need to add a case for our new field type
         case "hpsACH" :
-        field.label = "Bank Transfer"; //setting the default field label
-        break;
+            field.label = "Bank Transfer"; //setting the default field label
+            break;
         case "hpscreditcard" :
-        field.label = "Secure Credit Card"; //setting the default field label
-        break;
-        <?php //////
+            field.label = "Secure Credit Card"; //setting the default field label
+            break;
+        <?php
     }
     /**
      *
