@@ -29,8 +29,17 @@ class HpsCreditServiceGetBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $getSvc = new HpsCreditService($this->service->servicesConfig());
-        return $getSvc->get($this->transactionId);
+        if ($this->transactionId <= 0) {
+            throw new HpsArgumentException('Invalid Transaction Id');
+        }
+
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsReportTxnDetail = $xml->createElement('hps:ReportTxnDetail');
+        $hpsReportTxnDetail->appendChild($xml->createElement('hps:TxnId', $this->transactionId));
+        $hpsTransaction->appendChild($hpsReportTxnDetail);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'ReportTxnDetail');
     }
 
     /**

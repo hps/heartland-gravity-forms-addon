@@ -9,7 +9,15 @@ class HpsDirectMarketData
     public function __construct($invoiceNumber = null, $shipMonth = null, $shipDay = null)
     {
         $this->invoiceNumber = $invoiceNumber;
+
+        if ($shipMonth == null) {
+          $shipMonth = date('m');
+        }
         $this->shipMonth = $shipMonth;
+
+        if ($shipDay == null) {
+          $shipDay = date('d');
+        }
         $this->shipDay = $shipDay;
     }
 }

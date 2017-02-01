@@ -10,8 +10,8 @@ class HpsGiftCardSale extends HpsGiftCardActivate
         $item = $rsp->Transaction;
 
         $sale = parent::fromDict($rsp, $txnType, $returnType);
-        $sale->splitTenderCardAmount = (isset($item->SplitTenderCardAmt) ? $item->SplitTenderCardAmt : null);
-        $sale->splitTenderBalanceDue = (isset($item->SplitTenderBalanceDueAmt) ? $item->SplitTenderBalanceDueAmt : null);
+        $sale->splitTenderCardAmount = (isset($item->SplitTenderCardAmt) ? (string)$item->SplitTenderCardAmt : null);
+        $sale->splitTenderBalanceDue = (isset($item->SplitTenderBalanceDueAmt) ? (string)$item->SplitTenderBalanceDueAmt : null);
 
         return $sale;
     }

@@ -13,10 +13,10 @@ class HpsGiftCardAlias extends HpsTransaction
         $item = $rsp->Transaction->$txnType;
 
         $alias = new HpsGiftCardAlias();
-        $alias->transactionId = $rsp->Header->GatewayTxnId;
+        $alias->transactionId = (string)$rsp->Header->GatewayTxnId;
         $alias->giftCard = new HpsGiftCard($item->CardData);
-        $alias->responseCode = (isset($item->RspCode) ? $item->RspCode : null);
-        $alias->responseText = (isset($item->RspText) ? $item->RspText : null);
+        $alias->responseCode = (isset($item->RspCode) ? (string)$item->RspCode : null);
+        $alias->responseText = (isset($item->RspText) ? (string)$item->RspText : null);
 
         return $alias;
     }

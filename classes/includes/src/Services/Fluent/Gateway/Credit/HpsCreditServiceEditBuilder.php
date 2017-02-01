@@ -41,13 +41,26 @@ class HpsCreditServiceEditBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $editSvc = new HpsCreditService($this->service->servicesConfig());
-        return $editSvc->edit(
-            $this->transactionId,
-            $this->amount,
-            $this->gratuity,
-            $this->clientTransactionId
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditTxnEdit = $xml->createElement('hps:CreditTxnEdit');
+
+        $hpsCreditTxnEdit->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        if ($this->amount != null) {
+            $amount = sprintf('%0.2f', round($this->amount, 3));
+            $hpsCreditTxnEdit->appendChild($xml->createElement('hps:Amt', $amount));
+        }
+        if ($this->gratuity != null) {
+            $hpsCreditTxnEdit->appendChild($xml->createElement('hps:GratuityAmtInfo', $this->gratuity));
+        }
+
+        $hpsTransaction->appendChild($hpsCreditTxnEdit);
+        $trans = $this->service->_submitTransaction($hpsTransaction, 'CreditTxnEdit', $this->clientTransactionId);
+
+        $trans->responseCode = '00';
+        $trans->responseText = '';
+
+        return $trans;
     }
 
     /**

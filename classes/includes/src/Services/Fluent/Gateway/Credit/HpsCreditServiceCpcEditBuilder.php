@@ -33,11 +33,14 @@ class HpsCreditServiceCpcEditBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $cpcEditSvc = new HpsCreditService($this->service->servicesConfig());
-        return $cpcEditSvc->cpcEdit(
-            $this->transactionId,
-            $this->cpcData
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsPosCreditCPCEdit = $xml->createElement('hps:CreditCPCEdit');
+        $hpsPosCreditCPCEdit->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        $hpsPosCreditCPCEdit->appendChild($this->service->_hydrateCPCData($this->cpcData, $xml));
+        $hpsTransaction->appendChild($hpsPosCreditCPCEdit);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'CreditCPCEdit');
     }
 
     /**

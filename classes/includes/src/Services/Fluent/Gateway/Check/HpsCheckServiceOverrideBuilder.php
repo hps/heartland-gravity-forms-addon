@@ -37,8 +37,8 @@ class HpsCheckServiceOverrideBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $saleSvc = new HpsCheckService($this->service->servicesConfig());
-        return $saleSvc->override(
+        return $this->service->_buildTransaction(
+            'OVERRIDE',
             $this->check,
             $this->amount,
             $this->clientTransactionId
