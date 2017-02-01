@@ -645,32 +645,24 @@ class GFSecureSubmit
 
         $feeds = GFAPI::get_feeds(null, $form['id']);
         $feed = $feeds[0];
-
         $pubKey = $this->getPublicApiKey($feed);
         $cc_field = $this->get_credit_card_field($form);
-        if($cc_field !== false){
-            $args = array(
-                'apiKey' => $pubKey,
-                'formId' => $form['id'],
-                'ccFieldId' => $cc_field['id'],
-                'ccPage' => rgar($cc_field, 'pageNumber'),
-                'isAjax' => $is_ajax,);
-            $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
-            GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
-        }else{
+
+        if ($cc_field === false) {
             $cc_field = $this->get_hpscredit_card_field($form);
-            $args = array(
-                'apiKey' => $pubKey,
-                'formId' => $form['id'],
-                'ccFieldId' => $cc_field['id'],
-                'ccPage' => rgar($cc_field, 'pageNumber'),
-                'isAjax' => $is_ajax,
-                'assetFolder' => plugins_url( '', dirname(__FILE__) . '../' ),);
-            //TODO: figure out why when we do it this way the onsuccess is not triggered
-            $script = 'new window.SecureSubmitIframe(' . json_encode($args) . ');';
         }
 
-
+        $args = array(
+            'apiKey' => $pubKey,
+            'formId' => $form['id'],
+            'ccFieldId' => $cc_field['id'],
+            'ccPage' => rgar($cc_field, 'pageNumber'),
+            'isAjax' => $is_ajax,
+            'isSecure' => $cc_field['type'] === 'hpscreditcard',
+            'baseUrl' => plugins_url( '', dirname(__FILE__) . '../' ),
+        );
+        $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
+        GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
 
 

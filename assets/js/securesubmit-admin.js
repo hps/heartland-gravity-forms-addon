@@ -46,7 +46,7 @@
     this.validatePublicApiKey = function (keyName, key) {
       this.setKeyStatusIcon(keyName, "<img src='" + gforms_securesubmit_admin_strings.spinner + "'/>");
 
-      var hps = new HPS({
+      var hps = new Heartland.HPS({
         publicKey: key,
         cardNumber: '4111111111111111',
         cardCvv: '123',
