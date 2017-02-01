@@ -889,10 +889,6 @@ class GFSecureSubmit
                     'securesubmit_payment_action' => 'checkSale',
                     'note' => $note,],];
         } catch (HpsCheckException $e) {
-
-
-
-
             $err = null;
             if (is_array($e->details)) {
                 foreach ($e->details as $error) {
@@ -918,6 +914,20 @@ class GFSecureSubmit
             }
             $auth = $this->authorization_error($err);
             $auth['transaction_id'] = (string)$e->transactionId;
+        } catch (HpsException $e) {
+            // if advanced fraud is enabled, increment the error count
+            if ($enable_fraud) {
+                if (empty($HeartlandHPS_FailCount)) {
+                    $HeartlandHPS_FailCount = 0;
+                }
+                set_transient($HPS_VarName, $HeartlandHPS_FailCount + 1, MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                if ($HeartlandHPS_FailCount < $fraud_velocity_attempts) {
+                    set_transient($HPS_VarName . 'IssuerResponse',
+                                  $e->getMessage(),
+                                  MINUTE_IN_SECONDS * $fraud_velocity_timeout);
+                }
+            }
+            $auth = $this->authorization_error($e->getMessage());
         }
         return $auth;
     }
