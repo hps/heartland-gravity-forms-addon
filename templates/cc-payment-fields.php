@@ -4,15 +4,15 @@
     <!-- The Payment Form -->
     <div id="secure-submit-card" class="form-group">
       <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardNumber"></div>
+      <div class="iframeholder" id="iframesCardNumber" <?php echo $this->get_tabindex(); ?>></div>
     </div>
     <div id="secure-submit-date" class="form-group">
       <label for="iframesCardExpiration">Card Expiration<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardExpiration"></div>
+      <div class="iframeholder" id="iframesCardExpiration" <?php echo $this->get_tabindex(); ?>></div>
     </div>
     <div id="secure-submit-cvv" class="form-group">
       <label for="iframesCardCvv">Card CVV<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardCvv"></div>
+      <div class="iframeholder" id="iframesCardCvv" <?php echo $this->get_tabindex(); ?>></div>
     </div>
   </div>
 </div>

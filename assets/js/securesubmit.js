@@ -172,6 +172,17 @@
                         SecureSubmitObj.secureSubmitResponseHandler(response);
                     }
                 });
+
+                var count = 0;
+                Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
+                    if (++count === 3) {
+                        $('#HPS_secure_cc iframe').each(function (i, el) {
+                            var $el = $(el);
+                            $el.attr('tabindex', $el.parent().attr('tabindex'));
+                            $el.parent().removeAttr('tabindex')
+                        });
+                    }
+                });
             }
 
             // bind SecureSubmit functionality to submit event
