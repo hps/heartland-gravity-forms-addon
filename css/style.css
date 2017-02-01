@@ -217,7 +217,12 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
   #HPS_secure_ach label {
     font-size:14px !important;
     height:25px !important;
-  } 
+  }
+}
+
+.ginput_container #HPS_secure_cc span.red,
+.ginput_container #HPS_secure_cc label {
+  display:inline-block !important;
 }
 
 #HPS_secure_cc iframe {
