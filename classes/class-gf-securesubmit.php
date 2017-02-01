@@ -145,7 +145,8 @@ class GFSecureSubmit
                     // the first param here will be the button text
                     // leave the second one as gravityforms
                     'value' => __('Secure CC', "gravityforms"),
-                    "onclick" => "StartAddField('hpscreditcard');");
+                    "onclick" => "StartAddField('hpscreditcard');"
+                );
                 break;
             }
         }
@@ -570,7 +571,8 @@ class GFSecureSubmit
                 'deps' => array('jquery'),
                 'in_footer' => false,
                 'enqueue' => array(
-                    array('admin_page' => array('plugin_settings'), 'tab' => array($this->_slug, $this->get_short_title())),
+                    array('admin_page' => array('plugin_settings', 'form_editor')),
+                    array('tab' => array($this->_slug, $this->get_short_title())),
                 ),
                 'strings' => array(
                     'spinner' => GFCommon::get_base_url() . '/images/spinner.gif',

@@ -7,7 +7,8 @@ iframe {
 }
 #HPS_secure_ach input,
 #HPS_secure_ach textarea,
-#HPS_secure_ach select {
+#HPS_secure_ach select,
+#HPS_secure_cc input {
   color:#333333;
 }
 .ss-shield {
@@ -16,7 +17,8 @@ iframe {
   background-size:40px 40px;
 }
 
-#HPS_secure_ach input {
+#HPS_secure_ach input,
+#HPS_secure_cc input {
   min-width:100%;
   font-size:small !important;
 }
@@ -53,19 +55,25 @@ div.HPS_gform_card_icon {
   height:42px !important;
 }
 
-#HPS_secure_ach input {
+#HPS_secure_ach input,
+#HPS_secure_cc input {
     padding:15px !important;
 }
 
 #HPS_secure_ach input::-webkit-input-placeholder,
 #HPS_secure_ach input::-moz-placeholder,
 #HPS_secure_ach input:-ms-input-placeholder,
-#HPS_secure_ach input:-moz-placeholder {
+#HPS_secure_ach input:-moz-placeholder,
+#HPS_secure_cc input::-webkit-input-placeholder,
+#HPS_secure_cc input::-moz-placeholder,
+#HPS_secure_cc input:-ms-input-placeholder,
+#HPS_secure_cc input:-moz-placeholder {
   font-family:sans-serif !important;
   letter-spacing: 3px;
 }
 
-#HPS_secure_ach input{
+#HPS_secure_ach input,
+#HPS_secure_cc input {
   font-size: small;
   height:48px !important;
   border:1px solid #b5b5b5 !important;
@@ -97,7 +105,9 @@ div.HPS_gform_card_icon {
 }
 
 #HPS_secure_ach input:hover,
-#HPS_secure_ach input:focus {
+#HPS_secure_ach input:focus,
+#HPS_secure_cc input:hover,
+#HPS_secure_cc input:focus {
   border:1px solid #3989e3 !important;
   -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
   -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;

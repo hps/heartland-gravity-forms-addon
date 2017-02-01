@@ -17,3 +17,11 @@
     </div>
   </div>
 </div>
+
+<?php if (is_admin()): ?>
+  <script>
+    window.SecureSubmitAdmin = window.SecureSubmitAdmin || {};
+    window.SecureSubmitAdmin.initAdminCCFields = window.SecureSubmitAdmin.initAdminCCFields || function () {};
+    window.SecureSubmitAdmin.initAdminCCFields();
+  </script>
+<?php endif; ?>
