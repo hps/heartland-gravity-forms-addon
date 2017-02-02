@@ -678,7 +678,7 @@ class GFSecureSubmit
      */
     public function addSecureSubmitInputs($content, $field, $value, $lead_id, $form_id) {
         $type = GFFormsModel::get_input_type($field);
-       $secureSubmitFieldFound = preg_match('/(hpsACH|(hps|)creditcard)/',$type) === 1;
+        $secureSubmitFieldFound = in_array($type, $this->processPaymentsFor);
         $hasFeed = $this->has_feed($form_id);
         if (! $secureSubmitFieldFound) {
             return $content;
@@ -708,8 +708,9 @@ class GFSecureSubmit
         foreach ($validationResult['form']['fields'] as $field) {
             $currentPage = GFFormDisplay::get_source_page($validationResult['form']['id']);
             $fieldOnCurrentPage = $currentPage > 0 && $field['pageNumber'] == $currentPage;
+            $fieldType = GFFormsModel::get_input_type($field);
 
-            if ((preg_match('/^(hpsACH|(hps|)creditcard)$/', GFFormsModel::get_input_type($field)) !== 1 ) || !$fieldOnCurrentPage) {
+            if (!in_array($fieldType, $this->processPaymentsFor) || !$fieldOnCurrentPage) {
                 continue;
             }
 
@@ -747,11 +748,12 @@ class GFSecureSubmit
         foreach ($validation_result['form']['fields'] as $field) {
             $current_page = GFFormDisplay::get_source_page($validation_result['form']['id']);
             $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
+            $fieldType = GFFormsModel::get_input_type($field);
 
-            if (GFFormsModel::get_input_type($field) == 'hpsACH' && $field_on_curent_page) {
+            if ($fieldType == 'hpsACH' && $field_on_curent_page) {
                 $this->isACH = $field;
             }
-            if ((preg_match('/(hps|)creditcard/', GFFormsModel::get_input_type($field)) === 1 )) {
+            if (in_array($fieldType, $this->ccFields) && $field_on_curent_page) {
                 $this->isCC = $field;
                 if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
@@ -766,7 +768,7 @@ class GFSecureSubmit
         // revalidate the validation result
         $validation_result['is_valid'] = true;
         foreach ($validation_result['form']['fields'] as $field) {
-            if ($field['type'] === 'hpsACH'
+            if (in_array($field['type'], $this->processPaymentsFor)
                 && false !== $this->isACH
                 && false !== $this->isCC
                 && false === $this->isCC->failed_validation
