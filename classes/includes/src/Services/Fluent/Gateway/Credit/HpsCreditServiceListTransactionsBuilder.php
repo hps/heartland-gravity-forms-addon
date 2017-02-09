@@ -38,12 +38,22 @@ class HpsCreditServiceListTransactionsBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $listTransactionsSvc = new HpsCreditService($this->service->servicesConfig());
-        return $listTransactionsSvc->listTransactions(
-            $this->startDate,
-            $this->endDate,
-            $this->filterBy
-        );
+        date_default_timezone_set("UTC");
+        $dateFormat = 'Y-m-d\TH:i:s.00\Z';
+        $current = new DateTime();
+        $currentTime = $current->format($dateFormat);
+
+        HpsInputValidation::checkDateNotFuture($this->startDate);
+        HpsInputValidation::checkDateNotFuture($this->endDate);
+
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsReportActivity = $xml->createElement('hps:ReportActivity');
+        $hpsReportActivity->appendChild($xml->createElement('hps:RptStartUtcDT', $this->startDate));
+        $hpsReportActivity->appendChild($xml->createElement('hps:RptEndUtcDT', $this->endDate));
+        $hpsTransaction->appendChild($hpsReportActivity);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'ReportActivity');
     }
 
     /**

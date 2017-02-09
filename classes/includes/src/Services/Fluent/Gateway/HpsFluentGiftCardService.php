@@ -28,12 +28,9 @@ class HpsFluentGiftCardService extends HpsSoapGatewayService
             ->withAmount($amount);
     }
 
-    public function alias($amount = null)
+    public function alias()
     {
-        $builder = new HpsGiftCardServiceAliasBuilder($this);
-        return $builder
-            ->withAmount($amount)
-            ->withCurrency('usd');
+        return new HpsGiftCardServiceAliasBuilder($this);
     }
 
     public function balance()
@@ -80,5 +77,56 @@ class HpsFluentGiftCardService extends HpsSoapGatewayService
         $builder = new HpsGiftCardServiceVoidBuilder($this);
         return $builder
             ->withTransactionId($transactionId);
+    }
+
+    public function _submitTransaction($transaction, $txnType, $clientTxnId = null)
+    {
+        $response = $this->doRequest($transaction, $clientTxnId);
+
+        HpsGatewayResponseValidation::checkResponse($response, $txnType);
+        HpsIssuerResponseValidation::checkResponse(
+            $response->Header->GatewayTxnId,
+            $response->Transaction->$txnType->RspCode,
+            $response->Transaction->$txnType->RspText,
+            'gift'
+        );
+
+        $rvalue = '';
+        switch ($txnType) {
+            case 'GiftCardActivate':
+                $rvalue = HpsGiftCardActivate::fromDict($response, $txnType, 'HpsGiftCardActivate');
+                break;
+            case 'GiftCardAddValue':
+                $rvalue = HpsGiftCardAddValue::fromDict($response, $txnType, 'HpsGiftCardAddValue');
+                break;
+            case 'GiftCardAlias':
+                $rvalue = HpsGiftCardAlias::fromDict($response, $txnType, 'HpsGiftCardAlias');
+                break;
+            case 'GiftCardBalance':
+                $rvalue = HpsGiftCardBalance::fromDict($response, $txnType, 'HpsGiftCardBalance');
+                break;
+            case 'GiftCardDeactivate':
+                $rvalue = HpsGiftCardDeactivate::fromDict($response, $txnType, 'HpsGiftCardDeactivate');
+                break;
+            case 'GiftCardReplace':
+                $rvalue = HpsGiftCardReplace::fromDict($response, $txnType, 'HpsGiftCardReplace');
+                break;
+            case 'GiftCardReward':
+                $rvalue = HpsGiftCardReward::fromDict($response, $txnType, 'HpsGiftCardReward');
+                break;
+            case 'GiftCardSale':
+                $rvalue = HpsGiftCardSale::fromDict($response, $txnType, 'HpsGiftCardSale');
+                break;
+            case 'GiftCardVoid':
+                $rvalue = HpsGiftCardVoid::fromDict($response, $txnType, 'HpsGiftCardVoid');
+                break;
+            case 'GiftCardReversal':
+                $rvalue = HpsGiftCardReversal::fromDict($response, $txnType, 'HpsGiftCardReversal');
+                break;
+            default:
+                break;
+        }
+
+        return $rvalue;
     }
 }

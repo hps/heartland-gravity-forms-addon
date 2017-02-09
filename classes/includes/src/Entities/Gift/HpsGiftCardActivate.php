@@ -33,14 +33,14 @@ class HpsGiftCardActivate extends HpsTransaction
 
         $activation = new $returnType();
 
-        $activation->transactionId = $rsp->Header->GatewayTxnId;
-        $activation->authorizationCode = (isset($activationRsp->AuthCode) ? $activationRsp->AuthCode : null);
-        $activation->balanceAmount = (isset($activationRsp->BalanceAmt) ? $activationRsp->BalanceAmt : null);
-        $activation->pointsBalanceAmount = (isset($activationRsp->PointsBalanceAmount) ? $activationRsp->PointsBalanceAmount : null);
-        $activation->rewards = (isset($activationRsp->Rewards) ? $activationRsp->Rewards : null);
-        $activation->notes = (isset($activationRsp->Notes) ? $activationRsp->Notes : null);
-        $activation->responseCode = (isset($activationRsp->RspCode) ? $activationRsp->RspCode : null);
-        $activation->responseText = (isset($activationRsp->RspText) ? $activationRsp->RspText : null);
+        $activation->transactionId = (string)$rsp->Header->GatewayTxnId;
+        $activation->authorizationCode = (isset($activationRsp->AuthCode) ? (string)$activationRsp->AuthCode : null);
+        $activation->balanceAmount = (isset($activationRsp->BalanceAmt) ? (string)$activationRsp->BalanceAmt : null);
+        $activation->pointsBalanceAmount = (isset($activationRsp->PointsBalanceAmt) ? (string)$activationRsp->PointsBalanceAmt : null);
+        $activation->rewards = (isset($activationRsp->Rewards) ? (string)$activationRsp->Rewards : null);
+        $activation->notes = (isset($activationRsp->Notes) ? (string)$activationRsp->Notes : null);
+        $activation->responseCode = (isset($activationRsp->RspCode) ? (string)$activationRsp->RspCode : null);
+        $activation->responseText = (isset($activationRsp->RspText) ? (string)$activationRsp->RspText : null);
 
         return $activation;
     }

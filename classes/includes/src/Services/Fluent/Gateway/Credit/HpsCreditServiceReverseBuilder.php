@@ -5,6 +5,7 @@
  * transaction through the HpsCreditService.
  *
  * @method HpsCreditServiceReverseBuilder withAmount(double $amount)
+ * @method HpsCreditServiceReverseBuilder withAuthAmount(double $authAmount)
  * @method HpsCreditServiceReverseBuilder withCurrency(string $currency)
  * @method HpsCreditServiceReverseBuilder withCard(HpsCreditCard $card)
  * @method HpsCreditServiceReverseBuilder withToken(HpsTokenData $token)
@@ -14,22 +15,25 @@
 class HpsCreditServiceReverseBuilder extends HpsBuilderAbstract
 {
     /** @var double|null */
-    protected $amount        = null;
+    protected $amount          = null;
+
+    /** @var double|null */
+    protected $authAmount      = null;
 
     /** @var string|null */
-    protected $currency      = null;
+    protected $currency        = null;
 
     /** @var HpsCreditCard|null */
-    protected $card          = null;
+    protected $card            = null;
 
     /** @var HpsTokenData|null */
-    protected $token         = null;
+    protected $token           = null;
 
     /** @var string|null */
-    protected $transactionId = null;
+    protected $transactionId   = null;
 
     /** @var HpsTransactionDetails|null */
-    protected $details       = null;
+    protected $details         = null;
 
     /**
      * Instatiates a new HpsCreditServiceReverseBuilder
@@ -49,13 +53,46 @@ class HpsCreditServiceReverseBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $reverseSvc = new HpsCreditService($this->service->servicesConfig());
-        return $reverseSvc->reverse(
-            isset($this->card) ? $this->card : (isset($this->token) ? $this->token : $this->transactionId),
-            $this->amount,
-            $this->currency,
-            $this->details
-        );
+        HpsInputValidation::checkCurrency($this->currency);
+        HpsInputValidation::checkAmount($this->amount);
+
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditReversal = $xml->createElement('hps:CreditReversal');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        $hpsBlock1->appendChild($xml->createElement('hps:Amt', $this->amount));
+
+        if ($this->authAmount != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:AuthAmt', $this->authAmount));
+        }
+
+        if ($this->card != null) {
+            $cardData = $xml->createElement('hps:CardData');
+            $cardData->appendChild($this->service->_hydrateManualEntry(
+                $this->card,
+                $xml
+            ));
+            $hpsBlock1->appendChild($cardData);
+        } else if ($this->token != null) {
+            $cardData = $xml->createElement('hps:CardData');
+            $cardData->appendChild($this->service->_hydrateTokenData(
+                $this->token,
+                $xml
+            ));
+            $hpsBlock1->appendChild($cardData);
+        } else {
+            $hpsBlock1->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        }
+
+        if ($this->details != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateAdditionalTxnFields($this->details, $xml));
+        }
+
+        $hpsCreditReversal->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsCreditReversal);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'CreditReversal', (isset($this->details->clientTransactionId) ? $this->details->clientTransationId : null));
     }
 
     /**

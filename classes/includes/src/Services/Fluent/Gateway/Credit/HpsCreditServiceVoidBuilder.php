@@ -33,8 +33,13 @@ class HpsCreditServiceVoidBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $voidSvc = new HpsCreditService($this->service->servicesConfig());
-        return $voidSvc->void($this->transactionId);
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditVoid = $xml->createElement('hps:CreditVoid');
+        $hpsCreditVoid->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        $hpsTransaction->appendChild($hpsCreditVoid);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'CreditVoid', $this->clientTransactionId);
     }
 
     /**

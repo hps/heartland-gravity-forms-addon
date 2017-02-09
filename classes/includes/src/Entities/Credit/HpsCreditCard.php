@@ -2,10 +2,11 @@
 
 class HpsCreditCard
 {
-    public $number   = null;
-    public $cvv      = null;
-    public $expMonth = null;
-    public $expYear  = null;
+    public $number         = null;
+    public $cvv            = null;
+    public $expMonth       = null;
+    public $expYear        = null;
+    public $encryptionData = null;
 
     public function cardType()
     {

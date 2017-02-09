@@ -33,11 +33,20 @@ class HpsCheckServiceVoidBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $voidSvc = new HpsCheckService($this->service->servicesConfig());
-        return $voidSvc->void(
-            $this->transactionId,
-            $this->clientTransactionId
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCheckVoid = $xml->createElement('hps:CheckVoid');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        if ($this->transactionId != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:GatewayTxnId', $this->transactionId));
+        } else if ($this->clientTransactionId != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:ClientTxnId', $this->clientTransactionId));
+        }
+
+        $hpsCheckVoid->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsCheckVoid);
+        return $this->service->_submitTransaction($hpsTransaction, 'CheckVoid');
     }
 
     /**

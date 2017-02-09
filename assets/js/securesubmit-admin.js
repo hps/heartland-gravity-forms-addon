@@ -46,7 +46,7 @@
     this.validatePublicApiKey = function (keyName, key) {
       this.setKeyStatusIcon(keyName, "<img src='" + gforms_securesubmit_admin_strings.spinner + "'/>");
 
-      var hps = new HPS({
+      var hps = new Heartland.HPS({
         publicKey: key,
         cardNumber: '4111111111111111',
         cardCvv: '123',
@@ -68,6 +68,9 @@
     };
 
     this.initKeyStatus = function (keyName) {
+      if ($('#' + keyName + '_is_valid').length <= 0) {
+        return;
+      }
       var is_valid = $('#' + keyName + '_is_valid').val();
       var key = $('#' + keyName).val();
 
@@ -124,6 +127,37 @@
         }
       }
     };
+
+    this.initAdminCCFields = function () {
+      var $fields = $('#iframesCardNumber,#iframesCardExpiration,#iframesCardCvv');
+      var that = this;
+      if ($fields.length > 0) {
+        $fields.children().remove();
+        $fields.each(function (i, field) {
+          field.append(that.getDummyField(field));
+        });
+      }
+    };
+
+    this.getDummyField = function (field) {
+      var input = document.createElement('input');
+      input.type = 'tel';
+      input.disabled = true;
+
+      switch (field.id) {
+        case 'iframesCardNumber':
+          input.placeholder = '•••• •••• •••• ••••';
+          break;
+        case 'iframesCardExpiration':
+          input.placeholder = 'MM / YYYY';
+          break;
+        case 'iframesCardCvv':
+          input.placeholder = 'CVV';
+          break;
+      }
+
+      return input;
+    };
   };
 
   $(document).ready(function () {
@@ -132,5 +166,6 @@
     window.SecureSubmitAdmin.initKeyStatus('public_api_key');
     window.SecureSubmitAdmin.initKeyStatus('secret_api_key');
     window.SecureSubmitAdmin.initSendEmailFieldsToggle();
+    window.SecureSubmitAdmin.initAdminCCFields();
   });
 })(window, window.jQuery);

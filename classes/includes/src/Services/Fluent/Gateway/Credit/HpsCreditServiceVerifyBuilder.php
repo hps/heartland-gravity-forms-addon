@@ -6,9 +6,12 @@
  *
  * @method HpsCreditServiceVerifyBuilder withCard(HpsCreditCard $card)
  * @method HpsCreditServiceVerifyBuilder withToken(HpsTokenData $token)
+ * @method HpsCreditServiceVerifyBuilder withTrackData(HpsTrackData $trackData)
  * @method HpsCreditServiceVerifyBuilder withCardHolder(HpsCardHolder $cardHolder)
  * @method HpsCreditServiceVerifyBuilder withRequestMultiUseToken(bool $requestMultiUseToken)
  * @method HpsCreditServiceVerifyBuilder withClientTransactionId(string $clientTransactionId)
+ * @method HpsCreditServiceVerifyBuilder withCardPresent(bool $cardPresent)
+ * @method HpsCreditServiceVerifyBuilder withReaderPresent(bool $readerPresent)
  */
 class HpsCreditServiceVerifyBuilder extends HpsBuilderAbstract
 {
@@ -18,14 +21,23 @@ class HpsCreditServiceVerifyBuilder extends HpsBuilderAbstract
     /** @var HpsTokenData|null */
     protected $token                = null;
 
+    /** @var HpsTrackData|null */
+    protected $trackData            = null;
+
     /** @var HpsCardHolder|null */
     protected $cardHolder           = null;
 
-    /** @var bool|null */
+    /** @var bool */
     protected $requestMultiUseToken = false;
 
     /** @var string|null */
     protected $clientTransactionId  = null;
+
+    /** @var bool */
+    protected $cardPresent          = false;
+
+    /** @var bool */
+    protected $readerPresent        = false;
 
     /**
      * Instatiates a new HpsCreditServiceVerifyBuilder
@@ -45,13 +57,52 @@ class HpsCreditServiceVerifyBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $verifySvc = new HpsCreditService($this->service->servicesConfig());
-        return $verifySvc->verify(
-            isset($this->card) ? $this->card : $this->token,
-            $this->cardHolder,
-            $this->requestMultiUseToken,
-            $this->clientTransactionId
-        );
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditAccountVerify = $xml->createElement('hps:CreditAccountVerify');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        if ($this->cardHolder != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateCardHolderData($this->cardHolder, $xml));
+        }
+
+        $cardData = $xml->createElement('hps:CardData');
+        if ($this->card != null) {
+            $cardData->appendChild($this->service->_hydrateManualEntry(
+                $this->card,
+                $xml,
+                $this->cardPresent,
+                $this->readerPresent
+            ));
+            if ($this->card->encryptionData != null) {
+                $cardData->appendChild($this->service->_hydrateEncryptionData(
+                    $this->card->encryptionData,
+                    $xml
+                ));
+            }
+        } else if ($this->token != null) {
+            $cardData->appendChild($this->service->_hydrateTokenData(
+                $this->token,
+                $xml,
+                $this->cardPresent,
+                $this->readerPresent
+            ));
+        } else if ($this->trackData != null) {
+            $cardData->appendChild($this->service->_hydrateTrackData($this->trackData, $xml));
+            if ($this->trackData->encryptionData != null) {
+                $cardData->appendChild($this->service->_hydrateEncryptionData(
+                    $this->trackData->encryptionData,
+                    $xml
+                ));
+            }
+        }
+        $cardData->appendChild($xml->createElement('hps:TokenRequest', ($this->requestMultiUseToken) ? 'Y' : 'N'));
+
+        $hpsBlock1->appendChild($cardData);
+        $hpsCreditAccountVerify->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsCreditAccountVerify);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'CreditAccountVerify', $this->clientTransactionId);
     }
 
     /**
@@ -76,11 +127,10 @@ class HpsCreditServiceVerifyBuilder extends HpsBuilderAbstract
      */
     public function onlyOnePaymentMethod($actionCounts)
     {
-        return (isset($actionCounts['card']) && $actionCounts['card'] == 1
-                && (!isset($actionCounts['token'])
-                    || isset($actionCounts['token']) && $actionCounts['token'] == 0))
-            || (isset($actionCounts['token']) && $actionCounts['token'] == 1
-                && (!isset($actionCounts['card'])
-                    || isset($actionCounts['card']) && $actionCounts['card'] == 0));
+        $count = 0;
+        if (isset($actionCounts['card'])) { $count++; }
+        if (isset($actionCounts['token'])) { $count++; }
+        if (isset($actionCounts['trackData'])) { $count++; }
+        return 1 === $count;
     }
 }

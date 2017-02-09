@@ -15,41 +15,58 @@
  * @method HpsCreditServiceChargeBuilder withAllowPartialAuth(bool $allowPartialAuth)
  * @method HpsCreditServiceChargeBuilder withCpcReq(bool $cpcReq)
  * @method HpsCreditServiceChargeBuilder withDirectMarketData(HpsDirectMarketData $directMarketData)
+ * @method HpsCreditServiceChargeBuilder withAllowDuplicates(bool $allowDuplicates)
+ * @method HpsCreditServiceChargeBuilder withGratuity(double $gratuity)
  */
 class HpsCreditServiceChargeBuilder extends HpsBuilderAbstract
 {
     /** @var double|null */
-    protected $amount               = null;
+    protected $amount                   = null;
 
     /** @var string|null */
-    protected $currency             = null;
+    protected $currency                 = null;
 
     /** @var HpsCreditCard|null */
-    protected $card                 = null;
+    protected $card                     = null;
 
     /** @var HpsTokenData|null */
-    protected $token                = null;
+    protected $token                    = null;
 
     /** @var HpsCardHolder|null */
-    protected $cardHolder           = null;
+    protected $cardHolder               = null;
 
     /** @var bool|null */
-    protected $requestMultiUseToken = false;
+    protected $requestMultiUseToken     = false;
 
     /** @var HpsTransactionDetails|null */
-    protected $details              = null;
+    protected $details                  = null;
 
     /** @var string|null */
-    protected $txnDescriptor        = null;
+    protected $txnDescriptor            = null;
 
     /** @var bool|null */
-    protected $allowPartialAuth     = false;
+    protected $allowPartialAuth         = false;
 
     /** @var bool|null */
-    protected $cpcReq               = false;
+    protected $cpcReq                   = false;
 
     /** @var HpsDirectMarketData|null */
     protected $directMarketData     = null;
+
+    /** @var bool|null */
+    protected $allowDuplicates          = false;
+
+    /** @var double|null */
+    protected $gratuity                 = null;
+
+    /** @var bool|null */
+    protected $cardPresent              = false;
+
+    /** @var bool|null */
+    protected $readerPresent            = false;
+
+    protected $originalTxnReferenceData = null;
+    protected $secureEcommerce          = null;
 
     /**
      * Instatiates a new HpsCreditServiceChargeBuilder
@@ -69,19 +86,98 @@ class HpsCreditServiceChargeBuilder extends HpsBuilderAbstract
     {
         parent::execute();
 
-        $chargeSvc = new HpsCreditService($this->service->servicesConfig());
-        return $chargeSvc->charge(
-            $this->amount,
-            $this->currency,
-            isset($this->card) ? $this->card : $this->token,
-            $this->cardHolder,
-            $this->requestMultiUseToken,
-            $this->details,
-            $this->txnDescriptor,
-            $this->allowPartialAuth,
-            $this->cpcReq,
-            $this->directMarketData
-        );
+        HpsInputValidation::checkCurrency($this->currency);
+        HpsInputValidation::checkAmount($this->amount);
+
+        $xml = new DOMDocument();
+        $hpsTransaction = $xml->createElement('hps:Transaction');
+        $hpsCreditSale = $xml->createElement('hps:CreditSale');
+        $hpsBlock1 = $xml->createElement('hps:Block1');
+
+        $hpsBlock1->appendChild($xml->createElement('hps:AllowDup', ($this->allowDuplicates ? 'Y' : 'N')));
+        $hpsBlock1->appendChild($xml->createElement('hps:AllowPartialAuth', ($this->allowPartialAuth ? 'Y' : 'N')));
+        $hpsBlock1->appendChild($xml->createElement('hps:Amt', $this->amount));
+
+        if ($this->gratuity != null) {
+            $hpsBlock1->appendChild($xml->createElement('hps:GratuityAmtInfo', $this->gratuity));
+        }
+
+        if ($this->cardHolder != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateCardHolderData($this->cardHolder, $xml));
+        }
+
+        $cardData = $xml->createElement('hps:CardData');
+        if ($this->card != null) {
+            $cardData->appendChild($this->service->_hydrateManualEntry(
+                $this->card,
+                $xml,
+                $this->cardPresent,
+                $this->readerPresent
+            ));
+            if ($this->card->encryptionData != null) {
+                $cardData->appendChild($this->service->_hydrateEncryptionData(
+                    $this->card->encryptionData,
+                    $xml
+                ));
+            }
+        } else if ($this->token != null) {
+            $cardData->appendChild($this->service->_hydrateTokenData(
+                $this->token,
+                $xml,
+                $this->cardPresent,
+                $this->readerPresent
+            ));
+        } else if ($this->trackData != null) {
+            $cardData->appendChild($this->service->_hydrateTrackData($this->trackData, $xml));
+            if ($this->trackData->encryptionData != null) {
+                $cardData->appendChild($this->service->_hydrateEncryptionData(
+                    $this->trackData->encryptionData,
+                    $xml
+                ));
+            }
+        } else if ($this->paymentData != null) {
+            $manualEntry = $xml->createElement('hps:ManualEntry');
+            $manualEntry->appendChild($xml->createElement('hps:CardNbr', $this->paymentData->applicationPrimaryAccountNumber));
+            $expDate = $this->paymentData->applicationExpirationDate;
+            $manualEntry->appendChild($xml->createElement('hps:ExpMonth', substr($expDate, 2, 2)));
+            $manualEntry->appendChild($xml->createElement('hps:ExpYear', '20' . substr($expDate, 0, 2)));
+            $cardData->appendChild($manualEntry);
+        }
+
+        if ($this->cpcReq) {
+            $hpsBlock1->appendChild($xml->createElement('hps:CPCReq', 'Y'));
+        }
+
+        $cardData->appendChild($xml->createElement('hps:TokenRequest', ($this->requestMultiUseToken ? 'Y' : 'N')));
+
+        if ($this->details != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateAdditionalTxnFields($this->details, $xml));
+        }
+
+        if ($this->txnDescriptor != null && $this->txnDescriptor != '') {
+            $hpsBlock1->appendChild($xml->createElement('hps:TxnDescriptor', $this->txnDescriptor));
+        }
+
+        if ($this->directMarketData != null && $this->directMarketData->invoiceNumber != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateDirectMarketData($this->directMarketData, $xml));
+        }
+
+        if ($this->originalTxnReferenceData != null) {
+            $refElement = $xml->createElement('hps:OrigTxnRefData');
+            $refElement->appendChild($xml->createElement('hps:AuthCode', $this->originalTxnReferenceData->authorizationCode));
+            $refElement->appendChild($xml->createElement('hps:CardNbrLastFour', $this->originalTxnReferenceData->cardNumberLast4));
+        }
+
+        $hpsBlock1->appendChild($cardData);
+
+        if ($this->secureEcommerce != null) {
+            $hpsBlock1->appendChild($this->service->_hydrateSecureEcommerce($this->secureEcommerce, $xml));
+        }
+
+        $hpsCreditSale->appendChild($hpsBlock1);
+        $hpsTransaction->appendChild($hpsCreditSale);
+
+        return $this->service->_submitTransaction($hpsTransaction, 'CreditSale', (isset($details->clientTransactionId) ? $details->clientTransactionId : null));
     }
 
     /**
@@ -92,9 +188,9 @@ class HpsCreditServiceChargeBuilder extends HpsBuilderAbstract
     private function setUpValidations()
     {
         $this
-            ->addValidation(array($this, 'onlyOnePaymentMethod'), 'HpsArgumentException', 'Charge can only use one payment method')
             ->addValidation(array($this, 'amountNotNull'), 'HpsArgumentException', 'Charge needs an amount')
-            ->addValidation(array($this, 'currencyNotNull'), 'HpsArgumentException', 'Charge needs an currency');
+            ->addValidation(array($this, 'onlyOnePaymentMethod'), 'HpsArgumentException', 'Charge can only use one payment method')
+            ->addValidation(array($this, 'currencyNotNull'), 'HpsArgumentException', 'Charge needs a currency');
     }
 
     /**
@@ -108,12 +204,17 @@ class HpsCreditServiceChargeBuilder extends HpsBuilderAbstract
      */
     public function onlyOnePaymentMethod($actionCounts)
     {
-        return (isset($actionCounts['card']) && $actionCounts['card'] == 1
-                && (!isset($actionCounts['token'])
-                    || isset($actionCounts['token']) && $actionCounts['token'] == 0))
-            || (isset($actionCounts['token']) && $actionCounts['token'] == 1
-                && (!isset($actionCounts['card'])
-                    || isset($actionCounts['card']) && $actionCounts['card'] == 0));
+        $methods = 0;
+        if (isset($actionCounts['card']) && $actionCounts['card'] == 1) {
+            $methods++;
+        }
+        if (isset($actionCounts['token']) && $actionCounts['token'] == 1) {
+            $methods++;
+        }
+        if (isset($actionCounts['trackData']) && $actionCounts['trackData'] == 1) {
+            $methods++;
+        }
+        return $methods == 1;
     }
 
     /**
