@@ -922,7 +922,7 @@ class GFSecureSubmit
             if ($enable_fraud && $HeartlandHPS_FailCount >= $fraud_velocity_attempts) {
                 sleep(5);
                 $issuerResponse = (string)get_transient($HPS_VarName . 'IssuerResponse');
-                //return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
+                return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $response = $service->sale($submission_data['payment_amount'])
