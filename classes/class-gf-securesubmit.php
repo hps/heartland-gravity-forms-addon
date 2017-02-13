@@ -77,9 +77,10 @@ class GFSecureSubmit
      * @var array
      */
     protected $_capabilities
-        = [
+        = array(
             'gravityforms_securesubmit',
-            'gravityforms_securesubmit_uninstall'];
+            'gravityforms_securesubmit_uninstall'
+        );
     /**
      * @var null
      */
@@ -211,9 +212,10 @@ class GFSecureSubmit
     public function init_ajax() {
         parent::init_ajax();
         add_action('wp_ajax_gf_validate_secret_api_key',
-                   [
+                   array(
                        $this,
-                       'ajaxValidateSecretApiKey']);
+                       'ajaxValidateSecretApiKey'
+                   ));
     }
     /**
      *
@@ -714,7 +716,7 @@ class GFSecureSubmit
                 continue;
             }
 
-            if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
+            if (false == $this->validateACH() && $this->getSecureSubmitJsError() && $this->hasPayment($validationResult)) {
                 $field['failed_validation'] = true;
                 $field['validation_message'] = "The following error occured: [".$this->getSecureSubmitJsError() . "]";
             }
@@ -755,7 +757,7 @@ class GFSecureSubmit
             }
             if (in_array($fieldType, $this->ccFields) && $field_on_curent_page) {
                 $this->isCC = $field;
-                if (empty($this->validateACH()) && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
+                if (false == $this->validateACH() && $this->getSecureSubmitJsError() && $this->hasPayment($validation_result)) {
                     $field['failed_validation'] = true;
                     $field['validation_message'] = $this->getSecureSubmitJsError();
                 }
@@ -935,15 +937,17 @@ class GFSecureSubmit
                             $amount_formatted,
                             $response->transactionId);
 
-            $auth = [
+            $auth = array(
                 'is_authorized' => true,
-                'captured_payment' => [
+                'captured_payment' => array(
                     'is_success' => true,
                     'transaction_id' => $response->transactionId,
                     'amount' => $submission_data['payment_amount'],
                     'payment_method' => 'ACH',
                     'securesubmit_payment_action' => 'checkSale',
-                    'note' => $note,],];
+                    'note' => $note,
+                ),
+            );
         } catch (HpsCheckException $e) {
             $err = null;
             if (is_array($e->details)) {
@@ -993,7 +997,7 @@ class GFSecureSubmit
      * @return bool|\GF_Field
      */
     private function get_ach_field($form) {
-        $fields = GFAPI::get_fields_by_type($form, ['ach']);
+        $fields = GFAPI::get_fields_by_type($form, array('ach'));
         return empty($fields) ? false : $fields[0];
     }
     /**
@@ -1220,15 +1224,17 @@ class GFSecureSubmit
                 $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
 
-            $auth = [
+            $auth = array(
                 'is_authorized' => true,
-                'captured_payment' => [
+                'captured_payment' => array(
                     'is_success' => true,
                     'transaction_id' => $transaction->transactionId,
                     'amount' => $submission_data['payment_amount'],
                     'payment_method' => $response->card_type,
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
-                    'note' => $note,],];
+                    'note' => $note,
+                ),
+            );
         } catch (HpsException $e) {
 
             // if advanced fraud is enabled, increment the error count
@@ -1257,7 +1263,7 @@ class GFSecureSubmit
      *
      * @return mixed
      */
-    public function updateAuthorizationEntry($entry, $result = []) {
+    public function updateAuthorizationEntry($entry, $result = array()) {
         if (isset($result['securesubmit_payment_action'])
             && $result['securesubmit_payment_action'] == 'authorize'
             && isset($result['is_success'])
@@ -1582,11 +1588,12 @@ class GFSecureSubmit
      * @return mixed
      */
     public function replaceMergeTags($text, $form, $entry, $url_encode, $esc_html, $nl2br, $format) {
-        $mergeTags = [
+        $mergeTags = array(
             'transactionId' => '{securesubmit_transaction_id}',
-            'authorizationCode' => '{securesubmit_authorization_code}',];
+            'authorizationCode' => '{securesubmit_authorization_code}',
+        );
 
-        $gFormsKey = ['transactionId' => 'transaction_id',];
+        $gFormsKey = array('transactionId' => 'transaction_id',);
 
         foreach ($mergeTags as $key => $mergeTag) {
             // added for GF 1.9.x
