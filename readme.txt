@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.2.1 =
+* Fix compatibility issues with older versions of PHP
+
 = 1.2.0 =
 * Add ACH feature
 * Add secure credit card option with iframe tokenization
