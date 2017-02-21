@@ -222,10 +222,7 @@ class GFSecureSubmit
      */
     public function ajaxValidateSecretApiKey() {
         $this->includeSecureSubmitSDK();
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = rgpost('key');
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
+        $config = $this->getHpsServicesConfig(rgpost('key'));
 
         $service = new HpsCreditService($config);
 
@@ -827,19 +824,6 @@ class GFSecureSubmit
 
         return $auth;
     }
-    /**
-     * @param $feed
-     *
-     * @return \HpsServicesConfig
-     */
-    private function hpsServices($feed) {
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey($feed);
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
-
-        return $config;
-    }
 
     /**
      *
@@ -911,10 +895,7 @@ class GFSecureSubmit
             = $submission_data['ach_check_type']; //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
         $check->accountType
             = $submission_data['ach_account_type']; //HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey($feed);
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
+        $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
 
         $service = new HpsFluentCheckService($config);
         try {
@@ -1114,10 +1095,7 @@ class GFSecureSubmit
         }
 
         $isAuth = $this->getAuthorizeOrCharge($feed) == 'authorize';
-        $config = new HpsServicesConfig();
-        $config->secretApiKey = $this->getSecretApiKey($feed);
-        $config->developerId = '002914';
-        $config->versionNumber = '1916';
+        $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
 
         $service = new HpsCreditService($config);
 
@@ -1978,8 +1956,6 @@ class GFSecureSubmit
      * @since  Unknown
      * @access public
      *
-     * @used-by GFSecureSubmit::authorize_product()
-     * @used-by GFSecureSubmit::cancel()
      * @used-by GFSecureSubmit::process_subscription()
      * @used-by GFSecureSubmit::subscribe()
      * @uses    GFAddOn::log_debug()
@@ -2118,20 +2094,30 @@ class GFSecureSubmit
      * @access public
      *
      * @used-by GFSecureSubmit::subscribe()
-     * @uses    GFPaymentAddOn::get_amount_export()
-     * @uses    \Stripe\Plan::create()
+     * @uses    \GFSecureSubmit::getIdentifier
+     * @uses    \GFSecureSubmit::getPayPlanService
+     * @uses    \GFSecureSubmit::getSecretApiKey
+     * @uses    HpsInputValidation::checkAmount
+     * @uses    \GFSecureSubmit::validPayPlanCycle
+     * @uses    \GFSecureSubmit::validPayPlanLength
+     * @uses    HpsPayPlanSchedule
+     * @uses    HpsPayPlanAmount
      * @uses    GFAddOn::log_debug()
      *
      * @param string    $plan_id           The plan ID.
      * @param array     $feed              The feed currently being processed.
      * @param float|int $payment_amount    The recurring amount.
+     * @param string    $customerKey       The Custyomer ID used by HPS.
+     * @param string    $paymentMethodKey  The PaymentID used by HPS.
      * @param int       $trial_period_days The number of days the trial should last.
      * @param string    $currency          The currency code for the entry being processed.
      *
      * @return \Stripe\Plan The plan object.
      */
-    public function create_plan( $plan_id, $feed, $payment_amount, $trial_period_days, $currency ) {
+    public function create_plan($plan_id, $feed, $payment_amount, $customerKey, $paymentMethodKey, $trial_period_days = 0)
+    {
         // Prepare plan metadata.
+        /*
         $plan_meta = array(
             'interval'          => $feed['meta']['billingCycle_unit'],
             'interval_count'    => $feed['meta']['billingCycle_length'],
@@ -2140,15 +2126,124 @@ class GFSecureSubmit
             'id'                => $plan_id,
             'amount'            => $this->get_amount_export( $payment_amount, $currency ),
             'trial_period_days' => $trial_period_days,
-        );
+        );*/
+        $amount = \HpsInputValidation::checkAmount($payment_amount);
 
+        //TODO: make this a private variable conditionally created
+        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
         // Log the plan to be created.
-        $this->log_debug( __METHOD__ . '(): Plan to be created => ' . print_r( $plan_meta, 1 ) );
+        $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r(func_get_args(), 1));
+        //(HpsPayPlanService $service, $customerKey, $paymentMethodKey, $amount)
+        $schedule = new HpsPayPlanSchedule();
+        $schedule->scheduleIdentifier = $this->getIdentifier($feed['meta']['feedName'] . $plan_id);
+        $schedule->customerKey = $customerKey;
+        $schedule->scheduleStatus = HpsPayPlanScheduleStatus::ACTIVE;
+        $schedule->paymentMethodKey = $paymentMethodKey;
+        $schedule->subtotalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
+        $schedule->startDate = date('m30Y', strtotime(date('Y-m-d', strtotime(date('Y-m-d'))) . '+1 month'));
+        // TODO: make this get a parameter based on today and the cycke and trial period
+        $schedule->processingDateInfo = '31';
+        //TODO: Make this actually validate the cycle
+        $schedule->frequency = $this->validPayPlanCycle($feed);
+        //TODO: Make this actually validate the length
+        $schedule->duration = $this->validPayPlanLength($feed);
+        $schedule->reprocessingCount = 1;
+        $response = $payPlanService->addSchedule($schedule);
 
-        // Create HPS plan.
-        $plan = \Stripe\Plan::create( $plan_meta );
+        return $response->scheduleKey;
+    }
+    /**
+     * @param string $id
+     *
+     * @return string
+     */
+    private function getIdentifier($id)
+    {
+        $identifierBase = '%s-%s' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 10);
 
-        return $plan;
+        return sprintf($identifierBase, date('Ymd'), $id);
+    }
+    /**
+     * @param string $key
+     *
+     * @return \HpsServicesConfig|null
+     */
+    private function getHpsServicesConfig($key)
+    {
+        static $config = null;
+        if (empty($config)) {
+            $config = new HpsServicesConfig();
+            $config->secretApiKey = $key;
+            $config->developerId = '002914';
+            $config->versionNumber = '1916';
+        }
+
+        return $config;
+    }
+    /**
+     * @param string $key
+     *
+     * @return \HpsPayPlanService|null
+     */
+    private function getPayPlanService($key)
+    {
+        static $service = null;
+        if (empty($service)) {
+            $service = new HpsPayPlanService($this->getHpsServicesConfig($key));
+        }
+
+        return $service;
+    }
+    /** Takes subscription billing cycle and returns a valid payplan cycle
+     *
+     * @used-by \GFSecureSubmit::create_plan
+     * @uses HpsPayPlanScheduleFrequency
+     * @uses    GFAddOn::log_debug()
+     *
+     * @param array $feed
+     *
+     * @return null|string
+     * @throws \HpsArgumentException
+     */
+    private function validPayPlanCycle( $feed){
+        $this->log_debug( __METHOD__ . '(): Plan to be created => ' . print_r( $feed, 1 ) );
+        switch ($feed['meta']['billingCycle_unit']) {
+            case '1':
+                $cycle = HpsPayPlanScheduleFrequency::WEEKLY;
+                break;
+            case '2':
+                $cycle = HpsPayPlanScheduleFrequency::BIWEEKLY;
+                break;
+            case '4':
+                $cycle = HpsPayPlanScheduleFrequency::SEMIMONTHLY;
+                break;
+            case '3':
+                $cycle = HpsPayPlanScheduleFrequency::MONTHLY;
+                break;
+            case '5':
+                $cycle = HpsPayPlanScheduleFrequency::QUARTERLY;
+                break;
+            case '6':
+                $cycle = HpsPayPlanScheduleFrequency::SEMIANNUALLY;
+                break;
+            case '7':
+                $cycle = HpsPayPlanScheduleFrequency::ANNUALLY;
+                break;
+            default:
+                throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again', HpsExceptionCodes::INVALID_CONFIGURATION);
+                $this->log_debug( __METHOD__ . '(): Billing Cycle Error => ' . print_r( $feed, 1 ) );
+                break;
+        }
+        $this->log_debug( __METHOD__ . '(): Billing Cycle Calculated => ' . $cycle );
+
+        return $cycle;
+
+    }
+    private function validPayPlanLength( $feed){
+        // TODO: make this something other than ongoing
+        $feed['meta']['billingCycle_length'];
+        return HpsPayPlanScheduleDuration::ONGOING;
+
     }
 
 
