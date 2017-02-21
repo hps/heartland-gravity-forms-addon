@@ -12,6 +12,9 @@ define('GF_SECURESUBMIT_VERSION', '1.1.0');
 
 add_action('gform_loaded', array('GF_SecureSubmit_Bootstrap', 'load'), 5);
 
+/**
+ * Class GF_SecureSubmit_Bootstrap
+ */
 class GF_SecureSubmit_Bootstrap
 {
     public static function load()
@@ -26,6 +29,9 @@ class GF_SecureSubmit_Bootstrap
     }
 }
 
+/**
+ * @return \GFSecureSubmit|null
+ */
 function gf_securesubmit()
 {
     return GFSecureSubmit::get_instance();

@@ -286,8 +286,9 @@ class GFSecureSubmit
     private function has_ach_field( $form ) {
         return $this->get_ach_field( $form ) !== false;
     }
-
     /**
+     * @param $form
+     *
      * @return bool
      */
     private function has_credit_card_fields($form) {
@@ -1044,7 +1045,7 @@ class GFSecureSubmit
         }
         $submission_data['ach_check_holder'] = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME);
 
-        return gf_apply_filters(array('gform_submission_data_pre_process_payment', $form['id']), $submission_data, $feed, $form, $entry);;
+        return gf_apply_filters(array('gform_submission_data_pre_process_payment', $form['id']), $submission_data, $feed, $form, $entry);
     }
     /**
      * @return mixed|null
@@ -1432,6 +1433,7 @@ class GFSecureSubmit
         if ($feed != null && isset($feed['meta']["mappedFields_customerpo"])) {
             return (string)$_POST[ 'input_' . $feed["meta"]["mappedFields_customerpo"] ];
         }
+        return null;
     }
     /**
      * @param null $feed
@@ -1442,6 +1444,7 @@ class GFSecureSubmit
         if ($feed != null && isset($feed['meta']["mappedFields_taxtype"])) {
             return (string)$_POST[ 'input_' . $feed["meta"]["mappedFields_taxtype"] ];
         }
+        return null;
     }
     /**
      * @param null $feed
@@ -1452,6 +1455,7 @@ class GFSecureSubmit
         if ($feed != null && isset($feed['meta']["mappedFields_taxamount"])) {
             return (string)$_POST[ 'input_' . $feed["meta"]["mappedFields_taxamount"] ];
         }
+        return null;
     }
     /**
      * @return string
@@ -1680,4 +1684,473 @@ class GFSecureSubmit
 		$validationResult['is_valid']         = false;
         return parent::get_validation_result($validationResult, $authorizationResult);
 	}
+
+
+    // # HPS SUBSCRIPTION FUNCTIONS ---------------------------------------------------------------------------------------
+
+    /**
+     * If custom meta data has been configured on the feed retrieve the mapped field values.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @used-by GFSecureSubmit::authorize_product()
+     * @used-by GFSecureSubmit::capture()
+     * @used-by GFSecureSubmit::process_subscription()
+     * @used-by GFSecureSubmit::subscribe()
+     * @uses    GFAddOn::get_field_value()
+     *
+     * @param array $feed  The feed object currently being processed.
+     * @param array $entry The entry object currently being processed.
+     * @param array $form  The form object currently being processed.
+     *
+     * @return array The HPS meta data.
+     */
+    public function get_hps_meta_data( $feed, $entry, $form ) {
+
+        // Initialize metadata array.
+        $metadata = array();
+
+        // Find feed metadata.
+        $custom_meta = rgars( $feed, 'meta/metaData' );
+
+        if ( is_array( $custom_meta ) ) {
+
+            // Loop through custom meta and add to metadata for HPS.
+            foreach ( $custom_meta as $meta ) {
+
+                // If custom key or value are empty, skip meta.
+                if ( empty( $meta['custom_key'] ) || empty( $meta['value'] ) ) {
+                    continue;
+                }
+
+                // Make the key available to the gform_HPS_field_value filter.
+                $this->_current_meta_key = $meta['custom_key'];
+
+                // Get field value for meta key.
+                $field_value = $this->get_field_value( $form, $entry, $meta['value'] );
+
+                if ( ! empty( $field_value ) ) {
+
+                    // Trim to 500 characters, per HPS requirement.
+                    $field_value = substr( $field_value, 0, 500 );
+
+                    // Add to metadata array.
+                    $metadata[ $meta['custom_key'] ] = $field_value;
+
+                }
+
+            }
+
+            // Clear the key in case get_field_value() and gform_HPS_field_value are used elsewhere.
+            $this->_current_meta_key = '';
+
+        }
+
+        return $metadata;
+
+    }
+    /**
+     * Update the entry meta with the HPS Customer ID.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @uses GFSecureSubmit::get_hps_meta_data()
+     * @uses GFSecureSubmit::get_customer()
+     * @uses GFPaymentAddOn::process_subscription()
+     * @uses \Stripe\Customer::save()
+     * @uses \Exception::getMessage()
+     * @uses GFAddOn::log_error()
+     *
+     * @param array $authorization   Contains the result of the subscribe() function.
+     * @param array $feed            The feed object currently being processed.
+     * @param array $submission_data The customer and transaction data.
+     * @param array $form            The form object currently being processed.
+     * @param array $entry           The entry object currently being processed.
+     *
+     * @return array The entry object.
+     */
+    public function process_subscription( $authorization, $feed, $submission_data, $form, $entry ) {
+        // Update customer ID for entry.
+        gform_update_meta( $entry['id'], 'HPS_customer_id', $authorization['subscription']['customer_id'] );
+        $metadata = $this->get_hps_meta_data( $feed, $entry, $form );
+        if ( ! empty( $metadata ) ) {
+            // Update to user meta post entry creation so entry ID is available.
+            try {
+                // Get customer.
+                $customer = $this->get_customer( $authorization['subscription']['customer_id'] );
+                // Update customer metadata.
+                $customer->metadata = $metadata;
+                // Save customer.
+                $customer->save();
+            } catch ( \Exception $e ) {
+                // Log that we could not save customer.
+                $this->log_error( __METHOD__ . '(): Unable to save customer; ' . $e->getMessage() );
+            }
+        }
+        return parent::process_subscription( $authorization, $feed, $submission_data, $form, $entry );
+    }
+    /**
+     * Generate the subscription plan id.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @used-by GFSecureSubmit::subscribe()
+     *
+     * @param array     $feed The feed object currently being processed.
+     * @param float|int $payment_amount The recurring amount.
+     * @param int       $trial_period_days The number of days the trial should last.
+     *
+     * @return string The subscription plan ID, if found.
+     */
+    public function get_subscription_plan_id( $feed, $payment_amount, $trial_period_days ) {
+
+        $safe_trial_period = $trial_period_days ? 'trial' . $trial_period_days . 'days' : '';
+
+        $safe_feed_name     = str_replace( ' ', '', strtolower( $feed['meta']['feedName'] ) );
+        $safe_billing_cycle = $feed['meta']['billingCycle_length'] . $feed['meta']['billingCycle_unit'];
+
+        $plan_id = implode( '_', array_filter( array( $safe_feed_name, $feed['id'], $safe_billing_cycle, $safe_trial_period, $payment_amount ) ) );
+
+        return $plan_id;
+
+    }
+    /**
+ * Subscribe the user to a HPS Pay plan. This process works like so:
+ *
+ * 1 - Get existing plan or create new plan (plan ID generated by feed name, id and recurring amount).
+ * 2 - Create new customer.
+ * 3 - Create new subscription by subscribing customer to plan.
+ *
+ * @since  Unknown
+ * @access public
+ *
+ * @uses GFSecureSubmit::includeSecureSubmitSDK()
+ * @uses GFSecureSubmit::getSecureSubmitJsError()
+ * @uses GFPaymentAddOn::authorization_error()
+ * @uses GFSecureSubmit::get_subscription_plan_id()
+ * @uses GFSecureSubmit::get_plan()
+ * @uses GFSecureSubmit::getSecureSubmitJsResponse()
+ * @uses GFSecureSubmit::create_plan()
+ * @uses GFSecureSubmit::get_customer()
+ * @uses GFAddOn::log_debug()
+ * @uses GFPaymentAddOn::get_amount_export()
+ * @uses GFAddOn::get_field_value()
+ * @uses GFSecureSubmit::get_hps_meta_data()
+ * @uses GFAddOn::maybe_override_field_value()
+ * @uses GFSecureSubmit::create_customer()
+ * @uses \Stripe\Customer::save()
+ * @uses \Stripe\Customer::updateSubscription()
+ * @uses \Stripe\Customer::addInvoiceItem()
+ *
+ * @param array $feed            The feed object currently being processed.
+ * @param array $submission_data The customer and transaction data.
+ * @param array $form            The form object currently being processed.
+ * @param array $entry           The entry object currently being processed.
+ *
+ * @return array Subscription details if successful. Contains error message if failed.
+ */
+    public function subscribe( $feed, $submission_data, $form, $entry ) {
+
+        // Include HPS API library.
+        $this->includeSecureSubmitSDK();
+
+        // If there was an error when retrieving the HPS.js token, return an authorization error.
+        if ( $this->getSecureSubmitJsError() ) {
+            return $this->authorization_error( $this->getSecureSubmitJsError() );
+        }
+
+        // Prepare payment amount and trial period data.
+        $payment_amount        = $submission_data['payment_amount'];
+        $single_payment_amount = $submission_data['setup_fee'];
+        $trial_period_days     = rgars( $feed, 'meta/trialPeriod' ) ? $submission_data['trial'] : null;
+        $currency              = rgar( $entry, 'currency' );
+
+        // Get HPS plan for feed.
+        $plan_id = $this->get_subscription_plan_id( $feed, $payment_amount, $trial_period_days );
+        $plan    = $this->get_plan( $plan_id );
+
+        // If error was returned when retrieving plan, return plan.
+        if ( rgar( $plan, 'error_message' ) ) {
+            return $plan;
+        }
+
+        try {
+
+            // If plan does not exist, create it.
+            if ( ! $plan ) {
+                $plan = $this->create_plan( $plan_id, $feed, $payment_amount, $trial_period_days, $currency );
+            }
+
+            // Get HPS.js token.
+            $token_response = $this->getSecureSubmitJsResponse();
+
+            $customer = $this->get_customer( '', $feed, $entry, $form );
+
+            if ( $customer ) {
+
+                $this->log_debug( __METHOD__ . '(): Updating existing customer.' );
+
+                // Update the customer source with the HPS token.
+                $customer->source = $token_response->id;
+                $customer->save();
+
+                // If a setup fee is required, add an invoice item.
+                if ( $single_payment_amount ) {
+                    $setup_fee = array(
+                        'amount'   => $this->get_amount_export( $single_payment_amount, $currency ),
+                        'currency' => $currency,
+                    );
+                    $customer->addInvoiceItem( $setup_fee );
+                }
+
+                // Add subscription to customer.
+                $subscription = $customer->updateSubscription( array( 'plan' => $plan->id ) );
+
+                // Define subscription ID.
+                $subscription_id = $subscription->id;
+
+            } else {
+
+                // Prepare customer metadata.
+                $customer_meta = array(
+                    'description'     => $this->get_field_value( $form, $entry, rgar( $feed['meta'], 'customerInformation_description' ) ),
+                    'email'           => $this->get_field_value( $form, $entry, rgar( $feed['meta'], 'customerInformation_email' ) ),
+                    'source'          => $token_response->id,
+                    'account_balance' => $this->get_amount_export( $single_payment_amount, $currency ),
+                    'metadata'        => $this->get_hps_meta_data( $feed, $entry, $form ),
+                );
+
+                // Get coupon for feed.
+                $coupon_field_id = rgar( $feed['meta'], 'customerInformation_coupon' );
+                $coupon          = $this->maybe_override_field_value( rgar( $entry, $coupon_field_id ), $form, $entry, $coupon_field_id );
+
+                // If coupon is set, add it to customer metadata.
+                if ( $coupon ) {
+                    $customer_meta['coupon'] = $coupon;
+                }
+
+                $has_filter = has_filter( 'gform_stripe_customer_after_create' );
+
+                if ( ! $has_filter ) {
+                    // If filter is not being used add the plan to customer metadata; resolves a currency issue.
+                    $customer_meta['plan'] = $plan;
+                }
+
+                $customer = $this->create_customer( $customer_meta, $feed, $entry, $form );
+
+                if ( $has_filter ) {
+                    // Add subscription to customer.
+                    $subscription = $customer->updateSubscription( array( 'plan' => $plan->id ) );
+
+                    // Define subscription ID.
+                    $subscription_id = $subscription->id;
+                } else {
+                    // Define subscription ID.
+                    $subscription_id = $customer->subscriptions->data[0]->id;
+                }
+
+            }
+
+        } catch ( \Exception $e ) {
+
+            // Return authorization error.
+            return $this->authorization_error( $e->getMessage() );
+
+        }
+
+        // Return subscription data.
+        return array(
+            'is_success'      => true,
+            'subscription_id' => $subscription_id,
+            'customer_id'     => $customer->id,
+            'amount'          => $payment_amount,
+        );
+
+    }
+    // # HPS HELPER FUNCTIONS ---------------------------------------------------------------------------------------
+
+    /**
+     * Retrieve a specific customer from HPS.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @used-by GFSecureSubmit::authorize_product()
+     * @used-by GFSecureSubmit::cancel()
+     * @used-by GFSecureSubmit::process_subscription()
+     * @used-by GFSecureSubmit::subscribe()
+     * @uses    GFAddOn::log_debug()
+     * @uses    \Stripe\Customer::retrieve()
+     *
+     * @param string $customer_id The identifier of the customer to be retrieved.
+     * @param array  $feed        The feed currently being processed.
+     * @param array  $entry       The entry currently being processed.
+     * @param array  $form        The which created the current entry.
+     *
+     * @return bool|\Stripe\Customer Contains customer data if available. Otherwise, false.
+     */
+    public function get_customer( $customer_id, $feed = array(), $entry = array(), $form = array() ) {
+        if ( empty( $customer_id ) && has_filter( 'gform_stripe_customer_id' ) ) {
+            $this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_stripe_customer_id.' );
+
+            /**
+             * Allow an existing customer ID to be specified for use when processing the submission.
+             *
+             * @since  2.1.0
+             * @access public
+             *
+             * @param string $customer_id The identifier of the customer to be retrieved. Default is empty string.
+             * @param array  $feed        The feed currently being processed.
+             * @param array  $entry       The entry currently being processed.
+             * @param array  $form        The form which created the current entry.
+             */
+            $customer_id = apply_filters( 'gform_stripe_customer_id', $customer_id, $feed, $entry, $form );
+        }
+
+        if ( $customer_id ) {
+            $this->log_debug( __METHOD__ . '(): Retrieving customer id => ' . print_r( $customer_id, 1 ) );
+            $customer = \Stripe\Customer::retrieve( $customer_id );
+
+            return $customer;
+        }
+
+        return false;
+    }
+
+    /**
+     * Create and return a HPS customer with the specified properties.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @used-by GFSecureSubmit::subscribe()
+     * @uses    GFAddOn::log_debug()
+     * @uses    \Stripe\Customer::create()
+     *
+     * @param array $customer_meta The customer properties.
+     * @param array $feed          The feed currently being processed.
+     * @param array $entry         The entry currently being processed.
+     * @param array $form          The form which created the current entry.
+     *
+     * @return \Stripe\Customer The HPS customer object.
+     */
+    public function create_customer( $customer_meta, $feed, $entry, $form ) {
+
+        // Log the customer to be created.
+        $this->log_debug( __METHOD__ . '(): Customer meta to be created => ' . print_r( $customer_meta, 1 ) );
+
+        // Create customer.
+        $customer = \Stripe\Customer::create( $customer_meta );
+
+        if ( has_filter( 'gform_stripe_customer_after_create' ) ) {
+            // Log that filter will be executed.
+            $this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_stripe_customer_after_create.' );
+
+            /**
+             * Allow custom actions to be performed between the customer being created and subscribed to the plan.
+             *
+             * @since 2.0.1
+             *
+             * @param Stripe\Customer $customer The Stripe customer object.
+             * @param array           $feed     The feed currently being processed.
+             * @param array           $entry    The entry currently being processed.
+             * @param array           $form     The form currently being processed.
+             */
+            do_action( 'gform_stripe_customer_after_create', $customer, $feed, $entry, $form );
+        }
+
+        return $customer;
+    }
+
+    /**
+     * Try and retrieve the plan if a plan with the matching id has previously been created.
+     *
+     * @since  Unknown
+     * @access public
+     *
+     * @used-by GFSecureSubmit::subscribe()
+     * @uses    \Stripe\Plan::retrieve()
+     * @uses    GFPaymentAddOn::authorization_error()
+     *
+     * @param string $plan_id The subscription plan id.
+     *
+     * @return array|bool|string $plan The plan details. False if not found. If invalid request, the error message.
+     */
+    public function get_plan( $plan_id ) {
+
+        try {
+
+            // Get HPS plan.
+            $plan = \Stripe\Plan::retrieve( $plan_id );
+
+        } catch ( \Exception $e ) {
+
+            /**
+             * There is no error type specific to failing to retrieve a subscription when an invalid plan ID is passed. We assume here
+             * that any 'invalid_request_error' means that the subscription does not exist even though other errors (like providing
+             * incorrect API keys) will also generate the 'invalid_request_error'. There is no way to differentiate these requests
+             * without relying on the error message which is more likely to change and not reliable.
+             */
+
+            // Get error response.
+            //TODO: replace this calll
+            //$response = $e->getJsonBody();
+
+            // If error is an invalid request error, return error message.
+            if ( rgars( $response, 'error/type' ) !== 'invalid_request_error' ) {
+                $plan = $this->authorization_error( $e->getMessage() );
+            } else {
+                $plan = false;
+            }
+
+        }
+
+        return $plan;
+    }
+
+    /**
+     * Create and return a HPS plan with the specified properties.
+     *
+     * @since  Unknwon
+     * @access public
+     *
+     * @used-by GFSecureSubmit::subscribe()
+     * @uses    GFPaymentAddOn::get_amount_export()
+     * @uses    \Stripe\Plan::create()
+     * @uses    GFAddOn::log_debug()
+     *
+     * @param string    $plan_id           The plan ID.
+     * @param array     $feed              The feed currently being processed.
+     * @param float|int $payment_amount    The recurring amount.
+     * @param int       $trial_period_days The number of days the trial should last.
+     * @param string    $currency          The currency code for the entry being processed.
+     *
+     * @return \Stripe\Plan The plan object.
+     */
+    public function create_plan( $plan_id, $feed, $payment_amount, $trial_period_days, $currency ) {
+        // Prepare plan metadata.
+        $plan_meta = array(
+            'interval'          => $feed['meta']['billingCycle_unit'],
+            'interval_count'    => $feed['meta']['billingCycle_length'],
+            'name'              => $feed['meta']['feedName'],
+            'currency'          => $currency,
+            'id'                => $plan_id,
+            'amount'            => $this->get_amount_export( $payment_amount, $currency ),
+            'trial_period_days' => $trial_period_days,
+        );
+
+        // Log the plan to be created.
+        $this->log_debug( __METHOD__ . '(): Plan to be created => ' . print_r( $plan_meta, 1 ) );
+
+        // Create HPS plan.
+        $plan = \Stripe\Plan::create( $plan_meta );
+
+        return $plan;
+    }
+
+
+
 }

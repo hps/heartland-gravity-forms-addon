@@ -43,9 +43,9 @@
       </label>
 
       <select <?php echo $disabled_text; ?>  name="<?php echo GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_8" <?php echo $account_type_tabindex; ?>>
-        <option value="" disabled<?php $account_type_value === '' ? ' selected':''?>>Choose One..</option>
-        <option value="1"<?php $account_type_value === '1' ? ' selected':''?>>Checking</option>
-        <option value="2"<?php $account_type_value === '2' ? ' selected':''?>>Savings</option>
+        <option value="" disabled<?php echo $account_type_value === '' ? ' selected':''?>>Choose One..</option>
+        <option value="1"<?php echo $account_type_value === '1' ? ' selected':''?>>Checking</option>
+        <option value="2"<?php echo $account_type_value === '2' ? ' selected':''?>>Savings</option>
       </select>
     </span>
     <!-- check name -->
@@ -57,9 +57,9 @@
       </label>
 
       <select <?php echo $disabled_text; ?> name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_9" <?php echo $check_type_tabindex; ?>>
-        <option value="" disabled<?php $check_type_value === '' ? ' selected':''?>>Choose One..</option>
-        <option value="1"<?php $check_type_value === '1' ? ' selected':''?>>Personal</option>
-        <option value="2"<?php $check_type_value === '2' ? ' selected':''?>>Business</option>
+        <option value="" disabled<?php echo $check_type_value === '' ? ' selected':''?>>Choose One..</option>
+        <option value="1"<?php echo $check_type_value === '1' ? ' selected':''?>>Personal</option>
+        <option value="2"<?php echo $check_type_value === '2' ? ' selected':''?>>Business</option>
       </select>
     </span>
   </div>
