@@ -1853,7 +1853,6 @@ class GFSecureSubmit
 
             // while it could be ACH here for the Payplan Customer record it is the same difference
             // Prepare customer metadata.
-            $payPlanCustomer = null;
             $customer                     = $this->create_customer($feed, $submission_data, $entry);
 
             /** @var string $modifier This value helps semi uniqely identify the customer */
@@ -1861,14 +1860,10 @@ class GFSecureSubmit
                 , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
             $identifier = $this->getIdentifier($modifier . $customer->firstName . $customer->lastName);
 
-            $payPlanCustomer = $this->get_customer($feed, $identifier, $customer);
-            // TODO: check if customer exists
-            if(null=== $payPlanCustomer->customerIdentifier)
-            {
-                // TODO: create the customer
-                $this->log_debug(__METHOD__ . '(): Create customer.');
-                $payPlanCustomer = $payPlanService->addCustomer($customer);
-            }
+            $this->log_debug(__METHOD__ . '(): Create customer.');
+            $payPlanCustomer = $payPlanService->addCustomer($customer);
+
+            $payPlanService->addPaymentMethod($paymentMethod)
             $payMethod = $this->getKnownPaymentMethods($feed, $identifier, $customer);
             // TODO: create payment method
             {
@@ -1992,29 +1987,7 @@ class GFSecureSubmit
     }
     // # HPS HELPER FUNCTIONS ---------------------------------------------------------------------------------------
 
-    /**
-     * @param $feed
-     * @param $identifier
-     * @param $customer
-     *
-     * @return HpsPayPlanPaymentMethod
-     */
-    protected function getKnownPaymentMethods($feed, $identifier, $customer){
 
-        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
-        $payMethod = $payPlanService
-            ->findAllPaymentMethods(array(
-                'customerIdentifier' => $identifier
-            ));
-        if (null !== rgar($payMethod, 0) && null !== $payMethod[0]->customerIdentifier) {
-            $this->log_debug(__METHOD__ . '(): Retrieving customer id => ' . print_r($payMethod, 1));
-
-            return $payMethod[0];
-        }
-
-        return false;
-
-    }
     /**
      * Retrieve a specific customer from HPS.
      *
@@ -2032,6 +2005,25 @@ class GFSecureSubmit
      * @return bool|HpsPayPlanCustomer Contains customer data if available. Otherwise, false.
      *
      */
+
+    protected function createPaymentMethod($submission_data, $identifier,$modifier)
+    {
+        $isACH = null !== rgar($submission_data, 'ach_number');
+        $acct = rgar($submission_data, 'ach_number'
+            , @$this->getSecureSubmitJsResponse()->token_value);
+        $paymentMethod = null;
+        if ($acct){
+
+            $paymentMethod                          = new HpsPayPlanPaymentMethod();
+            $paymentMethod->paymentMethodIdentifier = getIdentifier(($isACH?'ACH':'Credit').$acct);
+            $paymentMethod->paymentMethodType       = HpsPayPlanPaymentMethodType::CREDIT_CARD;
+            $paymentMethod->nameOnAccount           = $cardHolder->firstName . ' ' . $cardHolder->lastName;
+            $paymentMethod->paymentToken            = $token->tokenValue;
+            $paymentMethod->customerKey             = $customerKey;
+            $paymentMethod->country                 = $cardHolder->address->country;
+        }
+        return $paymentMethod;
+    }
     protected function get_customer($feed, $identifier, $customer)
     {
 
