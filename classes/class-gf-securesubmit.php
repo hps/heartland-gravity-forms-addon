@@ -1809,7 +1809,7 @@ class GFSecureSubmit
      * @uses   GFSecureSubmit::getSecureSubmitJsError()
      * @uses   GFPaymentAddOn::authorization_error()
      * @uses   GFSecureSubmit::get_subscription_plan_id()
-     * @uses   GFSecureSubmit::get_plan()
+     * @uses   GFSecureSubmit::getSchedule()
      * @uses   GFSecureSubmit::getSecureSubmitJsResponse()
      * @uses   GFSecureSubmit::create_plan()
      * @uses   GFSecureSubmit::get_customer()
@@ -1855,25 +1855,29 @@ class GFSecureSubmit
             // Prepare customer metadata.
             $payPlanCustomer = null;
             $customer                     = $this->create_customer($feed, $submission_data, $entry);
+
+            /** @var string $modifier This value helps semi uniqely identify the customer */
+            $modifier = rgar($submission_data, 'ach_number'
+                , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
+            $identifier = $this->getIdentifier($modifier . $customer->firstName . $customer->lastName);
+
+            $payPlanCustomer = $this->get_customer($feed, $identifier, $customer);
             // TODO: check if customer exists
-            if(false){
-            }
-            else
+            if(null=== $payPlanCustomer->customerIdentifier)
             {
                 // TODO: create the customer
                 $this->log_debug(__METHOD__ . '(): Create customer.');
                 $payPlanCustomer = $payPlanService->addCustomer($customer);
             }
-
-
+            $payMethod = $this->getKnownPaymentMethods($feed, $identifier, $customer);
             // TODO: create payment method
             {
-
+                $this->create_plan()
             }
 
             // Get HPS plan for feed.
             $plan_id = $this->get_subscription_plan_id($feed, $payment_amount, $trial_period_days);
-            $plan = $this->get_plan($plan_id, $feed);
+            $plan = $this->getSchedule($plan_id, $feed);
 
             // If error was returned when retrieving plan, return plan.
             if (rgar($plan, 'error_message')) {
@@ -1989,6 +1993,29 @@ class GFSecureSubmit
     // # HPS HELPER FUNCTIONS ---------------------------------------------------------------------------------------
 
     /**
+     * @param $feed
+     * @param $identifier
+     * @param $customer
+     *
+     * @return HpsPayPlanPaymentMethod
+     */
+    protected function getKnownPaymentMethods($feed, $identifier, $customer){
+
+        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
+        $payMethod = $payPlanService
+            ->findAllPaymentMethods(array(
+                'customerIdentifier' => $identifier
+            ));
+        if (null !== rgar($payMethod, 0) && null !== $payMethod[0]->customerIdentifier) {
+            $this->log_debug(__METHOD__ . '(): Retrieving customer id => ' . print_r($payMethod, 1));
+
+            return $payMethod[0];
+        }
+
+        return false;
+
+    }
+    /**
      * Retrieve a specific customer from HPS.
      *
      * @since    Unknown
@@ -2005,10 +2032,12 @@ class GFSecureSubmit
      * @return bool|HpsPayPlanCustomer Contains customer data if available. Otherwise, false.
      *
      */
-    protected function get_customer($payPlanService, $customer)
+    protected function get_customer($feed, $identifier, $customer)
     {
+
+        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
         $customerSearch=array(
-            'customerIdentifier'=>$customer->customerIdentifier,
+            'customerIdentifier'=>$identifier,
             'firstName'=>$customer->firstName,
             'lastName'=>$customer->lastName,
             'primaryEmail'=>$customer->primaryEmail,
@@ -2024,11 +2053,11 @@ class GFSecureSubmit
             'hasActivePaymentMethods'=>HpsPayPlanPaymentMethodStatus::ACTIVE,
         );
         /** @var HpsPayPlanCustomer $payPlanCustomer */
-        $payPlanCustomer = $payPlanService->getCustomer($customerSearch);
-        if (null !== $payPlanCustomer->customerIdentifier) {
-            $this->log_debug(__METHOD__ . '(): Retrieving customer id => ' . print_r($payPlanCustomer->customerIdentifier, 1));
+        $payPlanCustomer = $payPlanService->findAll($customerSearch);
+        if (null !== rgar($payPlanCustomer, 0) && null !== $payPlanCustomer[0]->customerIdentifier) {
+            $this->log_debug(__METHOD__ . '(): Retrieving customer id => ' . print_r($payPlanCustomer, 1));
 
-            return $payPlanCustomer;
+            return $payPlanCustomer[0];
         }
 
         return false;
@@ -2051,25 +2080,31 @@ class GFSecureSubmit
      *
      * @return HpsPayPlanCustomer The HPS customer object.
      */
-    protected function create_customer( $feed, $submission_data, $entry ) {
+    protected function create_customer($feed, $submission_data, $entry)
+    {
 
         /** @var HpsCardHolder|HpsAddress $cardHolder */
         $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
-        // Log the customer to be created.
-        $this->log_debug( __METHOD__ . '(): Customer meta to be created => ' . print_r( $cardHolder, 1 ) );
 
-        $customer                     = new HpsPayPlanCustomer();
-        $customer->customerIdentifier = getIdentifier($cardHolder->firstName.$cardHolder->lastName);
-        $customer->firstName          = $cardHolder->firstName;
-        $customer->lastName           = $cardHolder->lastName;
-        $customer->customerStatus     = HpsPayPlanCustomerStatus::ACTIVE;
-        $customer->primaryEmail       = $cardHolder->email;
-        $customer->addressLine1       = $cardHolder->address->address;
-        $customer->city               = $cardHolder->address->city;
-        $customer->stateProvince      = $cardHolder->address->state;
-        $customer->zipPostalCode      = $cardHolder->address->zip;
-        $customer->country            = $cardHolder->address->country;
-        $customer->phoneDay           = $cardHolder->phoneNumber;
+        // Log the customer to be created.
+        $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($cardHolder, 1));
+
+        /** @var string $modifier This value helps semi uniqely identify the customer */
+        $modifier = rgar($submission_data, 'ach_number'
+            , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
+
+        $customer = new HpsPayPlanCustomer();
+        $customer->customerIdentifier = getIdentifier($modifier . $cardHolder->firstName . $cardHolder->lastName);
+        $customer->firstName = $cardHolder->firstName;
+        $customer->lastName = $cardHolder->lastName;
+        $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
+        $customer->primaryEmail = $cardHolder->email;
+        $customer->addressLine1 = $cardHolder->address->address;
+        $customer->city = $cardHolder->address->city;
+        $customer->stateProvince = $cardHolder->address->state;
+        $customer->zipPostalCode = $cardHolder->address->zip;
+        $customer->country = $cardHolder->address->country;
+        $customer->phoneDay = null;
 
         return $customer;
     }
@@ -2088,7 +2123,7 @@ class GFSecureSubmit
      *
      * @return array|HpsPayPlanSchedule $plan The plan details. False if not found. If invalid request, the error message.
      */
-    public function get_plan($plan_id, $feed)
+    public function getSchedule($plan_id, $feed)
     {
         try {
             // Get HPS plan.
