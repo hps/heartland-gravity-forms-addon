@@ -1863,16 +1863,13 @@ class GFSecureSubmit
             $this->log_debug(__METHOD__ . '(): Create customer.');
             $payPlanCustomer = $payPlanService->addCustomer($customer);
 
-            $payPlanService->addPaymentMethod($paymentMethod)
-            $payMethod = $this->getKnownPaymentMethods($feed, $identifier, $customer);
             // TODO: create payment method
-            {
-                $this->create_plan()
-            }
+            $paymentMethod = $this->createPaymentMethod($submission_data,$identifier,$modifier);
+            $payPlanService->addPaymentMethod($paymentMethod);
 
             // Get HPS plan for feed.
             $plan_id = $this->get_subscription_plan_id($feed, $payment_amount, $trial_period_days);
-            $plan = $this->getSchedule($plan_id, $feed);
+            $plan = $this->create_plan($plan_id, $feed, $payment_amount, $trial_period_days, $currency);;
 
             // If error was returned when retrieving plan, return plan.
             if (rgar($plan, 'error_message')) {
@@ -1880,14 +1877,9 @@ class GFSecureSubmit
             }
             // If plan does not exist, create it.
             // TODO: Check if customer has the selected schedule
-            if (null !== $plan->scheduleKey)
+            if (null === $plan->scheduleKey)
             {
-                // TODO: update the schedule to ensure its current
-            }
-            // TODO: else add the schedule
-            else
-            {
-                $plan = $this->create_plan($plan_id, $feed, $payment_amount, $trial_period_days, $currency);;
+                // TODO: ureturn an error
             }
 
             // TODO: process any setup fee
@@ -2002,57 +1994,38 @@ class GFSecureSubmit
      * @param HpsPayPlanService $payPlanService
      * @param HpsPayPlanCustomer $customer
      *
-     * @return bool|HpsPayPlanCustomer Contains customer data if available. Otherwise, false.
+     * @return bool|HpsPayPlanPaymentMethod Contains customer data if available. Otherwise, false.
      *
      */
 
-    protected function createPaymentMethod($submission_data, $identifier,$modifier)
+    protected function createPaymentMethod($submission_data, $customer)
     {
         $isACH = null !== rgar($submission_data, 'ach_number');
         $acct = rgar($submission_data, 'ach_number'
             , @$this->getSecureSubmitJsResponse()->token_value);
         $paymentMethod = null;
-        if ($acct){
+        if (!empty($acct)) {
 
-            $paymentMethod                          = new HpsPayPlanPaymentMethod();
-            $paymentMethod->paymentMethodIdentifier = getIdentifier(($isACH?'ACH':'Credit').$acct);
-            $paymentMethod->paymentMethodType       = HpsPayPlanPaymentMethodType::CREDIT_CARD;
-            $paymentMethod->nameOnAccount           = $cardHolder->firstName . ' ' . $cardHolder->lastName;
-            $paymentMethod->paymentToken            = $token->tokenValue;
-            $paymentMethod->customerKey             = $customerKey;
-            $paymentMethod->country                 = $cardHolder->address->country;
+            $paymentMethod = new HpsPayPlanPaymentMethod();
+            $paymentMethod->paymentMethodIdentifier = getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
+            $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
+            $paymentMethod->country = $customer->address->country;
+            $paymentMethod->customerKey = $customer->customerIdentifier;
+            if ($isACH) {
+                // todo: create a method to get this instead of hard coded
+                $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::ACH;
+                $paymentMethod->achType = HpsACHType::CHECKING;
+                $paymentMethod->accountType = HpsCheckType::BUSINESS;
+                $paymentMethod->routingNumber = '';
+                $paymentMethod->accountNumber = $acct;
+
+            } else { // credit card
+                $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
+                $paymentMethod->paymentToken = $acct;
+            }
         }
+
         return $paymentMethod;
-    }
-    protected function get_customer($feed, $identifier, $customer)
-    {
-
-        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
-        $customerSearch=array(
-            'customerIdentifier'=>$identifier,
-            'firstName'=>$customer->firstName,
-            'lastName'=>$customer->lastName,
-            'primaryEmail'=>$customer->primaryEmail,
-            'customerStatus'=>HpsPayPlanCustomerStatus::ACTIVE,
-            'phoneNumber'=>null,
-            'city'=>$customer->city,
-            'stateProvince'=>$customer->stateProvince,
-            'zipPostalCode'=>$customer->zipPostalCode,
-            'country'=>$customer->country,
-            'hasSchedules'=>true,
-            'hasActiveSchedules'=>HpsPayPlanScheduleStatus::ACTIVE,
-            'hasPaymentMethods'=>true,
-            'hasActivePaymentMethods'=>HpsPayPlanPaymentMethodStatus::ACTIVE,
-        );
-        /** @var HpsPayPlanCustomer $payPlanCustomer */
-        $payPlanCustomer = $payPlanService->findAll($customerSearch);
-        if (null !== rgar($payPlanCustomer, 0) && null !== $payPlanCustomer[0]->customerIdentifier) {
-            $this->log_debug(__METHOD__ . '(): Retrieving customer id => ' . print_r($payPlanCustomer, 1));
-
-            return $payPlanCustomer[0];
-        }
-
-        return false;
     }
 
     /**
