@@ -1905,21 +1905,23 @@ class GFSecureSubmit
      * @since    Unknown
      * @access   protected
      *
-     * @used-by  GFSecureSubmit::process_subscription()
      * @used-by  GFSecureSubmit::subscribe()
      * @uses     GFAddOn::log_debug()
      * @uses     HpsPayPlanService::getCustomer()
+     * @uses     \GFSecureSubmit::getSecureSubmitJsResponse
+     * @uses     \GFSecureSubmit::getIdentifier
      *
-     * @param HpsPayPlanService $payPlanService
+     * @param array              $submission_data
      * @param HpsPayPlanCustomer $customer
      *
-     * @return bool|HpsPayPlanPaymentMethod Contains customer data if available. Otherwise, false.
+     * @return bool|\HpsPayPlanPaymentMethod Contains customer data if available. Otherwise, false.
      *
+     * @internal param \HpsPayPlanService $payPlanService
      */
     private function createPaymentMethod($submission_data, $customer)
     {
-        $isACH = null !== rgar($submission_data, 'ach_number');
-        $acct = rgar($submission_data, 'ach_number'
+        $isACH = null !== rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME);
+        $acct = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME
             , @$this->getSecureSubmitJsResponse()->token_value);
         $paymentMethod = null;
 
@@ -1928,17 +1930,20 @@ class GFSecureSubmit
             $paymentMethod = new HpsPayPlanPaymentMethod();
             $paymentMethod->paymentMethodIdentifier = $this->getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
+            /** @noinspection PhpUndefinedFieldInspection */
             $paymentMethod->country = $customer->address->country;
             $paymentMethod->customerKey = $customer->customerIdentifier;
 
             if ($isACH) {
 
+                $accountTypeOptions = array(1 => HpsAccountType::CHECKING, HpsAccountType::SAVINGS);
+                $checkTypeOptions = array(1 => HpsCheckType::PERSONAL, HpsCheckType::BUSINESS);
                 $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::ACH;
                 // todo: create a method to get this instead of hard coded
-                $paymentMethod->achType = HpsACHType::CHECKING;
+                $paymentMethod->achType = rgar($accountTypeOptions, rgar($submission_data, GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME));
                 // todo: create a method to get this instead of hard coded
-                $paymentMethod->accountType = HpsCheckType::BUSINESS;
-                $paymentMethod->routingNumber = '';
+                $paymentMethod->accountType = rgar($checkTypeOptions, rgar($submission_data, GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME));
+                $paymentMethod->routingNumber = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME);
                 $paymentMethod->accountNumber = $acct;
 
             } else { // credit card
@@ -1952,23 +1957,31 @@ class GFSecureSubmit
 
         return $paymentMethod;
     }
+    private function getACHType($submission_data){
 
+    }
+    private function getAccountType($submission_data){
+
+    }
     /**
      * Create and return a HPS customer with the specified properties.
      *
-     * @since  Unknown
-     * @access public
+     * @since    Unknown
+     * @access   private
      *
-     * @used-by GFSecureSubmit::subscribe()
-     * @uses    GFAddOn::log_debug()
-     * @uses    \Stripe\Customer::create()
+     * @used-by  GFSecureSubmit::subscribe()
+     * @uses     GFAddOn::log_debug()
+     * @uses     \GFSecureSubmit::buildCardHolder
+     * @uses     \GFSecureSubmit::getIdentifier
      *
-     * @param array $customer_meta The customer properties.
-     * @param array $feed          The feed currently being processed.
-     * @param array $entry         The entry currently being processed.
-     * @param array $form          The form which created the current entry.
+     * @param array $feed  The feed currently being processed.
+     * @param array $submission_data
+     * @param array $entry The entry currently being processed.
      *
-     * @return HpsPayPlanCustomer The HPS customer object.
+     * @return \HpsPayPlanCustomer The HPS customer object.
+     * @internal param array $customer_meta The customer properties.
+     * @internal param array $form The form which created the current entry.
+     *
      */
     private function create_customer($feed, $submission_data, $entry)
     {
@@ -1980,7 +1993,7 @@ class GFSecureSubmit
         $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($cardHolder, 1));
 
         /** @var string $modifier This value helps semi uniqely identify the customer */
-        $modifier = rgar($submission_data, 'ach_number'
+        $modifier = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME
             , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
 
         $customer = new HpsPayPlanCustomer();
@@ -1989,10 +2002,15 @@ class GFSecureSubmit
         $customer->lastName = $cardHolder->lastName;
         $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
         $customer->primaryEmail = $cardHolder->email;
+        /** @noinspection PhpUndefinedFieldInspection */
         $customer->addressLine1 = $cardHolder->address->address;
+        /** @noinspection PhpUndefinedFieldInspection */
         $customer->city = $cardHolder->address->city;
+        /** @noinspection PhpUndefinedFieldInspection */
         $customer->stateProvince = $cardHolder->address->state;
+        /** @noinspection PhpUndefinedFieldInspection */
         $customer->zipPostalCode = $cardHolder->address->zip;
+        /** @noinspection PhpUndefinedFieldInspection */
         $customer->country = $cardHolder->address->country;
         $customer->phoneDay = null;
 
@@ -2011,7 +2029,6 @@ class GFSecureSubmit
      * @uses    \GFSecureSubmit::getSecretApiKey
      * @uses    HpsInputValidation::checkAmount
      * @uses    \GFSecureSubmit::validPayPlanCycle
-     * @uses    \GFSecureSubmit::validPayPlanLength
      * @uses    HpsPayPlanSchedule
      * @uses    HpsPayPlanAmount
      * @uses    GFAddOn::log_debug()
@@ -2022,7 +2039,6 @@ class GFSecureSubmit
      * @param string    $customerKey       The Custyomer ID used by HPS.
      * @param string    $paymentMethodKey  The PaymentID used by HPS.
      * @param int       $trial_period_days The number of days the trial should last.
-     * @param string    $currency          The currency code for the entry being processed.
      *
      * @return array|HpsPayPlanSchedule The plan object.
      */
