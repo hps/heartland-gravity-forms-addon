@@ -2051,12 +2051,17 @@ class GFSecureSubmit
         $schedule->paymentMethodKey = $paymentMethodKey;
         $schedule->subtotalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
         $schedule->startDate = date('m30Y', strtotime(date('Y-m-d', strtotime(date('Y-m-d'))) . '+1 month'));
-        // TODO: make this get a parameter based on today and the cycke and trial period
-        $schedule->processingDateInfo = '31';
-        //TODO: Make this actually validate the cycle
+        $schedule->processingDateInfo = date("d",strtotime(date('d-m-Y')));
         $schedule->frequency = $this->validPayPlanCycle($feed);
-        //TODO: Make this actually validate the length
-        $schedule->duration = $this->validPayPlanLength($feed);
+
+        $numberOfPayments =  $feed['meta']['billingCycle_length'] === '0'
+            ? HpsPayPlanScheduleDuration::ONGOING
+            : HpsPayPlanScheduleDuration::LIMITED_NUMBER;
+        $schedule->duration = $numberOfPayments;
+        if ($numberOfPayments !== HpsPayPlanScheduleDuration::ONGOING){
+            $schedule->numberOfPayments   = $feed['meta']['billingCycle_length'];
+        }
+
         $schedule->reprocessingCount = 1;
 
         return $schedule;
@@ -2120,32 +2125,14 @@ class GFSecureSubmit
      */
     private function validPayPlanCycle($feed){
         $this->log_debug( __METHOD__ . '(): Plan to be created => ' . print_r( $feed, 1 ) );
-        switch ($feed['meta']['billingCycle_unit']) {
-            case '1':
-                $cycle = HpsPayPlanScheduleFrequency::WEEKLY;
-                break;
-            case '2':
-                $cycle = HpsPayPlanScheduleFrequency::BIWEEKLY;
-                break;
-            case '4':
-                $cycle = HpsPayPlanScheduleFrequency::SEMIMONTHLY;
-                break;
-            case '3':
-                $cycle = HpsPayPlanScheduleFrequency::MONTHLY;
-                break;
-            case '5':
-                $cycle = HpsPayPlanScheduleFrequency::QUARTERLY;
-                break;
-            case '6':
-                $cycle = HpsPayPlanScheduleFrequency::SEMIANNUALLY;
-                break;
-            case '7':
-                $cycle = HpsPayPlanScheduleFrequency::ANNUALLY;
-                break;
-            default:
-                $this->log_debug( __METHOD__ . '(): Billing Cycle Error => ' . print_r( $feed, 1 ) );
-                throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again', HpsExceptionCodes::INVALID_CONFIGURATION);
-                break;
+
+        $this->includeSecureSubmitSDK();
+        $oClass = new ReflectionClass ('HpsPayPlanScheduleFrequency');
+        $array = $oClass->getConstants ();
+        $cycle = rgar($array, $feed['meta']['billingCycle_unit']);
+        if( null == $cycle){
+            $this->log_debug( __METHOD__ . '(): Billing Cycle Error => ' . print_r( $feed, 1 ) );
+            throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again', HpsExceptionCodes::INVALID_CONFIGURATION);
         }
         $this->log_debug( __METHOD__ . '(): Billing Cycle Calculated => ' . $cycle );
 
@@ -2154,17 +2141,35 @@ class GFSecureSubmit
     }
 
     /**
-     * @param $feed
-     *
-     * @return string
+     * @return array
      */
-    private function validPayPlanLength( $feed){
-        // TODO: make this something other than ongoing
-        $feed['meta']['billingCycle_length'];
-        return HpsPayPlanScheduleDuration::ONGOING;
+    /** @noinspection PhpMissingParentCallCommonInspection */
+    public function supported_billing_intervals() {
+        //authorize.net does not use years or weeks, override framework function
 
+        $this->includeSecureSubmitSDK();
+        $oClass = new ReflectionClass ('HpsPayPlanScheduleFrequency');
+        $array = $oClass->getConstants();
+        $billing_cycles = array();
+        foreach( $array as $const=>$value){
+            $billing_cycles[$const] = array( 'label' => esc_html__( $value, 'gravityforms' ), 'min' => 1,'max' => 1 );
+        }
+        /*
+        $cycle = rgar($array, $feed['meta']['billingCycle_unit']);
+
+
+        $billing_cycles = array(
+            'WEEKLY' => array( 'label' => esc_html__( 'Weekly', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'BIWEEKLY' => array( 'label' => esc_html__( 'Bi-Weekly', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'SEMIMONTHLY' => array( 'label' => esc_html__( 'Semi-Monthly', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'MONTHLY' => array( 'label' => esc_html__( 'Monthly', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'QUARTERLY' => array( 'label' => esc_html__( 'Quarterly', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'SEMIANNUALLY' => array( 'label' => esc_html__( 'Semi-Annually', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+            'ANNUALLY' => array( 'label' => esc_html__( 'Annually', 'gravityforms' ), 'min' => 1,'max' => 1 ),
+        );
+*/
+        return $billing_cycles;
     }
-
 
 
 }
