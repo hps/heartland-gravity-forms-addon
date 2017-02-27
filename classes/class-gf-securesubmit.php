@@ -2028,19 +2028,6 @@ class GFSecureSubmit
      */
     public function create_plan($plan_id, $feed, $payment_amount, $customerKey, $paymentMethodKey, $trial_period_days = 0)
     {
-        // Prepare plan metadata.
-        /*
-        $plan_meta = array(
-            'interval'          => $feed['meta']['billingCycle_unit'],
-            'interval_count'    => $feed['meta']['billingCycle_length'],
-            'name'              => $feed['meta']['feedName'],
-            'currency'          => $currency,
-            'id'                => $plan_id,
-            'amount'            => $this->get_amount_export( $payment_amount, $currency ),
-            'trial_period_days' => $trial_period_days,
-        );*/
-
-        $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
         // Log the plan to be created.
         $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r(func_get_args(), 1));
         //(HpsPayPlanService $service, $customerKey, $paymentMethodKey, $amount)
