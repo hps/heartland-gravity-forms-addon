@@ -1728,73 +1728,7 @@ class GFSecureSubmit
         return $metadata;
 
     }
-    /**
-     * Update the entry meta with the HPS Customer ID.
-     *
-     * @since  Unknown
-     * @access public
-     *
-     * @uses GFSecureSubmit::get_hps_meta_data()
-     * @uses GFSecureSubmit::get_customer()
-     * @uses GFPaymentAddOn::process_subscription()
-     * @uses \Stripe\Customer::save()
-     * @uses \Exception::getMessage()
-     * @uses GFAddOn::log_error()
-     *
-     * @param array $authorization   Contains the result of the subscribe() function.
-     * @param array $feed            The feed object currently being processed.
-     * @param array $submission_data The customer and transaction data.
-     * @param array $form            The form object currently being processed.
-     * @param array $entry           The entry object currently being processed.
-     *
-     * @return array The entry object.
-     */
-    public function process_subscription( $authorization, $feed, $submission_data, $form, $entry ) {
-        // Update customer ID for entry.
-        gform_update_meta( $entry['id'], 'HPS_customer_id', $authorization['subscription']['customer_id'] );
-        $metadata = $this->get_hps_meta_data( $feed, $entry, $form );
-        if ( ! empty( $metadata ) ) {
-            // Update to user meta post entry creation so entry ID is available.
-            try {
-                // Get customer.
-                $customer = $this->get_customer( $authorization['subscription']['customer_id'] );
-                // Update customer metadata.
-                $customer->metadata = $metadata;
-                // Save customer.
-                $customer->save();
-            } catch ( \Exception $e ) {
-                // Log that we could not save customer.
-                $this->log_error( __METHOD__ . '(): Unable to save customer; ' . $e->getMessage() );
-            }
-        }
-        return parent::process_subscription( $authorization, $feed, $submission_data, $form, $entry );
-    }
-    /**
-     * Generate the subscription plan id.
-     *
-     * @since  Unknown
-     * @access public
-     *
-     * @used-by GFSecureSubmit::subscribe()
-     *
-     * @param array     $feed The feed object currently being processed.
-     * @param float|int $payment_amount The recurring amount.
-     * @param int       $trial_period_days The number of days the trial should last.
-     *
-     * @return string The subscription plan ID, if found.
-     */
-    public function get_subscription_plan_id( $feed, $payment_amount, $trial_period_days ) {
 
-        $safe_trial_period = $trial_period_days ? 'trial' . $trial_period_days . 'days' : '';
-
-        $safe_feed_name     = str_replace( ' ', '', strtolower( $feed['meta']['feedName'] ) );
-        $safe_billing_cycle = $feed['meta']['billingCycle_length'] . $feed['meta']['billingCycle_unit'];
-
-        $plan_id = implode( '_', array_filter( array( $safe_feed_name, $feed['id'], $safe_billing_cycle, $safe_trial_period, $payment_amount ) ) );
-
-        return $plan_id;
-
-    }
     /**
      * Subscribe the user to a HPS Pay plan. This process works like so:
      *
@@ -1835,146 +1769,135 @@ class GFSecureSubmit
 
         // Include HPS API library.
         $this->includeSecureSubmitSDK();
+        $userError = 'Your subscription could not be created. Please try again or contact customer service. ';
 
         // If there was an error when retrieving the HPS.js token, return an authorization error.
         if ($this->getSecureSubmitJsError()) {
+            $this->log_debug(__METHOD__ . '(): Tokenization error: ' . $this->getSecureSubmitJsError());
+            $subscribResult = $this->authorization_error($userError . $this->getSecureSubmitJsError());
+
             return $this->authorization_error($this->getSecureSubmitJsError());
-        }
+        } else {
+            // Prepare payment amount and trial period data.
+            $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
+            $single_payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
+            $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
+            $currency = rgar($entry, 'currency');
 
-        // Prepare payment amount and trial period data.
-        $payment_amount = $submission_data['payment_amount'];
-        $single_payment_amount = $submission_data['setup_fee'];
-        $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
-        $currency = rgar($entry, 'currency');
+            try {
+                $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
 
+                // while it could be ACH here for the Payplan Customer record it is the same difference
+                // Prepare customer metadata.
+                $customer = $this->create_customer($feed, $submission_data, $entry);
 
-        try {
-            $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
+                $this->log_debug(__METHOD__ . '(): Create customer.');
+                /** @var HpsPayPlanCustomer $payPlanCustomer */
+                $payPlanCustomer = $payPlanService->addCustomer($customer);
 
-            // while it could be ACH here for the Payplan Customer record it is the same difference
-            // Prepare customer metadata.
-            $customer                     = $this->create_customer($feed, $submission_data, $entry);
+                if (null === $payPlanCustomer->customerKey) {
 
-            /** @var string $modifier This value helps semi uniqely identify the customer */
-            $modifier = rgar($submission_data, 'ach_number'
-                , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
-            $identifier = $this->getIdentifier($modifier . $customer->firstName . $customer->lastName);
+                    $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Customer');
+                    $subscribResult = $this->authorization_error($userError);
 
-            $this->log_debug(__METHOD__ . '(): Create customer.');
-            $payPlanCustomer = $payPlanService->addCustomer($customer);
-
-            // TODO: create payment method
-            $paymentMethod = $this->createPaymentMethod($submission_data,$identifier,$modifier);
-            $payPlanService->addPaymentMethod($paymentMethod);
-
-            // Get HPS plan for feed.
-            $plan_id = $this->get_subscription_plan_id($feed, $payment_amount, $trial_period_days);
-            $plan = $this->create_plan($plan_id, $feed, $payment_amount, $trial_period_days, $currency);;
-
-            // If error was returned when retrieving plan, return plan.
-            if (rgar($plan, 'error_message')) {
-                return $plan;
-            }
-            // If plan does not exist, create it.
-            // TODO: Check if customer has the selected schedule
-            if (null === $plan->scheduleKey)
-            {
-                // TODO: ureturn an error
-            }
-
-            // TODO: process any setup fee
-                // If a setup fee is required, add an invoice item.
-                if ($single_payment_amount) {
-
-                    $response = $this->authorize($feed, $submission_data, $form, $entry);
-                    // TODO: record the payment in the subscription
-                }
-
-            $customer = $this->get_customer('', $feed, $entry, $form);
-
-            if (null !== $customer->customerKey) {
-
-                $this->log_debug(__METHOD__ . '(): Updating existing customer.');
-
-                // Update the customer source with the HPS token.
-                $customer->source = $token_response->id;
-                $customer->save();
-
-                // If a setup fee is required, add an invoice item.
-                if ($single_payment_amount) {
-                    $setup_fee = array(
-                        'amount' => $this->get_amount_export($single_payment_amount, $currency),
-                        'currency' => $currency,
-                    );
-                    $customer->addInvoiceItem($setup_fee);
-                }
-
-                // Add subscription to customer.
-                //TODO: replace this with an edit of the customer record in HPS
-                $subscription = $customer->updateSubscription(array('plan' => $plan->scheduleKey));
-
-                // Define subscription ID.
-                $subscription_id = $subscription->id;
-
-            } else {
-                //$response = $service->addCustomer($customer);
-                //return $response->customerKey;
-                    array(
-                    'description' => $this->get_field_value($form, $entry,
-                        rgar($feed['meta'], 'customerInformation_description')),
-                    'email' => $this->get_field_value($form, $entry, rgar($feed['meta'], 'customerInformation_email')),
-                    'source' => $token_response->id,
-                    'account_balance' => $this->get_amount_export($single_payment_amount, $currency),
-                    'metadata' => $this->get_hps_meta_data($feed, $entry, $form),
-                );
-
-                // Get coupon for feed.
-                $coupon_field_id = rgar($feed['meta'], 'customerInformation_coupon');
-                $coupon = $this->maybe_override_field_value(rgar($entry, $coupon_field_id), $form, $entry,
-                    $coupon_field_id);
-
-                // If coupon is set, add it to customer metadata.
-                if ($coupon) {
-                    $customer_meta['coupon'] = $coupon;
-                }
-
-                // TODO: find a replacement for the stripe reference
-                $has_filter = has_filter('gform_stripe_customer_after_create');
-
-                if (!$has_filter) {
-                    // If filter is not being used add the plan to customer metadata; resolves a currency issue.
-                    $customer_meta['plan'] = $plan;
-                }
-
-                $customer = $this->create_customer($customer_meta, $feed);
-
-                if ($has_filter) {
-                    // Add subscription to customer.
-                    $subscription = $customer->updateSubscription(array('plan' => $plan->id));
-
-                    // Define subscription ID.
-                    $subscription_id = $subscription->id;
                 } else {
-                    // Define subscription ID.
-                    $subscription_id = $customer->subscriptions->data[0]->id;
+
+                    // TODO: create payment method
+                    $this->log_debug(__METHOD__ . '(): Create payment method.');
+                    $paymentMethod = $this->createPaymentMethod($submission_data, $payPlanCustomer);
+                    /** @var HpsPayPlanPaymentMethod $payPlanPaymentMethod */
+                    $payPlanPaymentMethod = $payPlanService->addPaymentMethod($paymentMethod);
+
+                    if (null === $payPlanPaymentMethod->paymentMethodKey) {
+
+                        $this->log_debug(__METHOD__ . '(): Could not create Pay Plan payment method');
+                        $subscribResult = $this->authorization_error($userError);
+
+                    } else {
+
+                        // Get HPS plan for feed.
+                        $this->log_debug(__METHOD__ . '(): Create Schedule.');
+                        $plan_id = __("%s:%s", $payPlanCustomer->customerIdentifier,
+                            $payPlanPaymentMethod->paymentMethodIdentifier);
+                        /** @var HpsPayPlanSchedule $plan */
+                        $plan = $this->create_plan($plan_id, $feed, $payment_amount, $trial_period_days, $currency);;
+
+                        // If error was returned when retrieving plan, return plan.
+
+                        /** @var HpsPayPlanSchedule $planSchedule */
+                        $this->log_debug(__METHOD__ . '(): Add Schedule.');
+                        $planSchedule = $payPlanService->addSchedule($plan);
+
+                        if (!isset($subscribResult) || null === rgar($subscribResult, 'error_message')) {
+
+                            // Create the plan unless there is no key.
+                            if (null === $planSchedule->scheduleKey) {
+
+                                $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Schedule');
+                                $subscribResult = $this->authorization_error($userError);
+
+                            } else {
+
+                                // If a setup fee is required, add an invoice item.
+                                if ($single_payment_amount) {
+
+                                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                                    $creditService = new HpsFluentCreditService($this->getHpsServicesConfig($this->getSecretApiKey($feed)));
+                                    /** @var HpsAuthorization $response */
+                                    $response = $creditService
+                                        ->recurring($single_payment_amount)
+                                        ->withPaymentMethodKey($paymentMethod->paymentMethodKey)
+                                        ->withSchedule($plan->paymentMethodKey)
+                                        ->execute();
+
+                                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
+
+                                        $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
+                                        $subscribResult = $this->authorization_error($userError);
+
+                                    } // if
+                                    else {
+
+                                        $this->log_debug(__METHOD__ . '(): Setup Fee Approved');
+
+                                    }
+
+                                } // if
+
+                                if (!isset($subscribResult) && null === rgar($subscribResult, 'error_message')) {
+
+                                    $subscribResult = array(
+                                        'is_success' => true,
+                                        'subscription_id' => $plan->paymentMethodKey,
+                                        'customer_id' => $customer->customerKey,
+                                        'amount' => $payment_amount,
+                                    ); // array
+
+                                } // if
+
+                            } // if
+                        }
+                    }
                 }
 
+
+            } catch (\Exception $e) {
+
+                // Return authorization error.
+                $subscribResult = $this->authorization_error($userError . $e->getMessage());
+
             }
-
-        } catch (\Exception $e) {
-
-            // Return authorization error.
-            return $this->authorization_error($e->getMessage());
-
         }
+       
 
+        if (!isset($subscribResult)) {
+
+            $this->log_debug(__METHOD__ . '(): Unknown error ');
+            $subscribResult = $this->authorization_error($userError);
+
+        } // if
         // Return subscription data.
-        return array(
-            'is_success' => true,
-            'subscription_id' => $subscription_id,
-            'customer_id' => $customer->customerIdentifier,
-            'amount' => $payment_amount,
-        );
+        return $subscribResult;
 
     }
     // # HPS HELPER FUNCTIONS ---------------------------------------------------------------------------------------
@@ -1997,32 +1920,38 @@ class GFSecureSubmit
      * @return bool|HpsPayPlanPaymentMethod Contains customer data if available. Otherwise, false.
      *
      */
-
     protected function createPaymentMethod($submission_data, $customer)
     {
         $isACH = null !== rgar($submission_data, 'ach_number');
         $acct = rgar($submission_data, 'ach_number'
             , @$this->getSecureSubmitJsResponse()->token_value);
         $paymentMethod = null;
+
         if (!empty($acct)) {
 
             $paymentMethod = new HpsPayPlanPaymentMethod();
-            $paymentMethod->paymentMethodIdentifier = getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
+            $paymentMethod->paymentMethodIdentifier = $this->getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             $paymentMethod->country = $customer->address->country;
             $paymentMethod->customerKey = $customer->customerIdentifier;
+
             if ($isACH) {
-                // todo: create a method to get this instead of hard coded
+
                 $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::ACH;
+                // todo: create a method to get this instead of hard coded
                 $paymentMethod->achType = HpsACHType::CHECKING;
+                // todo: create a method to get this instead of hard coded
                 $paymentMethod->accountType = HpsCheckType::BUSINESS;
                 $paymentMethod->routingNumber = '';
                 $paymentMethod->accountNumber = $acct;
 
             } else { // credit card
+
                 $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
                 $paymentMethod->paymentToken = $acct;
+
             }
+
         }
 
         return $paymentMethod;
@@ -2059,7 +1988,7 @@ class GFSecureSubmit
             , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
 
         $customer = new HpsPayPlanCustomer();
-        $customer->customerIdentifier = getIdentifier($modifier . $cardHolder->firstName . $cardHolder->lastName);
+        $customer->customerIdentifier = $this->getIdentifier($modifier . $cardHolder->firstName . $cardHolder->lastName);
         $customer->firstName = $cardHolder->firstName;
         $customer->lastName = $cardHolder->lastName;
         $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
@@ -2074,34 +2003,6 @@ class GFSecureSubmit
         return $customer;
     }
 
-    /**
-     * Try and retrieve the plan if a plan with the matching id has previously been created.
-     *
-     * @since  Unknown
-     * @access public
-     *
-     * @used-by GFSecureSubmit::subscribe()
-     * @uses    \Stripe\Plan::retrieve()
-     * @uses    GFPaymentAddOn::authorization_error()
-     *
-     * @param string $plan_id The subscription plan id.
-     *
-     * @return array|HpsPayPlanSchedule $plan The plan details. False if not found. If invalid request, the error message.
-     */
-    public function getSchedule($plan_id, $feed)
-    {
-        try {
-            // Get HPS plan.
-            $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
-            $plan = $payPlanService->getSchedule($plan_id);
-
-        } catch (\Exception $e) {
-            // If error is an invalid request error, return error message.
-            $plan = $this->authorization_error($e->getMessage());
-        }
-
-        return $plan;
-    }
 
     /**
      * Create and return a HPS plan with the specified properties.
@@ -2162,9 +2063,8 @@ class GFSecureSubmit
         //TODO: Make this actually validate the length
         $schedule->duration = $this->validPayPlanLength($feed);
         $schedule->reprocessingCount = 1;
-        $response = $payPlanService->addSchedule($schedule);
 
-        return $response->scheduleKey;
+        return $schedule;
     }
     /**
      * @param string $id
@@ -2244,8 +2144,8 @@ class GFSecureSubmit
                 $cycle = HpsPayPlanScheduleFrequency::ANNUALLY;
                 break;
             default:
-                throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again', HpsExceptionCodes::INVALID_CONFIGURATION);
                 $this->log_debug( __METHOD__ . '(): Billing Cycle Error => ' . print_r( $feed, 1 ) );
+                throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again', HpsExceptionCodes::INVALID_CONFIGURATION);
                 break;
         }
         $this->log_debug( __METHOD__ . '(): Billing Cycle Calculated => ' . $cycle );
@@ -2253,6 +2153,11 @@ class GFSecureSubmit
         return $cycle;
 
     }
+    /**
+     * @param $feed
+     *
+     * @return string
+     */
     private function validPayPlanLength( $feed){
         // TODO: make this something other than ongoing
         $feed['meta']['billingCycle_length'];
