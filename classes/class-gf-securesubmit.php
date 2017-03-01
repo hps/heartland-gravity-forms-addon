@@ -1235,7 +1235,6 @@ class GFSecureSubmit
     }
 
     // Helper functions
-
     /**
      * @param       $entry
      * @param array $result
@@ -1283,6 +1282,9 @@ class GFSecureSubmit
     private function buildCardHolder($feed, $submission_data, $entry) {
         $firstName = '';
         $lastName = '';
+        if ('' === rgar($submission_data,'card_name')){
+            $submission_data['card_name'] = rgpost( 'card_name' );
+        }
 
         try {
             $name = explode(' ', rgar($submission_data, 'card_name'));
@@ -1868,8 +1870,8 @@ class GFSecureSubmit
 
         $customer = new HpsPayPlanCustomer();
         $customer->customerIdentifier = $this->getIdentifier($modifier . $cardHolder->firstName . $cardHolder->lastName);
-        $customer->firstName = 'roe' ;//$cardHolder->firstName;
-        $customer->lastName = 'dog' ;//$cardHolder->lastName;
+        $customer->firstName = $cardHolder->firstName;
+        $customer->lastName = $cardHolder->lastName;
         $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
         $customer->primaryEmail = $cardHolder->email;
         /** @noinspection PhpUndefinedFieldInspection */
@@ -1881,7 +1883,7 @@ class GFSecureSubmit
         /** @noinspection PhpUndefinedFieldInspection */
         $customer->zipPostalCode = $cardHolder->address->zip;
         /** @noinspection PhpUndefinedFieldInspection */
-        $customer->country = 'USA'; //$cardHolder->address->country;
+        $customer->country = $cardHolder->address->country;
         $customer->phoneDay = null;
 
         return $customer;
@@ -1918,7 +1920,7 @@ class GFSecureSubmit
             $paymentMethod->paymentMethodIdentifier = $this->getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             /** @noinspection PhpUndefinedFieldInspection */
-            $paymentMethod->country = 'USA';
+            $paymentMethod->country = $customer->country;;
             $paymentMethod->customerKey = $customer->customerKey;
 
             if ($isACH) {
@@ -1984,11 +1986,15 @@ class GFSecureSubmit
         $schedule->paymentMethodKey = $plan->paymentMethodKey;
         $schedule->subtotalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount)*100);
         $schedule->totalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
-        //todo: make the month instead be based on the billing cycle
-        $schedule->startDate = date('m30Y', strtotime(date('Y-m-d', strtotime(date('Y-m-d'))) . '+1 month'));
-        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
-        //$schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
         $schedule->frequency = $this->validPayPlanCycle($feed);
+        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
+        if (!in_array($schedule->frequency ,array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY)) ){
+            $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
+        }
+        //todo: make the month instead be based on the billing cycle
+            $this->getDateModifier($schedule->frequency,$trial_period_days);
+        $schedule->startDate = date('m30Y', strtotime(date('Y-m-d', strtotime(date('Y-m-d'))) . '+1 month'));
+
 
         $numberOfPayments = $feed['meta']['billingCycle_length'] === '0'
             ? HpsPayPlanScheduleDuration::ONGOING
@@ -2029,6 +2035,57 @@ class GFSecureSubmit
         $this->log_debug(__METHOD__ . '(): Billing Cycle Calculated => ' . $cycle);
 
         return $cycle;
+
+    }
+    private function getDateModifier($frequency,$trial_period_days){
+        if ($trial_period_days*1 !== 0){
+
+            $period = '+'.$trial_period_days.' days';
+
+        } else {
+
+            switch ($frequency) {
+
+                case HpsPayPlanScheduleFrequency::WEEKLY:
+                    $period = '+1 week';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::BIWEEKLY:
+                    $period = '+2 week';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
+                    $middleOfMoth = date('Y-m-d',mktime(0, 0, 0, date('m'), 15));
+                    $endOfMonth = date('Y-m-d',mktime(0, 0, 0, date('m'), date('t')));
+                    $period = '+1 year';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::MONTHLY:
+                    $period = '+1 year';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::QUARTERLY:
+                    $period = '+1 year';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::SEMIANNUALLY:
+                    $period = '+1 year';
+                    break;
+
+                case HpsPayPlanScheduleFrequency::ANNUALLY:
+                    $period = '+1 year';
+                    break;
+
+                default:
+                    $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($frequency, 1));
+                    throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again',
+                        HpsExceptionCodes::INVALID_CONFIGURATION);
+            }
+        }
+
+        $date = strtotime(date('Y-m-d') . '+'.$trial_period_days.' days');
+        date('m30Y', strtotime(date('Y-m-d',$date) . '+1 month'));
+
 
     }
     /**

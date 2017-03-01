@@ -1,6 +1,15 @@
 <div class="ginput_complex<?php echo $class_suffix; ?> ginput_container ginput_container_creditcard hps_secure_cc" id="<?php echo $field_id; ?>">
   <div id="HPS_secure_cc">
+
+
     <div class="ss-shield"></div>
+
+    <div id="secure-submit-card" class="form-group">
+      <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
+      <input type="text" name="card_name" placeholder="John Doe">
+    </div>
+
+
     <!-- The Payment Form -->
     <div id="secure-submit-card" class="form-group">
       <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
