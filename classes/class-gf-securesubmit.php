@@ -1772,12 +1772,41 @@ class GFSecureSubmit
 
                             } else {
 
+                                if (null !== $trial_period_days) {
+
+                                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                                    $creditService = new HpsFluentCreditService($this->getHpsServicesConfig($this->getSecretApiKey($feed)));
+                                    /** @var HpsAuthorization $response */
+                                    /** @noinspection PhpParamsInspection */
+                                    $response = $creditService
+                                        ->recurring($payment_amount*100) // amounts always in pennies
+                                        //->recurring(1000)
+                                        ->withPaymentMethodKey($payPlanPaymentMethod->paymentMethodKey)
+                                        ->withSchedule($planSchedule->scheduleKey)
+                                        ->execute();
+
+                                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
+
+                                        $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
+                                        $subscribResult = $this->authorization_error($userError);
+
+                                    } // if
+                                    else {
+
+                                        $this->log_debug(__METHOD__ . '(): First Charge Approved');
+
+                                    }
+
+                                } // if
+
+
                                 // If a setup fee is required, add an invoice item.
                                 if ($single_payment_amount) {
 
                                     $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
                                     $creditService = new HpsFluentCreditService($this->getHpsServicesConfig($this->getSecretApiKey($feed)));
                                     /** @var HpsAuthorization $response */
+                                    /** @noinspection PhpParamsInspection */
                                     $response = $creditService
                                         ->recurring($single_payment_amount*100)
                                         //->recurring(1000)
@@ -2043,7 +2072,6 @@ class GFSecureSubmit
      * @throws \HpsArgumentException
      */
     private function getStartDateInfo($frequency, $trial_period_days){
-        $today = date('Y-m-d');
         if ($trial_period_days*1 !== 0){
 
             $period = date('mdY', strtotime('+'.($trial_period_days*1).' days'));
