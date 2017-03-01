@@ -251,6 +251,7 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
 #iframesCardCvv {
   margin-bottom:14px;
 }
+label[for=iframesCardHolder],
 label[for=iframesCardNumber],
 label[for=iframesCardExpiration],
 label[for=iframesCardCvv]{
