@@ -1991,9 +1991,7 @@ class GFSecureSubmit
         if (!in_array($schedule->frequency ,array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY)) ){
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
         }
-        //todo: make the month instead be based on the billing cycle
-            $this->getDateModifier($schedule->frequency,$trial_period_days);
-        $schedule->startDate = date('m30Y', strtotime(date('Y-m-d', strtotime(date('Y-m-d'))) . '+1 month'));
+        $schedule->startDate = $this->getStartDateInfo($schedule->frequency,$trial_period_days);
 
 
         $numberOfPayments = $feed['meta']['billingCycle_length'] === '0'
@@ -2037,56 +2035,60 @@ class GFSecureSubmit
         return $cycle;
 
     }
-    private function getDateModifier($frequency,$trial_period_days){
+    /**
+     * @param string $frequency
+     * @param int $trial_period_days
+     *
+     * @return bool|string
+     * @throws \HpsArgumentException
+     */
+    private function getStartDateInfo($frequency, $trial_period_days){
+        $today = date('Y-m-d');
         if ($trial_period_days*1 !== 0){
 
-            $period = '+'.$trial_period_days.' days';
+            $period = date('mdY', strtotime('+'.($trial_period_days*1).' days'));
 
         } else {
 
             switch ($frequency) {
 
                 case HpsPayPlanScheduleFrequency::WEEKLY:
-                    $period = '+1 week';
+                    $period = date('mdY', strtotime('+1 week'));
                     break;
 
                 case HpsPayPlanScheduleFrequency::BIWEEKLY:
-                    $period = '+2 week';
+                    $period = date('mdY', strtotime('+2 week'));
                     break;
 
                 case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
-                    $middleOfMoth = date('Y-m-d',mktime(0, 0, 0, date('m'), 15));
-                    $endOfMonth = date('Y-m-d',mktime(0, 0, 0, date('m'), date('t')));
-                    $period = '+1 year';
+                    $period = 'Last';
                     break;
 
                 case HpsPayPlanScheduleFrequency::MONTHLY:
-                    $period = '+1 year';
+                    $period = date('mdY', strtotime('+1 month'));
                     break;
 
                 case HpsPayPlanScheduleFrequency::QUARTERLY:
-                    $period = '+1 year';
+                    $period = date('mdY', strtotime('+3 month'));
                     break;
 
                 case HpsPayPlanScheduleFrequency::SEMIANNUALLY:
-                    $period = '+1 year';
+                    $period = date('mdY', strtotime('+6 month'));
                     break;
 
                 case HpsPayPlanScheduleFrequency::ANNUALLY:
-                    $period = '+1 year';
+                    $period = date('mdY', strtotime('+1 year'));
                     break;
 
                 default:
                     $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($frequency, 1));
                     throw new HpsArgumentException('Invalid period for subscription. Please check settings and try again',
                         HpsExceptionCodes::INVALID_CONFIGURATION);
+
             }
+
         }
-
-        $date = strtotime(date('Y-m-d') . '+'.$trial_period_days.' days');
-        date('m30Y', strtotime(date('Y-m-d',$date) . '+1 month'));
-
-
+        return $period;
     }
     /**
      * @param string $id
