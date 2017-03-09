@@ -14,10 +14,6 @@
              placeholder="JON DOE" value="<?php echo $account_name_value; ?>" <?php echo $account_name_tabindex; ?> <?php echo $disabled_text; ?>/>
     </span>
 
-    <div id="secure-submit-card" class="form-group">
-      <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardNumber" tabindex="1"><input type="tel" disabled="" placeholder="JON DOE"></div>
-    </div>
 
 
     <!-- account number -->

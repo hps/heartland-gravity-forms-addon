@@ -1315,6 +1315,19 @@ class GFSecureSubmit
         $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
         $checkHolder->checkName = rgar($submission_data, 'ach_check_holder'); //'check holder';
 
+        $firstName = '';
+        $lastName = '';
+        try {
+            $name = explode(' ', rgar($submission_data, 'ach_check_holder'));
+            $firstName = $name[0];
+            unset($name[0]);
+            $lastName = implode(' ', $name);
+        } catch (Exception $ex) {
+            $firstName = rgar($submission_data, 'ach_check_holder');
+        }
+
+        $checkHolder->firstName = $firstName;
+        $checkHolder->lastName = $lastName;
         return $checkHolder;
     }
     /**
@@ -1712,9 +1725,17 @@ class GFSecureSubmit
 
         // If there was an error when retrieving the HPS.js token, return an authorization error.
         if ($this->getSecureSubmitJsError()) {
+
             $this->log_debug(__METHOD__ . '(): Tokenization error: ' . $this->getSecureSubmitJsError());
             $subscribResult = $this->authorization_error($userError . $this->getSecureSubmitJsError());
+
+        } elseif ('' !== rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME)) { // make sure we arent trying to submit ACH
+
+            $this->log_debug(__METHOD__ . '(): Incorrect submission: ' . $this->getSecureSubmitJsError());
+            $subscribResult = $this->authorization_error($userError . 'Currently ACH is not supported for subscriptions');
+
         } else {
+
             // Prepare payment amount and trial period data.
             $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
             $single_payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
@@ -1740,7 +1761,7 @@ class GFSecureSubmit
                 } else {
 
                     $this->log_debug(__METHOD__ . '(): Create payment method.');
-                    $paymentMethod = $this->createPaymentMethod($submission_data, $payPlanCustomer);
+                    $paymentMethod = $this->createPaymentMethod($payPlanCustomer);
                     /** @var HpsPayPlanPaymentMethod $payPlanPaymentMethod */
                     $payPlanPaymentMethod = $payPlanService->addPaymentMethod($paymentMethod);
 
@@ -1887,33 +1908,21 @@ class GFSecureSubmit
     private function create_customer($feed, $submission_data, $entry)
     {
 
-        /** @var HpsCardHolder|HpsAddress $cardHolder */
-        $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
+        $acctHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
         // Log the customer to be created.
-        $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($cardHolder, 1));
+        $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
 
         /** @var string $modifier This value helps semi uniqely identify the customer */
-        $modifier = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME
-            , $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type);
+        $modifier = $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type;
 
         $customer = new HpsPayPlanCustomer();
-        $customer->customerIdentifier = $this->getIdentifier($modifier . $cardHolder->firstName . $cardHolder->lastName);
-        $customer->firstName = $cardHolder->firstName;
-        $customer->lastName = $cardHolder->lastName;
+        $customer->customerIdentifier = $this->getIdentifier($modifier . $acctHolder->firstName . $acctHolder->lastName);
+        $customer->firstName = $acctHolder->firstName;
+        $customer->lastName = $acctHolder->lastName;
         $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
-        $customer->primaryEmail = $cardHolder->email;
         /** @noinspection PhpUndefinedFieldInspection */
-        $customer->addressLine1 = $cardHolder->address->address;
-        /** @noinspection PhpUndefinedFieldInspection */
-        $customer->city = $cardHolder->address->city;
-        /** @noinspection PhpUndefinedFieldInspection */
-        $customer->stateProvince = $cardHolder->address->state;
-        /** @noinspection PhpUndefinedFieldInspection */
-        $customer->zipPostalCode = $cardHolder->address->zip;
-        /** @noinspection PhpUndefinedFieldInspection */
-        $customer->country = $cardHolder->address->country;
-        $customer->phoneDay = null;
+        $customer->country = $acctHolder->address->country;
 
         return $customer;
     }
@@ -1936,40 +1945,21 @@ class GFSecureSubmit
      *
      * @internal param \HpsPayPlanService $payPlanService
      */
-    private function createPaymentMethod($submission_data, $customer)
+    private function createPaymentMethod($customer)
     {
-        $isACH = '' !== rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME);
-        $acct = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ACCOUNT_FIELD_NAME
-            , @$this->getSecureSubmitJsResponse()->token_value);
         $paymentMethod = null;
+        $acct = $this->getSecureSubmitJsResponse()->token_value;
 
         if (!empty($acct)) {
 
             $paymentMethod = new HpsPayPlanPaymentMethod();
-            $paymentMethod->paymentMethodIdentifier = $this->getIdentifier(($isACH ? 'ACH' : 'Credit') . $acct);
+            $paymentMethod->paymentMethodIdentifier = $this->getIdentifier('Credit' . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             /** @noinspection PhpUndefinedFieldInspection */
             $paymentMethod->country = $customer->country;;
             $paymentMethod->customerKey = $customer->customerKey;
-
-            if ($isACH) {
-
-                $accountTypeOptions = array(1 => HpsAccountType::CHECKING, HpsAccountType::SAVINGS);
-                $checkTypeOptions = array(1 => HpsCheckType::PERSONAL, HpsCheckType::BUSINESS);
-                $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::ACH;
-                $paymentMethod->achType = rgar($accountTypeOptions,
-                    rgar($submission_data, GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME));
-                $paymentMethod->accountType = rgar($checkTypeOptions,
-                    rgar($submission_data, GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME));
-                $paymentMethod->routingNumber = rgar($submission_data, GF_Field_HPSach::HPS_ACH_ROUTING_FIELD_NAME);
-                $paymentMethod->accountNumber = $acct;
-
-            } else { // credit card
-                $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
-                $paymentMethod->paymentToken = $acct;
-
-            }
-
+            $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
+            $paymentMethod->paymentToken = $acct;
         }
 
         return $paymentMethod;
@@ -2003,7 +1993,7 @@ class GFSecureSubmit
         $plan,
         $feed,
         $payment_amount,
-        $trial_period_days = 0, $currency
+        $trial_period_days = 0
     ) {
         // Log the plan to be created.
         $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r(func_get_args(), 1));

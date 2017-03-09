@@ -104,7 +104,7 @@ abstract class HpsGatewayServiceAbstract
             ) {
                 curl_setopt_array($request, $this->_config->curlOptions);
             }
-
+            print $request;
             $curlResponse = curl_exec($request);
             $curlInfo = curl_getinfo($request);
             $curlError = curl_errno($request);
