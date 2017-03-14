@@ -1793,58 +1793,57 @@ class GFSecureSubmit
 
                     return $this->authorization_error($userError);
 
-                } else {
+                }
 
-                    if (null !== $trial_period_days) {
+                if (null !== $trial_period_days) {
 
-                        $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                        /** @var HpsAuthorization $response */
-                        /** @noinspection PhpParamsInspection */
-                        $response = $this->processRecurring($payment_amount, $feed, $payPlanPaymentMethod,
-                            $planSchedule);
+                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                    /** @var HpsAuthorization $response */
+                    /** @noinspection PhpParamsInspection */
+                    $response = $this->processRecurring($payment_amount, $feed, $payPlanPaymentMethod,
+                        $planSchedule);
 
-                        if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
+                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
 
-                            $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
+                        $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
 
-                            return $this->authorization_error($userError);
+                        return $this->authorization_error($userError);
 
-                        }
+                    }
 
-                    } // if
+                } // if
 
-                    // If a setup fee is required, add an invoice item.
-                    if ($single_payment_amount) {
+                // If a setup fee is required, add an invoice item.
+                if ($single_payment_amount) {
 
-                        $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                        /** @var HpsAuthorization $response */
-                        /** @noinspection PhpParamsInspection */
-                        $response = $this->processRecurring($single_payment_amount, $feed,
-                            $payPlanPaymentMethod, $planSchedule);
+                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                    /** @var HpsAuthorization $response */
+                    /** @noinspection PhpParamsInspection */
+                    $response = $this->processRecurring($single_payment_amount, $feed,
+                        $payPlanPaymentMethod, $planSchedule);
 
-                        if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
+                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
 
-                            $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
+                        $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
 
-                            return $this->authorization_error($userError);
-
-                        } // if
-
-                    } // if
-
-                    if (!isset($subscribResult) && null === rgar($subscribResult, 'error_message')) {
-
-                        $subscribResult = array(
-                            'is_success' => true,
-                            'subscription_id' => $plan->paymentMethodKey,
-                            'customer_id' => $customer->customerKey,
-                            'amount' => $payment_amount,
-                        ); // array
+                        return $this->authorization_error($userError);
 
                     } // if
 
                 } // if
-            }
+
+                if (!isset($subscribResult) && null === rgar($subscribResult, 'error_message')) {
+
+                    $subscribResult = array(
+                        'is_success' => true,
+                        'subscription_id' => $plan->paymentMethodKey,
+                        'customer_id' => $customer->customerKey,
+                        'amount' => $payment_amount,
+                    ); // array
+
+                } // if
+
+            } // if
 
         } catch (\Exception $e) {
 
