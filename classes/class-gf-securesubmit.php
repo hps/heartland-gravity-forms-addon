@@ -1727,144 +1727,141 @@ class GFSecureSubmit
         if ($this->getSecureSubmitJsError()) {
 
             $this->log_debug(__METHOD__ . '(): Tokenization error: ' . $this->getSecureSubmitJsError());
-            $subscribResult = $this->authorization_error($userError . $this->getSecureSubmitJsError());
 
-        } elseif ('' !== rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME)) { // make sure we arent trying to submit ACH
+            return $this->authorization_error($userError . $this->getSecureSubmitJsError());
+
+        }
+        if ('' !== rgpost(GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME)) { // make sure we arent trying to submit ACH
 
             $this->log_debug(__METHOD__ . '(): Incorrect submission: ' . $this->getSecureSubmitJsError());
-            $subscribResult = $this->authorization_error($userError . 'Currently ACH is not supported for subscriptions');
 
-        } else {
+            return $this->authorization_error($userError . 'Currently ACH is not supported for subscriptions');
 
-            // Prepare payment amount and trial period data.
-            $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
-            $single_payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
-            $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
-            $currency = rgar($entry, 'currency');
+        }
 
-            try {
-                $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
+        // Prepare payment amount and trial period data.
+        $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
+        $single_payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
+        $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
+        $currency = rgar($entry, 'currency');
 
-                // while it could be ACH here for the Payplan Customer record it is the same difference
-                // Prepare customer metadata.
-                $customer = $this->create_customer($feed, $submission_data, $entry);
+        try {
+            $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
 
-                $this->log_debug(__METHOD__ . '(): Create customer.');
-                /** @var HpsPayPlanCustomer $payPlanCustomer */
-                $payPlanCustomer = $payPlanService->addCustomer($customer);
+            // while it could be ACH here for the Payplan Customer record it is the same difference
+            // Prepare customer metadata.
+            $customer = $this->create_customer($feed, $submission_data, $entry);
 
-                if (null === $payPlanCustomer->customerKey) {
+            $this->log_debug(__METHOD__ . '(): Create customer.');
+            /** @var HpsPayPlanCustomer $payPlanCustomer */
+            $payPlanCustomer = $payPlanService->addCustomer($customer);
 
-                    $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Customer');
-                    $subscribResult = $this->authorization_error($userError);
+            if (null === $payPlanCustomer->customerKey) {
+
+                $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Customer');
+
+                return $this->authorization_error($userError);
+
+            }
+
+            $this->log_debug(__METHOD__ . '(): Create payment method.');
+            $paymentMethod = $this->createPaymentMethod($payPlanCustomer);
+            /** @var HpsPayPlanPaymentMethod $payPlanPaymentMethod */
+            $payPlanPaymentMethod = $payPlanService->addPaymentMethod($paymentMethod);
+
+            if (null === $payPlanPaymentMethod->paymentMethodKey) {
+
+                $this->log_debug(__METHOD__ . '(): Could not create Pay Plan payment method');
+
+                return $this->authorization_error($userError);
+
+            }
+
+            // Get HPS plan for feed.
+            $this->log_debug(__METHOD__ . '(): Create Schedule.');
+            /** @var HpsPayPlanSchedule $plan */
+            $plan = $this->create_plan($payPlanPaymentMethod, $feed, $payment_amount, $trial_period_days,
+                $currency);;
+
+            // If error was returned when retrieving plan, return plan.
+
+            /** @var HpsPayPlanSchedule $planSchedule */
+            $this->log_debug(__METHOD__ . '(): Add Schedule.');
+            $planSchedule = $payPlanService->addSchedule($plan);
+
+            if (!isset($subscribResult) || null === rgar($subscribResult, 'error_message')) {
+
+                // Create the plan unless there is no key.
+                if (null === $planSchedule->scheduleKey) {
+
+                    $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Schedule');
+
+                    return $this->authorization_error($userError);
 
                 } else {
 
-                    $this->log_debug(__METHOD__ . '(): Create payment method.');
-                    $paymentMethod = $this->createPaymentMethod($payPlanCustomer);
-                    /** @var HpsPayPlanPaymentMethod $payPlanPaymentMethod */
-                    $payPlanPaymentMethod = $payPlanService->addPaymentMethod($paymentMethod);
+                    if (null !== $trial_period_days) {
 
-                    if (null === $payPlanPaymentMethod->paymentMethodKey) {
+                        $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                        /** @var HpsAuthorization $response */
+                        /** @noinspection PhpParamsInspection */
+                        $response = $this->processRecurring($payment_amount, $feed, $payPlanPaymentMethod,
+                            $planSchedule);
 
-                        $this->log_debug(__METHOD__ . '(): Could not create Pay Plan payment method');
-                        $subscribResult = $this->authorization_error($userError);
+                        if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
 
-                    } else {
+                            $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
 
-                        // Get HPS plan for feed.
-                        $this->log_debug(__METHOD__ . '(): Create Schedule.');
-                        /** @var HpsPayPlanSchedule $plan */
-                        $plan = $this->create_plan($payPlanPaymentMethod, $feed, $payment_amount, $trial_period_days, $currency);;
+                            return $this->authorization_error($userError);
 
-                        // If error was returned when retrieving plan, return plan.
-
-                        /** @var HpsPayPlanSchedule $planSchedule */
-                        $this->log_debug(__METHOD__ . '(): Add Schedule.');
-                        $planSchedule = $payPlanService->addSchedule($plan);
-
-                        if (!isset($subscribResult) || null === rgar($subscribResult, 'error_message')) {
-
-                            // Create the plan unless there is no key.
-                            if (null === $planSchedule->scheduleKey) {
-
-                                $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Schedule');
-                                $subscribResult = $this->authorization_error($userError);
-
-                            } else {
-
-                                if (null !== $trial_period_days) {
-
-                                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                                    /** @var HpsAuthorization $response */
-                                    /** @noinspection PhpParamsInspection */
-                                    $response = $this->processRecurring($payment_amount,$feed,$payPlanPaymentMethod,$planSchedule);
-
-                                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
-
-                                        $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
-                                        $subscribResult = $this->authorization_error($userError);
-
-                                    } // if
-                                    else {
-
-                                        $this->log_debug(__METHOD__ . '(): First Charge Approved');
-
-                                    }
-
-                                } // if
-
-
-                                // If a setup fee is required, add an invoice item.
-                                if ($single_payment_amount) {
-
-                                    $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                                    /** @var HpsAuthorization $response */
-                                    /** @noinspection PhpParamsInspection */
-                                    $response = $this->processRecurring($single_payment_amount,$feed,$payPlanPaymentMethod,$planSchedule);
-
-                                    if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
-
-                                        $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
-                                        $subscribResult = $this->authorization_error($userError);
-
-                                    } // if
-                                    else {
-
-                                        $this->log_debug(__METHOD__ . '(): Setup Fee Approved');
-
-                                    }
-
-                                } // if
-
-                                if (!isset($subscribResult) && null === rgar($subscribResult, 'error_message')) {
-
-                                    $subscribResult = array(
-                                        'is_success' => true,
-                                        'subscription_id' => $plan->paymentMethodKey,
-                                        'customer_id' => $customer->customerKey,
-                                        'amount' => $payment_amount,
-                                    ); // array
-
-                                } // if
-
-                            } // if
                         }
-                    }
-                }
 
-            } catch (\Exception $e) {
+                    } // if
 
-                // Return authorization error.
-                $subscribResult = $this->authorization_error($userError . $e->getMessage());
+                    // If a setup fee is required, add an invoice item.
+                    if ($single_payment_amount) {
 
+                        $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                        /** @var HpsAuthorization $response */
+                        /** @noinspection PhpParamsInspection */
+                        $response = $this->processRecurring($single_payment_amount, $feed,
+                            $payPlanPaymentMethod, $planSchedule);
+
+                        if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
+
+                            $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
+
+                            return $this->authorization_error($userError);
+
+                        } // if
+
+                    } // if
+
+                    if (!isset($subscribResult) && null === rgar($subscribResult, 'error_message')) {
+
+                        $subscribResult = array(
+                            'is_success' => true,
+                            'subscription_id' => $plan->paymentMethodKey,
+                            'customer_id' => $customer->customerKey,
+                            'amount' => $payment_amount,
+                        ); // array
+
+                    } // if
+
+                } // if
             }
+
+        } catch (\Exception $e) {
+
+            // Return authorization error.
+            $subscribResult = $this->authorization_error($userError . $e->getMessage());
+
         }
 
         if (!isset($subscribResult)) {
 
             $this->log_debug(__METHOD__ . '(): Unknown error ');
-            $subscribResult = $this->authorization_error($userError);
+            return $this->authorization_error($userError);
 
         } // if
         // Return subscription data.
