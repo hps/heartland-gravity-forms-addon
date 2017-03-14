@@ -992,6 +992,16 @@ class GFSecureSubmit
         return empty( $fields ) ? false : $fields[0];
     }
     /**
+     * @param $form
+     *
+     * @return bool|\GF_Field
+     */
+    private function get_address_card_field($feed){
+        $form = GFAPI::get_form($feed['form_id']);
+        $fields = GFAPI::get_fields_by_type( $form, array( 'address' ) );
+        return empty( $fields ) ? false : $fields[0];
+    }
+    /**
      * @param $feed
      * @param $form
      * @param $entry
@@ -1366,21 +1376,6 @@ class GFSecureSubmit
         $address->country = rgar($submission_data, 'country');
         if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
             $address->country = $entry[ $feed['meta']['billingInformation_country'] ];
-        }
-
-        return $address;
-    }
-    /**
-     * @param $validation_result
-     *
-     * @return bool
-     */
-    public function hasPayment($validation_result) {
-        $form = $validation_result['form'];
-        $entry = GFFormsModel::create_lead($form);
-        $feed = $this->get_payment_feed($entry, $form);
-
-        if (!$feed) {
             return false;
         }
 
@@ -1854,7 +1849,7 @@ class GFSecureSubmit
         } catch (\Exception $e) {
 
             // Return authorization error.
-            $subscribResult = $this->authorization_error($userError . $e->getMessage());
+            return $this->authorization_error($userError . $e->getMessage());
 
         }
 
