@@ -1662,7 +1662,7 @@ class GFSecureSubmit
     {
 		$ach_page = 0;
 		foreach ($validationResult['form']['fields'] as $field) {
-			if ($field->type == 'hpsACH') {
+			if ($field->type == 'hpsACH' || $field->type == 'hpscreditcard' ) {
 				$field->failed_validation  = true;
 				$field->validation_message = $authorizationResult['error_message'];
 				$ach_page                  = $field->pageNumber;
