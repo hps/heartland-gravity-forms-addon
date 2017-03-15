@@ -1688,17 +1688,17 @@ class GFSecureSubmit
      * @uses   GFSecureSubmit::includeSecureSubmitSDK()
      * @uses   GFSecureSubmit::getSecureSubmitJsError()
      * @uses   GFPaymentAddOn::authorization_error()
-     * @uses   GFSecureSubmit::get_subscription_plan_id()
-     * @uses   GFSecureSubmit::getSchedule()
-     * @uses   GFSecureSubmit::getSecureSubmitJsResponse()
-     * @uses   GFSecureSubmit::create_plan()
-     * @uses   GFSecureSubmit::get_customer()
      * @uses   GFAddOn::log_debug()
-     * @uses   GFPaymentAddOn::get_amount_export()
-     * @uses   GFAddOn::get_field_value()
-     * @uses   GFSecureSubmit::get_hps_meta_data()
-     * @uses   GFAddOn::maybe_override_field_value()
-     * @uses   GFSecureSubmit::create_customer()
+     * @uses   HpsInputValidation::checkAmount
+     * @uses   \rgars
+     * @uses   \GFSecureSubmit::getPayPlanService
+     * @uses   \GFSecureSubmit::create_customer
+     * @uses   \HpsPayPlanService::addCustomer
+     * @uses   \GFSecureSubmit::createPaymentMethod
+     * @uses   \HpsPayPlanService::addPaymentMethod
+     * @uses   \GFSecureSubmit::create_plan
+     * @uses   \HpsPayPlanService::addSchedule
+     * @uses   \GFSecureSubmit::processRecurring
      *
      * @param array $feed            The feed object currently being processed.
      * @param array $submission_data The customer and transaction data.
