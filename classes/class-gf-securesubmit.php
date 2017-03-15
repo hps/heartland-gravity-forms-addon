@@ -1379,9 +1379,26 @@ class GFSecureSubmit
             return false;
         }
 
+        return $address;
+    }
+    /**
+     * @param mixed $validation_result
+     *
+     * @return bool
+     */
+    public function hasPayment($validation_result)
+    {
+        $form = $validation_result['form'];
+        $entry = GFFormsModel::create_lead($form);
+        $feed = $this->get_payment_feed($entry, $form);
+
+        if (!$feed) {
+            return false;
+        }
+
         $submission_data = $this->get_submission_data($feed, $form, $entry);
 
-        //Do not process payment if payment amount is 0 or less
+        // Do not process payment if payment amount is 0 or less
         return floatval($submission_data['payment_amount']) > 0;
     }
     /**
@@ -1829,7 +1846,7 @@ class GFSecureSubmit
 
             $subscribResult = array(
                 'is_success' => true,
-                'subscription_id' => $planSchedule->paymentMethodKey,
+                'subscription_id' => $planSchedule->scheduleKey,
                 'customer_id' => $customer->customerKey,
                 'amount' => $payment_amount,
             ); // array
@@ -1897,6 +1914,17 @@ class GFSecureSubmit
 
         $acctHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
+        $meta = $this->get_address_card_field($feed);
+        //'United States' 'Canada'
+        $acctHolder->address->country = rgar($entry, $meta->id . '.6', 'USA');;
+        /** @noinspection PhpUndefinedFieldInspection */
+        if ('United States' === $acctHolder->address->country){
+            $acctHolder->address->country = 'USA';
+        }
+        /** @noinspection PhpUndefinedFieldInspection */
+        if ('Canada' === $acctHolder->address->country){
+            $acctHolder->address->country = 'CAN';
+        }
         // Log the customer to be created.
         $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
 
