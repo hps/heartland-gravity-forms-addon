@@ -1699,9 +1699,6 @@ class GFSecureSubmit
      * @uses   GFSecureSubmit::get_hps_meta_data()
      * @uses   GFAddOn::maybe_override_field_value()
      * @uses   GFSecureSubmit::create_customer()
-     * @uses   \Stripe\Customer::save()
-     * @uses   \Stripe\Customer::updateSubscription()
-     * @uses   \Stripe\Customer::addInvoiceItem()
      *
      * @param array $feed            The feed object currently being processed.
      * @param array $submission_data The customer and transaction data.
@@ -1832,7 +1829,7 @@ class GFSecureSubmit
 
             $subscribResult = array(
                 'is_success' => true,
-                'subscription_id' => $plan->paymentMethodKey,
+                'subscription_id' => $planSchedule->paymentMethodKey,
                 'customer_id' => $customer->customerKey,
                 'amount' => $payment_amount,
             ); // array
