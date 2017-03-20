@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.2.4 =
+* Add support for PayPlan CC schedules
+
 = 1.2.3 =
 * Fix compatibility issues with Gravity Forms 2.* when passing card/check holder information to gateway
 
