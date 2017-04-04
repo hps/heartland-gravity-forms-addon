@@ -724,10 +724,10 @@ class GFSecureSubmit
                 $field['failed_validation'] = false;
             }
 
+            $validationResult['is_valid'] = !$field['failed_validation'];
+
             break;
         }
-
-        $validationResult['is_valid'] = !$field['failed_validation'];
 
         return parent::maybe_validate($validationResult);
     }
