@@ -41,6 +41,8 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.2.2 =
+* Fix issue with `maybe_validate` on multi-page forms
 
 = 1.2.1 =
 * Fix compatibility issues with older versions of PHP
