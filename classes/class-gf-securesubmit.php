@@ -1927,7 +1927,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         // Prepare payment amount and trial period data.
         $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
-        $single_payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
+        $setupFeePaymentAmount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
         $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
         $currency = rgar($entry, 'currency');
 
@@ -2006,24 +2006,24 @@ class GFSecureSubmit extends GFPaymentAddOn
             } // if
 
             // If a setup fee is required, add an invoice item.
-            if ($single_payment_amount) {
-                error_log('process single_payment_amount');
+            if ($setupFeePaymentAmount) {
+                error_log('process setupFeePaymentAmount');
+                error_log(print_r($setupFeePaymentAmount, true));
                 $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                /** @var HpsAuthorization $response */
-                /** @noinspection PhpParamsInspection */
-                $response = $this->processRecurring(
-                    $single_payment_amount,
-                    $feed,
-                    $payPlanPaymentMethod,
-                    $planSchedule
-                );
-
-                if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
-                    $this->log_debug(__METHOD__ . '(): Setup Fee Failed!! ');
-
-                    return $this->authorization_error($userError);
-                } // if
+                $payment_amount += $setupFeePaymentAmount;
             } // if
+
+            error_log('payment amount');
+            error_log(print_r($payment_amount, true));
+
+            /** @var HpsAuthorization $response */
+            /** @noinspection PhpParamsInspection */
+            $response = $this->processRecurring(
+                $payment_amount,
+                $feed,
+                $payPlanPaymentMethod,
+                $planSchedule
+            );
 
             $subscribResult = array(
                 'is_success' => true,
