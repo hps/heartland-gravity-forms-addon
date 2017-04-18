@@ -65,7 +65,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     /**
      * @var bool
      */
-    protected $_requires_credit_card = true;
+    protected $_requires_credit_card = false;
 
     /**
      * @var bool
