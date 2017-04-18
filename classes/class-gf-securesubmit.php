@@ -1931,6 +1931,10 @@ class GFSecureSubmit extends GFPaymentAddOn
         $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
         $currency = rgar($entry, 'currency');
 
+        $payPlanCustomer = null;
+        $payPlanPaymentMethod = null;
+        $planSchedule = null;
+
         try {
             $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
 
@@ -2003,6 +2007,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             // If a setup fee is required, add an invoice item.
             if ($single_payment_amount) {
+                error_log('process single_payment_amount');
                 $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
                 /** @var HpsAuthorization $response */
                 /** @noinspection PhpParamsInspection */
@@ -2027,17 +2032,38 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'amount' => $payment_amount,
             ); // array
         } catch (\Exception $e) {
+            $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             // Return authorization error.
             return $this->authorization_error($userError . $e->getMessage());
         }
 
         if (!isset($subscribResult)) {
+            $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             $this->log_debug(__METHOD__ . '(): Unknown error ');
             return $this->authorization_error($userError);
         } // if
 
         // Return subscription data.
         return $subscribResult;
+    }
+
+    protected function rollbackPayPlanResources($service, $customer, $paymentMethod, $schedule)
+    {
+        if ($service === null) {
+            return;
+        }
+
+        if ($schedule !== null) {
+            $service->deleteSchedule($schedule);
+        }
+
+        if ($paymentMethod !== null) {
+            $service->deletePaymentMethod($paymentMethod);
+        }
+
+        if ($customer !== null) {
+            $service->deleteCustomer($customer);
+        }
     }
 
     // # HPS HELPER FUNCTIONS ---------------------------------------------------------------------------------------
