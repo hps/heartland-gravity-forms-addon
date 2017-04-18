@@ -518,6 +518,42 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $default_settings = parent::feed_settings_fields();
 
+        // removes 'Options' checkboxes
+        $default_settings = $this->remove_field('options', $default_settings);
+
+        // replace default 'Billing Cycle' to remove useless number select before real choices
+        $billingCycle = array(
+            'name'    => 'billingCycle',
+            'label'   => esc_html__( 'Billing Cycle', 'gravityforms' ),
+            'type'     => 'select',
+            'choices'  => array(
+                array( 'value' => 'WEEKLY', 'label' => esc_html('Weekly', 'gravityforms'), ),
+                array( 'value' => 'BIWEEKLY', 'label' => esc_html('Bi-Weekly', 'gravityforms'), ),
+                array( 'value' => 'SEMIMONTHLY', 'label' => esc_html('Semi-Monthly', 'gravityforms'), ),
+                array( 'value' => 'MONTHLY', 'label' => esc_html('Monthly', 'gravityforms'), ),
+                array( 'value' => 'QUARTERLY', 'label' => esc_html('Quarterly', 'gravityforms'), ),
+                array( 'value' => 'SEMIANNUALLY', 'label' => esc_html('Semi-Annually', 'gravityforms'), ),
+                array( 'value' => 'ANNUALLY', 'label' => esc_html('Annually', 'gravityforms'), ),
+            ),
+            'tooltip' => '<h6>' . esc_html__( 'Billing Cycle', 'gravityforms' ) . '</h6>' . esc_html__( 'Select your billing cycle.  This determines how often the recurring payment should occur.', 'gravityforms' )
+        );
+        $setupFee = array(
+            'name'  => 'setupFee',
+            'label' => esc_html__( 'Setup Fee', 'gravityforms' ),
+            'type'  => 'setup_fee',
+        );
+        $trialPeriod = array(
+            'name'    => 'trial',
+            'label'   => esc_html__( 'Trial', 'gravityforms' ),
+            'hidden'  => false,
+            'type'    => 'trial',
+            'tooltip' => '<h6>' . esc_html__( 'Trial Period (days)', 'gravityforms' ) . '</h6>' . esc_html__( 'Enable a trial period.  The user\'s recurring payment will not begin until after this trial period.', 'gravityforms' )
+        );
+
+        $default_settings = $this->replace_field('billingCycle', $billingCycle, $default_settings);
+        $default_settings = $this->replace_field('setupFee', $setupFee, $default_settings);
+        $default_settings = $this->replace_field('trial', $trialPeriod, $default_settings);
+
         if ($this->getAllowPaymentActionOverride() == 'yes') {
             $authorize_or_charge_field = array(
                 'name' => 'authorize_or_charge',
