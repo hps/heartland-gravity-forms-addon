@@ -1,6 +1,6 @@
 <?php
 
-if ( ! class_exists( 'GFForms' ) ) {
+if (!class_exists('GFForms')) {
     die();
 }
 
@@ -9,7 +9,6 @@ if ( ! class_exists( 'GFForms' ) ) {
  */
 class GF_Field_HPSCreditCard extends GF_Field
 {
-
     /**
      *@var string
      */
@@ -19,7 +18,8 @@ class GF_Field_HPSCreditCard extends GF_Field
     /**
      * @return string
      */
-    public function get_form_editor_field_title() {
+    public function get_form_editor_field_title()
+    {
 
         return esc_attr__('Secure CC', 'gravityforms');
     }
@@ -27,7 +27,8 @@ class GF_Field_HPSCreditCard extends GF_Field
     /**
      * @return array
      */
-    public function get_form_editor_button() {
+    public function get_form_editor_button()
+    {
         return array(); // this button is conditionally added in the form detail page
     }
 
@@ -36,7 +37,8 @@ class GF_Field_HPSCreditCard extends GF_Field
      *
      * @return array
      */
-    function get_form_editor_field_settings() {
+    public function get_form_editor_field_settings()
+    {
         return array(
             'label_setting',
         );
@@ -58,14 +60,14 @@ class GF_Field_HPSCreditCard extends GF_Field
         $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
         $form_id  = $form['id'];
-        $id       = intval( $this->id );
+        $id       = intval($this->id);
         $field_id = $is_entry_detail || $is_form_editor || $form_id == 0 ? "input_$id" : 'input_' . $form_id . "_$id";
-        $form_id  = ( $is_entry_detail || $is_form_editor ) && empty( $form_id ) ? rgget( 'id' ) : $form_id;
+        $form_id  = ($is_entry_detail || $is_form_editor) && empty($form_id) ? rgget('id') : $form_id;
 
         $disabled_text = $is_form_editor ? ",disabled: 'disabled'" : '';
 
-        $settings = get_option( 'gravityformsaddon_' . $this->_slug . '_settings' );;
-        $baseURL = plugins_url( '', dirname(__FILE__) . '../' );
+        $settings = get_option('gravityformsaddon_' . $this->_slug . '_settings');
+        $baseURL = plugins_url('', dirname(__FILE__) . '../');
         $pubKey = (string)trim(rgar($settings, "public_api_key"));
         ob_start();
         include dirname(__FILE__) . "/../templates/cc-payment-fields.php";
@@ -73,4 +75,4 @@ class GF_Field_HPSCreditCard extends GF_Field
         return $ss_cc_output;
     }
 }
-GF_Fields::register( new GF_Field_HPSCreditCard() );
+GF_Fields::register(new GF_Field_HPSCreditCard());
