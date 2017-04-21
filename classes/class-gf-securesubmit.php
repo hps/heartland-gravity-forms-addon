@@ -524,7 +524,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         // replace default 'Billing Cycle' to remove useless number select before real choices
         $billingCycle = array(
             'name'    => 'billingCycle',
-            'label'   => esc_html__( 'Billing Cycle', 'gravityforms' ),
+            'label'   => esc_html__('Billing Cycle', 'gravityforms'),
             'type'     => 'select',
             'choices'  => array(
                 array( 'value' => 'WEEKLY', 'label' => esc_html('Weekly', 'gravityforms'), ),
@@ -535,19 +535,18 @@ class GFSecureSubmit extends GFPaymentAddOn
                 array( 'value' => 'SEMIANNUALLY', 'label' => esc_html('Semi-Annually', 'gravityforms'), ),
                 array( 'value' => 'ANNUALLY', 'label' => esc_html('Annually', 'gravityforms'), ),
             ),
-            'tooltip' => '<h6>' . esc_html__( 'Billing Cycle', 'gravityforms' ) . '</h6>' . esc_html__( 'Select your billing cycle.  This determines how often the recurring payment should occur.', 'gravityforms' )
+            'tooltip' => '<h6>' . esc_html__('Billing Cycle', 'gravityforms') . '</h6>' . esc_html__('Select your billing cycle. This determines how often the recurring payment should occur.', 'gravityforms'),
         );
         $setupFee = array(
             'name'  => 'setupFee',
-            'label' => esc_html__( 'Setup Fee', 'gravityforms' ),
+            'label' => esc_html__('Setup Fee', 'gravityforms'),
             'type'  => 'setup_fee',
         );
         $trialPeriod = array(
             'name'    => 'trial',
-            'label'   => esc_html__( 'Trial', 'gravityforms' ),
-            'hidden'  => false,
+            'label'   => esc_html__('Trial', 'gravityforms'),
             'type'    => 'trial',
-            'tooltip' => '<h6>' . esc_html__( 'Trial Period (days)', 'gravityforms' ) . '</h6>' . esc_html__( 'Enable a trial period.  The user\'s recurring payment will not begin until after this trial period.', 'gravityforms' )
+            'tooltip' => '<h6>' . esc_html__('Trial Period (days)', 'gravityforms') . '</h6>' . esc_html__('Enable a trial period. The user\'s recurring payment will not begin until after this trial period.', 'gravityforms'),
         );
 
         $default_settings = $this->replace_field('billingCycle', $billingCycle, $default_settings);
@@ -614,6 +613,52 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         return $default_settings;
+    }
+
+    /**
+     * Override to modify HTML of 'Trial' option
+     */
+    public function settings_trial($field, $echo = true)
+    {
+        //--- Enabled field ---
+        $enabled_field = array(
+            'name'       => $field['name'] . '_checkbox',
+            'type'       => 'checkbox',
+            'horizontal' => true,
+            'choices'    => array(
+                array(
+                    'label'    => esc_html__('Enabled', 'gravityforms'),
+                    'name'     => $field['name'] . '_enabled',
+                    'value'    => '1',
+                    'onchange' => $this->set_trial_onchange($field),
+                ),
+            ),
+        );
+
+        $html = $this->settings_checkbox($enabled_field, false);
+
+        //--- Select Product field ---
+        $form            = $this->get_current_form();
+        $payment_choices = array_merge($this->get_payment_choices($form), array(
+            array(
+                'label' => esc_html__('Enter an amount', 'gravityforms'),
+                'value' => 'enter_amount',
+            )
+        ));
+
+        $product_field = array(
+            'name'     => $field['name'] . '_product',
+            'type'     => 'text',
+            'class'    => $this->get_setting("{$field['name']}_enabled") ? '' : 'hidden',
+        );
+
+        $html .= '&nbsp' . $this->settings_text($product_field, false);
+
+        if ($echo) {
+            echo $html;
+        }
+
+        return $html;
     }
 
     /**
@@ -1476,7 +1521,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $cardHolder = new HpsCardHolder();
         $cardHolder->firstName = $firstName;
         $cardHolder->lastName = $lastName;
-        $cardHolder->address = $this->buildAddress($feed, $submission_data, $entry);;
+        $cardHolder->address = $this->buildAddress($feed, $submission_data, $entry);
 
         return $cardHolder;
     }
@@ -2153,7 +2198,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $acctHolder = $this->buildCardHolder($feed, $submission_data, $entry);
         $meta = $this->get_address_card_field($feed);
         //'United States' 'Canada'
-        $acctHolder->address->country = rgar($entry, $meta->id . '.6', 'USA');
 
         /** @noinspection PhpUndefinedFieldInspection */
         if ('United States' === $acctHolder->address->country) {
@@ -2174,7 +2218,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         $customer->customerIdentifier = $this->getIdentifier($modifier . $acctHolder->firstName . $acctHolder->lastName);
         $customer->firstName = $acctHolder->firstName;
         $customer->lastName = $acctHolder->lastName;
+        $customer->primaryEmail = rgar($submission_data, 'email');
         $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
+        $customer->addressLine1 = $acctHolder->address->address;
+        $customer->city = $acctHolder->address->city;
+        $customer->stateProvince = $acctHolder->address->state;
+        $customer->zipPostalCode = $acctHolder->address->zip;
         /** @noinspection PhpUndefinedFieldInspection */
         $customer->country = $acctHolder->address->country;
 
@@ -2268,14 +2317,14 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
-        $numberOfPayments = $feed['meta']['billingCycle_length'] === '0'
+        $numberOfPayments = $feed['meta']['recurringTimes'] === '0'
             ? HpsPayPlanScheduleDuration::ONGOING
             : HpsPayPlanScheduleDuration::LIMITED_NUMBER;
         $schedule->duration = $numberOfPayments;
         $schedule->reprocessingCount = 1;
 
         if ($numberOfPayments !== HpsPayPlanScheduleDuration::ONGOING) {
-            $schedule->numberOfPayments = $feed['meta']['billingCycle_length'];
+            $schedule->numberOfPayments = $feed['meta']['recurringTimes'];
         }
 
         return $schedule;
@@ -2299,7 +2348,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->includeSecureSubmitSDK();
         $oClass = new ReflectionClass('HpsPayPlanScheduleFrequency');
         $array = $oClass->getConstants();
-        $cycle = rgar($array, $feed['meta']['billingCycle_unit']);
+        $cycle = rgar($array, $feed['meta']['billingCycle']);
         if (null == $cycle) {
             $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($feed, 1));
             throw new HpsArgumentException(
