@@ -546,6 +546,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'name'    => 'trial',
             'label'   => esc_html__('Trial', 'gravityforms'),
             'type'    => 'trial',
+            'hidden'  => $this->get_setting('setupFee_enabled'),
             'tooltip' => '<h6>' . esc_html__('Trial Period (days)', 'gravityforms') . '</h6>' . esc_html__('Enable a trial period. The user\'s recurring payment will not begin until after this trial period.', 'gravityforms'),
         );
 
@@ -2008,8 +2009,11 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         // Prepare payment amount and trial period data.
         $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
-        $setupFeePaymentAmount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
-        $trial_period_days = rgars($feed, 'meta/trialPeriod') ? $submission_data['trial'] : null;
+        $setupFeeEnabled = rgar($feed['meta'], 'setupFee_enabled');
+        $setupFeeField = rgar($feed['meta'], 'setupFee_product');
+        $setupFeePaymentAmount = 0;//HpsInputValidation::checkAmount();
+        $trialEnabled = rgars($feed, 'meta/trial_enabled');
+        $trial_period_days = $trialEnabled ? rgars($feed, 'meta/trial_product') : null;
         $currency = rgar($entry, 'currency');
 
         $payPlanCustomer = null;
@@ -2068,8 +2072,13 @@ class GFSecureSubmit extends GFPaymentAddOn
                 return $this->authorization_error($userError);
             }
 
-            if (null !== $trial_period_days) {
+            // If a setup fee is required, add an invoice item.
+            if ($setupFeePaymentAmount) {
                 $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
+                $payment_amount += $setupFeePaymentAmount;
+            } // if
+
+            if (!$trialEnabled) {
                 /** @var HpsAuthorization $response */
                 /** @noinspection PhpParamsInspection */
                 $response = $this->processRecurring(
@@ -2078,33 +2087,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $payPlanPaymentMethod,
                     $planSchedule
                 );
-
-                if (!($response->transactionId > 0 && null !== $response->authorizationCode)) {
-                    $this->log_debug(__METHOD__ . '(): First Charge Failed!! ');
-
-                    return $this->authorization_error($userError);
-                }
-            } // if
-
-            // If a setup fee is required, add an invoice item.
-            if ($setupFeePaymentAmount) {
-                error_log('process setupFeePaymentAmount');
-                error_log(print_r($setupFeePaymentAmount, true));
-                $this->log_debug(__METHOD__ . '(): Processing one time setup fee');
-                $payment_amount += $setupFeePaymentAmount;
-            } // if
-
-            error_log('payment amount');
-            error_log(print_r($payment_amount, true));
-
-            /** @var HpsAuthorization $response */
-            /** @noinspection PhpParamsInspection */
-            $response = $this->processRecurring(
-                $payment_amount,
-                $feed,
-                $payPlanPaymentMethod,
-                $planSchedule
-            );
+            }
 
             $subscribResult = array(
                 'is_success' => true,
