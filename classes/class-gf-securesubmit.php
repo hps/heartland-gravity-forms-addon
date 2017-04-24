@@ -537,21 +537,16 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             'tooltip' => '<h6>' . esc_html__('Billing Cycle', 'gravityforms') . '</h6>' . esc_html__('Select your billing cycle. This determines how often the recurring payment should occur.', 'gravityforms'),
         );
-        $setupFee = array(
-            'name'  => 'setupFee',
-            'label' => esc_html__('Setup Fee', 'gravityforms'),
-            'type'  => 'setup_fee',
-        );
         $trialPeriod = array(
             'name'    => 'trial',
-            'label'   => esc_html__('Trial', 'gravityforms'),
+            'label'   => esc_html__('Trial Period', 'gravityforms'),
             'type'    => 'trial',
             'hidden'  => $this->get_setting('setupFee_enabled'),
             'tooltip' => '<h6>' . esc_html__('Trial Period (days)', 'gravityforms') . '</h6>' . esc_html__('Enable a trial period. The user\'s recurring payment will not begin until after this trial period.', 'gravityforms'),
         );
 
         $default_settings = $this->replace_field('billingCycle', $billingCycle, $default_settings);
-        $default_settings = $this->replace_field('setupFee', $setupFee, $default_settings);
+        $default_settings = $this->remove_field('setupFee', $default_settings);
         $default_settings = $this->replace_field('trial', $trialPeriod, $default_settings);
 
         if ($this->getAllowPaymentActionOverride() == 'yes') {
