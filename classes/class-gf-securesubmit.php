@@ -2111,6 +2111,59 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $subscribResult;
     }
 
+    /**
+     * Update entry meta with subscription data
+     *
+     * @param array $authorization   Contains the result of the subscribe() function.
+     * @param array $feed            The feed object currently being processed.
+     * @param array $submission_data The customer and transaction data.
+     * @param array $form            The form object currently being processed.
+     * @param array $entry           The entry object currently being processed.
+     *
+     * @return array
+     */
+    public function process_subscription(
+        $authorization,
+        $feed,
+        $submission_data,
+        $form,
+        $entry
+    ) {
+        gform_update_meta($entry['id'], 'hps_payplan_subscription_id', $authorization['subscription']['subscription_id']);
+        return parent::process_subscription(
+            $authorization,
+            $feed,
+            $submission_data,
+            $form,
+            $entry
+        );
+    }
+
+    /**
+     * Handle subscription cancellation through entry detail page
+     *
+     * @param array $entry The entry object currently being processed
+     * @param array $feed  The feed object associated with the `$entry`
+     *
+     * @return bool
+     */
+    public function cancel($entry, $feed)
+    {
+        $this->includeSecureSubmitSDK();
+
+        try {
+            $scheduleKey = gform_get_meta($entry['id'], 'hps_payplan_subscription_id');
+            $service = $this->getPayPlanService($this->getSecretApiKey($feed));
+            $subscription = $service->getSchedule($scheduleKey);
+            // set schedule to inactive
+            $subscription->scheduleStatus = HpsPayPlanScheduleStatus::INACTIVE;
+            $service->editSchedule($subscription);
+            return true;
+        } catch (HpsException $e) {
+            return false;
+        }
+    }
+
     protected function rollbackPayPlanResources($service, $customer, $paymentMethod, $schedule)
     {
         if ($service === null) {
