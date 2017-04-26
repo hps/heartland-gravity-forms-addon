@@ -2203,7 +2203,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         return $creditService
             ->recurring()
-            ->withAmount($payment_amount*100) // amounts always in pennies
+            ->withAmount($payment_amount)
             ->withPaymentMethodKey($payPlanPaymentMethod->paymentMethodKey)
             ->withSchedule($planSchedule->scheduleKey)
             ->execute();
