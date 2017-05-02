@@ -1317,7 +1317,7 @@ class GFSecureSubmit
         $cardHolder = new HpsCardHolder();
         $cardHolder->firstName = $firstName;
         $cardHolder->lastName = $lastName;
-        $cardHolder->address = $this->buildAddress($feed, $entry);;
+        $cardHolder->address = $this->buildAddress($feed, $submission_data, $entry);;
 
         return $cardHolder;
     }
@@ -1331,33 +1331,45 @@ class GFSecureSubmit
     protected function buildCheckHolder($feed, $submission_data, $entry) {
 
         $checkHolder = new HpsCheckHolder();
-        $checkHolder->address = $this->buildAddress($feed, $entry);
+        $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
         $checkHolder->checkName = $submission_data['ach_check_holder']; //'check holder';
 
         return $checkHolder;
     }
     /**
      * @param $feed
+     * @param $submission_data
      * @param $entry
      *
      * @return \HpsAddress
      */
-    private function buildAddress($feed, $entry) {
+    private function buildAddress($feed, $submission_data, $entry) {
         $address = new HpsAddress();
-        if (in_array('billingInformation_address', $feed['meta'])) {
+
+        $address->address = rgar($submission_data, 'address')
+            . rgar($submission_data, 'address2');
+        if (empty($address->address) && in_array('billingInformation_address', $feed['meta'])) {
             $address->address
                 = $entry[ $feed['meta']['billingInformation_address'] ] . $entry[ $feed['meta']['billingInformation_address2'] ];
         }
-        if (in_array('billingInformation_city', $feed['meta'])) {
+
+        $address->city = rgar($submission_data, 'city');
+        if (empty($address->city) && in_array('billingInformation_city', $feed['meta'])) {
             $address->city = $entry[ $feed['meta']['billingInformation_city'] ];
         }
-        if (in_array('billingInformation_state', $feed['meta'])) {
+
+        $address->state = rgar($submission_data, 'state');
+        if (empty($address->state) && in_array('billingInformation_state', $feed['meta'])) {
             $address->state = $entry[ $feed['meta']['billingInformation_state'] ];
         }
-        if (in_array('billingInformation_zip', $feed['meta'])) {
+
+        $address->zip = rgar($submission_data, 'zip');
+        if (empty($address->zip) && in_array('billingInformation_zip', $feed['meta'])) {
             $address->zip = $entry[ $feed['meta']['billingInformation_zip'] ];
         }
-        if (in_array('billingInformation_country', $feed['meta'])) {
+
+        $address->country = rgar($submission_data, 'country');
+        if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
             $address->country = $entry[ $feed['meta']['billingInformation_country'] ];
         }
 
