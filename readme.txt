@@ -42,6 +42,12 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.2.3 =
+* Fix compatibility issues with Gravity Forms 2.* when passing card/check holder information to gateway
+
+= 1.2.2 =
+* Fix issue with `maybe_validate` on multi-page forms
+
 = 1.2.1 =
 * Fix compatibility issues with older versions of PHP
 
