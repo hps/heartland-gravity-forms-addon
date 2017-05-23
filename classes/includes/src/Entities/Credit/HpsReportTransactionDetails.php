@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Class HpsReportTransactionDetails
+ */
 class HpsReportTransactionDetails extends HpsAuthorization
 {
     public $issuerTransactionId   = null;
@@ -15,7 +18,15 @@ class HpsReportTransactionDetails extends HpsAuthorization
     public $customerId            = null;
     public $transactionStatus     = null;
     public $gratuityAmount        = null;
-
+    public $convenienceAmount     = null;
+    public $shippingAmount        = null;
+    /**
+     * @param        $rsp
+     * @param        $txnType
+     * @param string $returnType
+     *
+     * @return mixed
+     */
     public static function fromDict($rsp, $txnType, $returnType = 'HpsReportTransactionDetails')
     {
         $reportResponse = $rsp->Transaction->$txnType;
@@ -40,6 +51,8 @@ class HpsReportTransactionDetails extends HpsAuthorization
         $details->transactionStatus = (isset($reportResponse->Data->TxnStatus) ? (string)$reportResponse->Data->TxnStatus : null);
         $details->gratuityAmount = (isset($reportResponse->Data->GratuityAmtInfo) ? (string)$reportResponse->Data->GratuityAmtInfo : null);
         $details->settlementAmount = (isset($reportResponse->Data->SettlementAmt) ? (string)$reportResponse->Data->SettlementAmt : null);
+        $details->convenienceAmount = (isset($reportResponse->Data->ConvenienceAmtInfo) ? (string)$reportResponse->Data->ConvenienceAmtInfo : null);
+        $details->shippingAmount = (isset($reportResponse->Data->ShippingAmtInfo) ? (string)$reportResponse->Data->ShippingAmtInfo : null);
 
         if (isset($reportResponse->Data->TokenizationMsg)) {
             $details->tokenData = new HpsTokenData();
@@ -53,7 +66,7 @@ class HpsReportTransactionDetails extends HpsAuthorization
             $details->customerId = (isset($additionalTxnFields->CustomerID) ? (string)$additionalTxnFields->CustomerID : null);
         }
 
-        if ((string)$reportResponse->Data->RspCode != '00') {
+        if ((string)$reportResponse->GatewayRspCode != '0' && (string)$reportResponse->Data->RspCode != '00') {
             if ($details->exceptions == null) {
                 $details->exceptions = new HpsChargeExceptions();
             }
@@ -61,7 +74,8 @@ class HpsReportTransactionDetails extends HpsAuthorization
             $details->exceptions->issuerException = HpsIssuerResponseValidation::getException(
                 (string)$rsp->Header->GatewayTxnId,
                 (string)$reportResponse->Data->RspCode,
-                (string)$reportResponse->Data->RspText
+                (string)$reportResponse->Data->RspText,
+                'credit'
             );
         }
 

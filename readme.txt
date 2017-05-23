@@ -1,7 +1,7 @@
 === Heartland Secure Submit Addon for Gravity Forms ===
 Contributors: markhagan
 Tags: gravity, forms, gravityforms, heartland, payment, systems, gateway, token, tokenize
-Tested up to: 4.5.1
+Tested up to: 4.7
 Stable tag: trunk
 License: GPLv2
 License URI: https://github.com/hps/heartland-gravity-forms-addon/blob/master/LICENSE.md
@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+
+= 1.3.0 =
+* Add support for PayPlan CC schedules
 
 = 1.2.3 =
 * Fix compatibility issues with Gravity Forms 2.* when passing card/check holder information to gateway
