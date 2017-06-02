@@ -600,6 +600,16 @@ class GFSecureSubmit extends GFPaymentAddOn
             $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
         }
 
+        $transaction_detail_fields = array(
+            'name' => 'mappedDetailFields',
+            'label' => __('Transaction Details', $this->_slug),
+            'type' => 'field_map',
+            'field_map' => $this->get_transaction_detail_fields(),
+            'tooltip' => '<h6>'. esc_html__('Map Fields', $this->_slug) . '</h6>'
+                            . esc_html__('These are optional fields you can pass over to help identify the transaction.', $this->_slug),
+        );
+        $default_settings = $this->add_field_after('paymentAmount', $transaction_detail_fields, $default_settings);
+
         if ($this->getAllowLevelII() == 'yes') {
             $tax_type_field = array(
                 'name' => 'mappedFields',
@@ -681,6 +691,24 @@ class GFSecureSubmit extends GFPaymentAddOn
             array(
                 "name" => "taxamount",
                 "label" => __("Tax Amount", "gravityforms"),
+                "required" => false,
+            ),
+        );
+
+        return $fields;
+    }
+
+    protected function get_transaction_detail_fields()
+    {
+        $fields = array(
+            array(
+                "name" => "memo",
+                "label" => __("Memo", "gravityforms"),
+                "required" => false,
+            ),
+            array(
+                "name" => "invoicenumber",
+                "label" => __("Invoice Number", "gravityforms"),
                 "required" => false,
             ),
         );
@@ -1319,6 +1347,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ? $response->token_value
                 : '');
 
+            $details = new HpsTransactionDetails();
+            $details->invoiceNumber = $this->getTransactionDetailInvoiceNumber($feed);
+            $details->memo = $this->getTransactionDetailMemo($feed);
+
             $transaction = null;
             if ($isAuth) {
                 if ($this->getAllowLevelII()) {
@@ -1328,7 +1360,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                         $token,
                         $cardHolder,
                         false,
-                        null,
+                        $details,
                         null,
                         false,
                         true
@@ -1338,7 +1370,9 @@ class GFSecureSubmit extends GFPaymentAddOn
                         $submission_data['payment_amount'],
                         GFCommon::get_currency(),
                         $token,
-                        $cardHolder
+                        $cardHolder,
+                        false,
+                        $details
                     );
                 }
             } else {
@@ -1349,7 +1383,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                         $token,
                         $cardHolder,
                         false,
-                        null,
+                        $details,
                         null,
                         false,
                         true,
@@ -1360,7 +1394,9 @@ class GFSecureSubmit extends GFPaymentAddOn
                         $submission_data['payment_amount'],
                         GFCommon::get_currency(),
                         $token,
-                        $cardHolder
+                        $cardHolder,
+                        false,
+                        $details
                     );
                 }
             }
@@ -1662,6 +1698,33 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
         return null;
     }
+
+    /**
+     * @param null $feed
+     *
+     * @return string
+     */
+    public function getTransactionDetailMemo($feed = null)
+    {
+        if ($feed != null && isset($feed['meta']["memo_memo"])) {
+            return (string)$_POST[ 'input_' . $feed["meta"]["mappedDetailFields_memo"] ];
+        }
+        return null;
+    }
+
+    /**
+     * @param null $feed
+     *
+     * @return string
+     */
+    public function getTransactionDetailInvoiceNumber($feed = null)
+    {
+        if ($feed != null && isset($feed['meta']["mappedDetailFields_invoicenumber"])) {
+            return (string)$_POST[ 'input_' . $feed["meta"]["mappedDetailFields_invoicenumber"] ];
+        }
+        return null;
+    }
+
 
     /**
      * @param null $feed
