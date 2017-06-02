@@ -1706,7 +1706,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function getTransactionDetailMemo($feed = null)
     {
-        if ($feed != null && isset($feed['meta']["memo_memo"])) {
+        if ($feed != null && isset($feed['meta']["mappedDetailFields_memo"])) {
             return (string)$_POST[ 'input_' . $feed["meta"]["mappedDetailFields_memo"] ];
         }
         return null;
