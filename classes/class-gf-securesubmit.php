@@ -1034,26 +1034,27 @@ class GFSecureSubmit extends GFPaymentAddOn
          */
         $enable_fraud = (bool)($this->get_setting("enable_fraud", 'true', $settings) === 'true');
 
-        /** @var HpsFluentCheckService $service */
-        /** @var HpsCheckResponse $response */
-        /** @var HpsCheck $check */
-        /** @var string $note displayed message for consumer */
-
-        $check = new HpsCheck();
-        $check->accountNumber = $submission_data['ach_number']; // from form $account_number_field_input
-        $check->routingNumber = $submission_data['ach_route'];  // from form $routing_number_field_input
-
-        $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);//$account_name_field_input
-        $check->secCode = HpsSECCode::WEB;
-        $check->dataEntryMode = HpsDataEntryMode::MANUAL;
-        //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
-        $check->checkType = $submission_data['ach_check_type'];
-        //HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
-        $check->accountType = $submission_data['ach_account_type'];
-        $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-
-        $service = new HpsFluentCheckService($config);
         try {
+            /** @var HpsFluentCheckService $service */
+            /** @var HpsCheckResponse $response */
+            /** @var HpsCheck $check */
+            /** @var string $note displayed message for consumer */
+
+            $check = new HpsCheck();
+            $check->accountNumber = $submission_data['ach_number']; // from form $account_number_field_input
+            $check->routingNumber = $submission_data['ach_route'];  // from form $routing_number_field_input
+
+            $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);//$account_name_field_input
+            $check->secCode = HpsSECCode::WEB;
+            $check->dataEntryMode = HpsDataEntryMode::MANUAL;
+            //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
+            $check->checkType = $submission_data['ach_check_type'];
+            //HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
+            $check->accountType = $submission_data['ach_account_type'];
+            $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
+
+            $service = new HpsFluentCheckService($config);
+
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
              * far too many failures have been tried
@@ -1145,6 +1146,8 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
             }
 
+            $auth = $this->authorization_error($e->getMessage());
+        } catch (Exception $e) {
             $auth = $this->authorization_error($e->getMessage());
         }
         return $auth;
@@ -1295,13 +1298,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         $isAuth = $this->getAuthorizeOrCharge($feed) == 'authorize';
-        $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-
-        $service = new HpsCreditService($config);
-
-        $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
         try {
+            $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
+            $service = new HpsCreditService($config);
+
+            $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
 
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
@@ -1442,6 +1444,8 @@ class GFSecureSubmit extends GFPaymentAddOn
                     );
                 }
             }
+            $auth = $this->authorization_error($e->getMessage());
+        } catch (Exception $e) {
             $auth = $this->authorization_error($e->getMessage());
         }
 
@@ -1589,9 +1593,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             $address->zip = $entry[ $feed['meta']['billingInformation_zip'] ];
         }
 
-        $address->country = rgar($submission_data, 'country');
+        $address->country = $this->normalizeCountry(rgar($submission_data, 'country'));
         if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
-            $address->country = $entry[ $feed['meta']['billingInformation_country'] ];
+            $address->country = $this->normalizeCountry($entry[ $feed['meta']['billingInformation_country'] ]);
             return false;
         }
 
@@ -2095,7 +2099,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'customer_id' => $customer->customerKey,
                 'amount' => $payment_amount,
             ); // array
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             // Return authorization error.
             return $this->authorization_error($userError . $e->getMessage());
@@ -2236,14 +2240,10 @@ class GFSecureSubmit extends GFPaymentAddOn
         //'United States' 'Canada'
 
         /** @noinspection PhpUndefinedFieldInspection */
-        if ('United States' === $acctHolder->address->country) {
-            $acctHolder->address->country = 'USA';
-        }
+        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country);
 
         /** @noinspection PhpUndefinedFieldInspection */
-        if ('Canada' === $acctHolder->address->country) {
-            $acctHolder->address->country = 'CAN';
-        }
+        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country);
         // Log the customer to be created.
         $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
 
@@ -2561,5 +2561,24 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         return $metadata;
+    }
+
+    protected function normalizeCountry($country)
+    {
+        switch (strtolower($country)) {
+            case 'us':
+            case 'usa':
+            case 'united states':
+            case 'united states of america':
+                return 'USA';
+            case 'ca':
+            case 'can':
+            case 'cana':
+            case 'cgg':
+            case 'canada':
+                return 'CAN';
+            default:
+                throw new Exception(sprintf('Country "%s" is currently not supported', $country));
+        }
     }
 }
