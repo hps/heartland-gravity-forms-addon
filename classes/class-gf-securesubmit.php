@@ -1596,7 +1596,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $address->country = $this->normalizeCountry(rgar($submission_data, 'country'));
         if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
             $address->country = $this->normalizeCountry($entry[ $feed['meta']['billingInformation_country'] ]);
-            return false;
         }
 
         return $address;
@@ -2566,6 +2565,8 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected function normalizeCountry($country)
     {
         switch (strtolower($country)) {
+            case null:
+            case '':
             case 'us':
             case 'usa':
             case 'united states':
