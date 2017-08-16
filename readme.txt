@@ -42,6 +42,10 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.2 =
+* Fix issue with annual subscriptions
+* Fix issue with country values in address when country field is hidden
+
 = 1.3.1 =
 * Fix address issue when invalid countries are supplied by normalizing country values
 
