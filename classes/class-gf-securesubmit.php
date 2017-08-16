@@ -2348,7 +2348,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $schedule->frequency = $this->validPayPlanCycle($feed);
 
         /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
-        if (!in_array($schedule->frequency, array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY))) {
+        if (!in_array($schedule->frequency, array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY, HpsPayPlanScheduleFrequency::ANNUALLY))) {
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
         }
 
