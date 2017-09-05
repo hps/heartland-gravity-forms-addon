@@ -2643,7 +2643,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES PACIFIC' => 'AP',
         );
         $state_uc = strtoupper($state);
-        if ( empty($na_state_abbreviations[$state_uc]) ) {
+        if ( empty($na_state_abbreviations[$state_uc]) 
+          && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
         }
         return $na_state_abbreviations[$state_uc];
