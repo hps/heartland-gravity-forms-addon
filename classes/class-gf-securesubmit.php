@@ -2595,6 +2595,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'COLORADO' => 'CO',
             'CONNECTICUT' => 'CT',
             'DELAWARE' => 'DE',
+            'DISTRICT OF COLUMBIA' => 'DC',
             'FLORIDA' => 'FL',
             'GEORGIA' => 'GA',
             'HAWAII' => 'HI',
@@ -2636,7 +2637,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             'WASHINGTON' => 'WA',
             'WEST VIRGINIA' => 'WV',
             'WISCONSIN' => 'WI',
-            'WYOMING' => 'WY'
+            'WYOMING' => 'WY',
+            'ARMED FORCES AMERICAS' => 'AA',
+            'ARMED FORCES EUROPE' => 'AE',
+            'ARMED FORCES PACIFIC' => 'AP',
         );
         $state_uc = strtoupper($state);
         if ( empty($na_state_abbreviations[$state_uc]) ) {
