@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.3 =
+* Fix issue with state field passing full name instead of abbreviation
+
 = 1.3.2 =
 * Fix issue with annual subscriptions
 * Fix issue with country values in address when country field is hidden
