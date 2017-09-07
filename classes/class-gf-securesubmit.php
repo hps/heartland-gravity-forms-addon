@@ -2241,8 +2241,9 @@ class GFSecureSubmit extends GFPaymentAddOn
         /** @noinspection PhpUndefinedFieldInspection */
         $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country);
 
-        /** @noinspection PhpUndefinedFieldInspection */
-        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country);
+        // Convert states names to abbreviations
+        $acctHolder->address->state = $this->normalizeState($acctHolder->address->state);
+
         // Log the customer to be created.
         $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
 
@@ -2581,5 +2582,71 @@ class GFSecureSubmit extends GFPaymentAddOn
             default:
                 throw new Exception(sprintf('Country "%s" is currently not supported', $country));
         }
+    }
+
+    protected function normalizeState($state)
+    {
+        $na_state_abbreviations  = array(
+            'ALABAMA' => 'AL',
+            'ALASKA' => 'AK',
+            'ARIZONA' => 'AZ',
+            'ARKANSAS' => 'AR',
+            'CALIFORNIA' => 'CA',
+            'COLORADO' => 'CO',
+            'CONNECTICUT' => 'CT',
+            'DELAWARE' => 'DE',
+            'DISTRICT OF COLUMBIA' => 'DC',
+            'FLORIDA' => 'FL',
+            'GEORGIA' => 'GA',
+            'HAWAII' => 'HI',
+            'IDAHO' => 'ID',
+            'ILLINOIS' => 'IL',
+            'INDIANA' => 'IN',
+            'IOWA' => 'IA',
+            'KANSAS' => 'KS',
+            'KENTUCKY' => 'KY',
+            'LOUISIANA' => 'LA',
+            'MAINE' => 'ME',
+            'MARYLAND' => 'MD',
+            'MASSACHUSETTS' => 'MA',
+            'MICHIGAN' => 'MI',
+            'MINNESOTA' => 'MN',
+            'MISSISSIPPI' => 'MS',
+            'MISSOURI' => 'MO',
+            'MONTANA' => 'MT',
+            'NEBRASKA' => 'NE',
+            'NEVADA' => 'NV',
+            'NEW HAMPSHIRE' => 'NH',
+            'NEW JERSEY' => 'NJ',
+            'NEW MEXICO' => 'NM',
+            'NEW YORK' => 'NY',
+            'NORTH CAROLINA' => 'NC',
+            'NORTH DAKOTA' => 'ND',
+            'OHIO' => 'OH',
+            'OKLAHOMA' => 'OK',
+            'OREGON' => 'OR',
+            'PENNSYLVANIA' => 'PA',
+            'RHODE ISLAND' => 'RI',
+            'SOUTH CAROLINA' => 'SC',
+            'SOUTH DAKOTA' => 'SD',
+            'TENNESSEE' => 'TN',
+            'TEXAS' => 'TX',
+            'UTAH' => 'UT',
+            'VERMONT' => 'VT',
+            'VIRGINIA' => 'VA',
+            'WASHINGTON' => 'WA',
+            'WEST VIRGINIA' => 'WV',
+            'WISCONSIN' => 'WI',
+            'WYOMING' => 'WY',
+            'ARMED FORCES AMERICAS' => 'AA',
+            'ARMED FORCES EUROPE' => 'AE',
+            'ARMED FORCES PACIFIC' => 'AP',
+        );
+        $state_uc = strtoupper($state);
+        if ( empty($na_state_abbreviations[$state_uc]) 
+          && !in_array($state_uc, $na_state_abbreviations, true)) {
+            throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
+        }
+        return $na_state_abbreviations[$state_uc];
     }
 }
