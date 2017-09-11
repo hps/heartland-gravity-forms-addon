@@ -453,7 +453,28 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'type' => 'radio',
                 'default_value' => 'no',
                 'tooltip' => __(
-                    'Allows a SecureSubmit Feed to override the default set of API keys.',
+                    'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.',
+                    $this->_slug
+                ),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal' => true,
+            ),array(
+                'name' => 'enable_threedsecure',
+                'label' => __('Enable Cardholder Authentication (3DSecure)', $this->_slug),
+                'type' => 'radio',
+                'default_value' => 'no',
+                'tooltip' => __(
+                    'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.',
                     $this->_slug
                 ),
                 'choices' => array(
@@ -1777,6 +1798,16 @@ class GFSecureSubmit extends GFPaymentAddOn
         $settings = $this->get_plugin_settings();
 
         return (string)$this->get_setting('allow_api_keys_override', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecure()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure', 'no', $settings);
     }
 
     /**
