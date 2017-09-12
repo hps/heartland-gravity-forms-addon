@@ -3,6 +3,7 @@
 (function (window, $) {
   window.SecureSubmitAdminClass = function () {
     this.sendEmailFields = ['recipient_address'];
+    this.enableThreeDSecureFields = ['api_identifier', 'org_unit_id', 'api_key'];
 
     this.validateKey = function (keyName, key) {
       if (key.length === 0) {
@@ -114,6 +115,18 @@
         this.toggleFields(this.sendEmailFields, 'send_email', 'hide');
       }
     };
+    
+    this.initEnableThreeDSecureFieldsToggle = function () {
+      this.toggleEnableThreeDSecureFields($('#gaddon-setting-row-enable_threedsecure input:checked').val());
+    };
+
+    this.toggleEnableThreeDSecureFields = function (value) {
+      if (value === 'yes') {
+        this.toggleFields(this.enableThreeDSecureFields, 'enable_threedsecure', 'show');
+      } else {
+        this.toggleFields(this.enableThreeDSecureFields, 'enable_threedsecure', 'hide');
+      }
+    };
 
     this.toggleFields = function (fields, prefix, showOrHide) {
       var length = fields.length;
@@ -165,6 +178,7 @@
 
     window.SecureSubmitAdmin.initKeyStatus('public_api_key');
     window.SecureSubmitAdmin.initKeyStatus('secret_api_key');
+    window.SecureSubmitAdmin.initEnableThreeDSecureFieldsToggle();
     window.SecureSubmitAdmin.initSendEmailFieldsToggle();
     window.SecureSubmitAdmin.initAdminCCFields();
   });

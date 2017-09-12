@@ -468,7 +468,8 @@ class GFSecureSubmit extends GFPaymentAddOn
                     ),
                 ),
                 'horizontal' => true,
-            ),array(
+            ),
+            array(
                 'name' => 'enable_threedsecure',
                 'label' => __('Enable Cardholder Authentication (3DSecure)', $this->_slug),
                 'type' => 'radio',
@@ -489,6 +490,25 @@ class GFSecureSubmit extends GFPaymentAddOn
                     ),
                 ),
                 'horizontal' => true,
+                'onchange' => "SecureSubmitAdmin.toggleEnableThreeDSecureFields(this.value);",
+            ),
+            array(
+                'name' => 'enable_threedsecure_api_identifier',
+                'label' => __('Cardholder Authentication API Identifier', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
+            ),
+            array(
+                'name' => 'enable_threedsecure_org_unit_id',
+                'label' => __('Cardholder Authentication Org Unit ID', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
+            ),
+            array(
+                'name' => 'enable_threedsecure_api_key',
+                'label' => __('Cardholder Authentication API Key', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
             ),
             array(
                 'name' => 'send_email',
