@@ -1843,6 +1843,36 @@ class GFSecureSubmit extends GFPaymentAddOn
     /**
      * @return string
      */
+    public function getEnable3DSecureApiIdentifier()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_api_identifier', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecureOrgUnitId()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_org_unit_id', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecureApiKey()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_api_key', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
     public function getSendEmailRecipientAddress()
     {
         $settings = $this->get_plugin_settings();
