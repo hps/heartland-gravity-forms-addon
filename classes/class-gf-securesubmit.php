@@ -20,6 +20,11 @@ class GFSecureSubmit extends GFPaymentAddOn
     /**
      * @var bool
      */
+    private $isCert = false;
+
+    /**
+     * @var bool
+     */
     private $isCC = false;
 
     /**
@@ -748,6 +753,18 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
             ),
             array(
+                'handle' => 'songbird.js',
+                'src' => 'https://includestest.ccdc02.com/cardinalcruise/v1/songbird.js',
+                'version' => $this->_version,
+                'deps' => array(),
+                'enqueue' => array(
+                    array(
+                        'admin_page' => array('plugin_settings'),
+                        'tab' => array($this->_slug, $this->get_short_title()),
+                    ),
+                ),
+            ),
+            array(
                 'handle' => 'gforms_securesubmit_frontend',
                 'src' => $this->get_base_url() . '/../assets/js/securesubmit.js',
                 'version' => $this->_version,
@@ -1362,50 +1379,87 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ? $response->token_value
                 : '');
 
+            /**
+             * CardHolder Authentication (3D Secure)
+             *
+             */
+            $secureEcommerce = null;
+            if ($this->getEnable3DSecure() === 'yes'
+                && false !== ($data = json_decode(stripslashes($submission_data['securesubmit_cca_data'])))
+                && isset($data) && isset($data->ActionCode)
+                && in_array($data->ActionCode, array('SUCCESS', 'NOACTION'))
+            ) {
+                $dataSource = '';
+                switch ($submission_data['card_type']) {
+                case 'visa':
+                    $dataSource = 'Visa 3DSecure';
+                    break;
+                case 'mastercard':
+                    $dataSource = 'MasterCard 3DSecure';
+                    break;
+                case 'discover':
+                    $dataSource = 'Discover 3DSecure';
+                    break;
+                case 'amex':
+                    $dataSource = 'AMEX 3DSecure';
+                    break;
+                }
+
+                $cavv = isset($data->Payment->ExtendedData->CAVV)
+                    ? $data->Payment->ExtendedData->CAVV
+                    : '';
+                $eciFlag = isset($data->Payment->ExtendedData->ECIFlag)
+                    ? substr($data->Payment->ExtendedData->ECIFlag, 1)
+                    : '';
+                $xid = isset($data->Payment->ExtendedData->XID)
+                    ? $data->Payment->ExtendedData->XID
+                    : '';
+
+                $secureEcommerce = new HpsSecureEcommerce();
+                $secureEcommerce->type       = '3DSecure';
+                $secureEcommerce->dataSource = $dataSource;
+                $secureEcommerce->data       = $cavv;
+                $secureEcommerce->eciFlag    = $eciFlag;
+                $secureEcommerce->xid        = $xid;
+            }
+
+            $cpcReq = false;
+            if ($this->getAllowLevelII()) {
+                $cpcReq = true;
+            }
+
             $transaction = null;
             if ($isAuth) {
-                if ($this->getAllowLevelII()) {
-                    $transaction = $service->authorize(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder,
-                        false,
-                        null,
-                        null,
-                        false,
-                        true
-                    );
-                } else {
-                    $transaction = $service->authorize(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder
-                    );
-                }
+                $transaction = $service->authorize(
+                    $submission_data['payment_amount'],
+                    GFCommon::get_currency(),
+                    $token,
+                    $cardHolder,
+                    false,
+                    null,
+                    null,
+                    false,
+                    $cpcReq,
+                    null,
+                    null,
+                    $secureEcommerce
+                );
             } else {
-                if ($this->getAllowLevelII()) {
-                    $transaction = $service->charge(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder,
-                        false,
-                        null,
-                        null,
-                        false,
-                        true,
-                        null
-                    );
-                } else {
-                    $transaction = $service->charge(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder
-                    );
-                }
+                $transaction = $service->charge(
+                    $submission_data['payment_amount'],
+                    GFCommon::get_currency(),
+                    $token,
+                    $cardHolder,
+                    false,
+                    null,
+                    null,
+                    false,
+                    $cpcReq,
+                    null,
+                    null,
+                    null,
+                    $secureEcommerce
+                );
             }
 
             self::get_instance()->transaction_response = $transaction;
@@ -1425,7 +1479,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $transaction->transactionId
             );
 
-            if ($this->getAllowLevelII()
+            if ($cpcReq
                 && ($transaction->cpcIndicator == 'B'
                     || $transaction->cpcIndicator == 'R'
                     || $transaction->cpcIndicator == 'S')
