@@ -4,7 +4,6 @@
     'use strict';
 
     window.SecureSubmit = function (args) {
-        var prop;
 
         this.form = null;
         this.apiKey = null;
@@ -18,6 +17,7 @@
         this.hps = null;
         this.isInit = false;
 
+        var prop;
         for (prop in args) {
             if (args.hasOwnProperty(prop)) {
                 this[prop] = args[prop];
@@ -25,13 +25,14 @@
         }
 
         this.init = function () {
+
             var SecureSubmitObj = this;
 
             if (!this.isCreditCardOnPage()) {
                 return;
             }
 
-            // initialize spinner
+            // Initialize spinner
             if (!this.isAjax) {
                 gformInitSpinner(this.formId);
             }
@@ -40,9 +41,11 @@
                 var options = {
                     publicKey: SecureSubmitObj.apiKey,
                     type:      'iframe',
-                    // Configure the iframe fields to tell the library where
-                    // the iframe should be inserted into the DOM and some
-                    // basic options
+                    /*
+                    * Configure the iframe fields to tell the library where
+                    * the iframe should be inserted into the DOM and some
+                    * basic options.
+                    */
                     fields: {
                         cardNumber: {
                             target:      'iframesCardNumber',
@@ -57,9 +60,11 @@
                             placeholder: 'CVV'
                         }
                     },
-                    // Collection of CSS to inject into the iframes.
-                    // These properties can match the site's styles
-                    // to create a seamless experience.
+                    /*
+                     * Collection of CSS to inject into the iframes.
+                     * These properties can match the site's styles
+                     * to create a seamless experience.
+                     */
                     style: {
                         '#heartland-field': {
                             'box-sizing':'border-box',
@@ -177,7 +182,7 @@
                     }
                 };
 
-                // 3DSecure
+                // If 3DSecure is enabled, add the JWT and Order Number
                 if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
                     options.cca = {
                         jwt: SecureSubmitObj.ccaData.jwt,
@@ -185,9 +190,13 @@
                     };
                 }
 
-                // Create a new `HPS` object with the necessary configuration
+                // Create a new HPS object with the above config
                 SecureSubmitObj.hps = new Heartland.HPS(options);
 
+                /*
+                 * The tab indexes get out-of-whack here.
+                 * So, tweak the iframe elements after they are loaded.
+                 */
                 var count = 0;
                 Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
                     if (++count === 3) {
@@ -198,23 +207,22 @@
                         });
                     }
                 });
-                
+
                 console.log('Init SecureSubmitObj');
                 console.log(SecureSubmitObj);
             }
-            
-            // bind SecureSubmit functionality to submit event
+
+            // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
                 var $form = $(this);
                 SecureSubmitObj.form = $form;
-                
+
                 var ccInputPrefix = 'input_' + SecureSubmitObj.formId + '_' + SecureSubmitObj.ccFieldId + '_';
 
                 if (!$('#securesubmit_response').length) {
-                    
+
                     if (SecureSubmitObj.isSecure) {
-                        // Using iFrames
-                        // Tell the iframes to tokenize the data
+                        // Using iFrames. Tell the iframes to tokenize the data.
                         console.log('Tokenize iFrames');
                         SecureSubmitObj.hps.Messages.post(
                             {
@@ -242,7 +250,7 @@
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             }
                         };
-    
+
                         // 3DSecure
                         if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
                             options.cca = {
@@ -258,7 +266,7 @@
                         console.log('Done tokenizing');
                         return false;
                     }
-                    
+
                 }
                 if (SecureSubmitObj.isCCA) {
                     console.log('Get CCA Token');
@@ -278,12 +286,12 @@
 
             var heartland = response.heartland || response;
             var cardinal = response.cardinal;
-            
+
             console.log('heartland');
             console.log(heartland);
             console.log('cardinal');
             console.log(cardinal);
-            
+
             $('#securesubmit_response').remove();
             $('#securesubmit_cca_data').remove();
 
@@ -324,7 +332,7 @@
             $form.append($(cType));
             $form.append($(expMo));
             $form.append($(expYr));
-            
+
             $('#securesubmit_response').remove();
             $('#securesubmit_cca_data').remove();
             $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(response)));
@@ -370,6 +378,15 @@
             cardinalToken.value = value;
             $form.append($(cardinalToken));
         }
+
+        // ginput_container ginput_container_total
+        this.getOrderTotal = function () {
+            var $orderTotalElement = $('div.ginput_container_total').find('input[id^="input_' + this.formId + '_"]');
+            if ( $orderTotalElement ) {
+                return ($orderTotalElement.val() * 100);
+            }
+            return 0;
+        }
         
         this.cca = function () {
             if ( $('#securesubmit_cca_data').length ) {
@@ -395,7 +412,7 @@
                     Cardinal.on('payments.validated', function (data, jwt) {
                         console.log('payments.validated');
                         data.jwt = jwt;
-                        
+
                         var cca = document.createElement('input');
                         cca.type = 'hidden';
                         cca.id = 'securesubmit_cca_data';
@@ -419,7 +436,8 @@
 
                 var options = {
                     OrderDetails: {
-                        OrderNumber: this.ccaData.orderNumber + 'cca'
+                        OrderNumber: this.ccaData.orderNumber + 'cca',
+                        Amount: this.getOrderTotal()
                     }
                 };
                 if ( $('#securesubmit_cardinal_token').length ) {
@@ -427,16 +445,17 @@
                         Token: $('#securesubmit_cardinal_token').val(),
                         ExpirationMonth: $('#exp_month').val(),
                         ExpirationYear: $('#exp_year').val()
-                    }                
+                    }
                 }
                 console.log('Cardinal.start');
+                console.log(options);
                 Cardinal.start('cca', options);
             } catch(e){
                 // An error occurred
                 console.log( (window["Cardinal"] === undefined ? "Cardinal Cruise did not load properly. " : "An error occurred during processing. ") + e );
             }
         }
-        
+
         this.init();
     };
 })(window, window.jQuery);
