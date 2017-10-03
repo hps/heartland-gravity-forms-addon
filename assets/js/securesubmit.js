@@ -13,7 +13,10 @@
         this.ccPage = null;
         this.isAjax = null;
         this.isSecure = false;
+        this.isCCA = false;
+        this.ccaData = null;
         this.hps = null;
+        this.isInit = false;
 
         for (prop in args) {
             if (args.hasOwnProperty(prop)) {
@@ -34,8 +37,7 @@
             }
 
             if (this.isSecure) {
-                // Create a new `HPS` object with the necessary configuration
-                SecureSubmitObj.hps = new Heartland.HPS({
+                var options = {
                     publicKey: SecureSubmitObj.apiKey,
                     type:      'iframe',
                     // Configure the iframe fields to tell the library where
@@ -165,13 +167,28 @@
                     },
                     // Callback when a token is received from the service
                     onTokenSuccess: function (response) {
+                        console.log('Tokenize - GOOD');
+                        console.log(response);
                         SecureSubmitObj.secureSubmitResponseHandler(response);
                     },
                     // Callback when an error is received from the service
                     onTokenError: function (response) {
+                        console.log('Tokenize - ERROR');
+                        console.log(response);
                         SecureSubmitObj.secureSubmitResponseHandler(response);
                     }
-                });
+                };
+
+                // 3DSecure
+                if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
+                    options.cca = {
+                        jwt: SecureSubmitObj.ccaData.jwt,
+                        orderNumber: SecureSubmitObj.ccaData.orderNumber
+                    };
+                }
+
+                // Create a new `HPS` object with the necessary configuration
+                SecureSubmitObj.hps = new Heartland.HPS(options);
 
                 var count = 0;
                 Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
@@ -183,8 +200,11 @@
                         });
                     }
                 });
+                
+                console.log('Init SecureSubmitObj');
+                console.log(SecureSubmitObj);
             }
-
+            
             // bind SecureSubmit functionality to submit event
             $('#gform_' + this.formId).submit(function (event) {
                 var $form = $(this);
@@ -193,18 +213,29 @@
                 SecureSubmitObj.form = $form;
 
                 if ($('#securesubmit_response').size() === 0) {
+                    
                     if (SecureSubmitObj.isSecure) {
+                        // Using iFrames
                         // Tell the iframes to tokenize the data
+                        console.log('Tokenize iFrames');
                         SecureSubmitObj.hps.Messages.post(
                             {
                                 accumulateData: true,
                                 action: 'tokenize',
-                                message: SecureSubmitObj.apiKey
+                                message: SecureSubmitObj.apiKey,
+                                data: SecureSubmitObj.hps.options
                             },
                             'cardNumber'
                         );
+                        console.log('Done tokenizing');
+                        if (SecureSubmitObj.isCCA) {
+                            console.log('Get CCA Token');
+                            SecureSubmitObj.cca();
+                        }
+                        return false;
                     } else {
-                        var hps = new Heartland.HPS({
+                        // Not using iFrames
+                        var options = {
                             publicKey: SecureSubmitObj.apiKey,
                             cardNumber: $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
                             cardCvv: $form.find('#' + ccInputPrefix + '3').val(),
@@ -216,27 +247,52 @@
                             error: function (response) {
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             }
-                        });
+                        };
+    
+                        // 3DSecure
+                        if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
+                            options.cca = {
+                                jwt: SecureSubmitObj.ccaData.jwt,
+                                orderNumber: SecureSubmitObj.ccaData.orderNumber
+                            };
+                        }
 
+                        var hps = new Heartland.HPS(options);
+
+                        console.log('Tokenize non iFrames');
                         hps.tokenize();
+                        if (SecureSubmitObj.isCCA) {
+                            console.log('Get CCA Token');
+                            SecureSubmitObj.cca();
+                        }
+                        return false;
                     }
-
-                    return false;
+                    
                 }
-
+               
                 return true;
             });
         };
 
+        // Handles tokenization response
         this.secureSubmitResponseHandler = function (response) {
             var $form = this.form;
             var ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
             var ccInputSuffixes = ['1', '2_month', '2_year', '3'];
             var i, input;
 
+            var heartland = response.heartland || response;
+            var cardinal = response.cardinal;
+            
+            console.log('heartland');
+            console.log(heartland);
+            console.log('cardinal');
+            console.log(cardinal);
+            
             $('#securesubmit_response').remove();
 
             if (!this.isSecure) {
+                // Clear the fields if not using iFrames
                 for (i = 0; i < ccInputSuffixes.length; i++) {
                     input = $form.find('#' + ccInputPrefix + ccInputSuffixes[i]);
                     input.val('');
@@ -245,6 +301,15 @@
 
             $('#securesubmit_response').remove();
             $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(response)));
+            console.log('secureSubmitResponseHandler called');
+            console.log($('#securesubmit_response').val());
+            if (this.isCCA) {
+                this.createCardinalTokenNode($form, response.cardinal.token_value);
+                this.cca();
+                return;
+            }
+            console.log('Ready to submit form');
+            return false;
             $form.submit();
         };
 
@@ -264,6 +329,78 @@
             return currentPageInput.length > 0 ? parseInt(currentPageInput.val(), 10) : false;
         };
 
+        this.createCardinalTokenNode = function (form, value) {
+            console.log('createCardinalTokenNode');
+            var cardinalToken = document.createElement('input');
+            cardinalToken.type = 'hidden';
+            cardinalToken.id = 'securesubmit_cardinal_token';
+            cardinalToken.name = 'securesubmit_cardinal_token';
+            cardinalToken.value = value;
+            form.appendChild(cardinalToken);
+        }
+        
+        this.cca = function () {
+
+            var $form = this.form;
+            try {
+                Cardinal.setup('init', {
+                    jwt: this.ccaData.jwt
+                });
+
+                Cardinal.configure({
+                    logging: {
+                        debug: "verbose"
+                    }
+                });
+
+                // The below callback function will be called
+                // after the authentication process completes.
+                Cardinal.on('payments.validated', function (data, jwt) {
+                    console.log('payments.validated');
+                    data.jwt = jwt;
+                    
+                    var cca = document.createElement('input');
+                    cca.type = 'hidden';
+                    cca.id = 'securesubmit_cca_data';
+                    cca.name = 'securesubmit_cca_data';
+                    cca.value = Heartland.JSON.stringify(data);
+                    $form.append($(cca));
+
+                    if ( !$('#securesubmit_cardinal_token') ) {
+                        if ( data.Token && data.Token.Token ) {
+                            createCardinalTokenNode(form, data.Token.Token);
+                        }
+                    }
+                    console.log('payments.validated.data');
+                    console.log(data);
+                    //$form.submit();
+                });
+                
+                console.log('jwt.update');
+                Cardinal.trigger('jwt.update', this.ccaData.jwt);
+
+                var options = {
+                    OrderDetails: {
+                        OrderNumber: this.ccaData.orderNumber + 'cca'
+                    }
+                };
+                if ( !$('#securesubmit_cardinal_token') ) {
+                    if ( data.Token && data.Token.Token ) {
+                        options.Token = {
+                            Token: token,
+                            ExpirationMonth: document.getElementById('exp_month').value,
+                            ExpirationYear: document.getElementById('exp_year').value
+                        }
+                    }
+                }
+                console.log('Cardinal.start');
+                Cardinal.start('cca', options);
+            } catch(e){
+                // An error occurred
+                console.log( (window["Cardinal"] === undefined ? "Cardinal Cruise did not load properly. " : "An error occurred during processing. ") + e );
+            }
+        }
+        
         this.init();
     };
 })(window, window.jQuery);

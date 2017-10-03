@@ -758,10 +758,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'version' => $this->_version,
                 'deps' => array(),
                 'enqueue' => array(
-                    array(
-                        'admin_page' => array('plugin_settings'),
-                        'tab' => array($this->_slug, $this->get_short_title()),
-                    ),
+                    array($this, 'hasFeedCallback'),
                 ),
             ),
             array(
@@ -862,6 +859,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $cc_field = $this->get_hpscredit_card_field($form);
         }
 
+        $use_3DSecure = ($this->getEnable3DSecure() === 'yes' ? true : false);
+        
         $args = array(
             'apiKey' => $pubKey,
             'formId' => $form['id'],
@@ -869,8 +868,38 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ccPage' => rgar($cc_field, 'pageNumber'),
             'isAjax' => $is_ajax,
             'isSecure' => $cc_field['type'] === 'hpscreditcard',
+            'isCCA' => $use_3DSecure,
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
         );
+        
+        if ($use_3DSecure) {
+            $orderNumber = str_shuffle('abcdefghijklmnopqrstuvwxyz');
+            $data = array(
+                'jti' => str_shuffle('abcdefghijklmnopqrstuvwxyz'),
+                'iat' => time(),
+                'iss' => $this->getEnable3DSecureApiIdentifier(),
+                'OrgUnitId' => $this->getEnable3DSecureOrgUnitId(),
+                'Payload' => array(
+                    'OrderDetails' => array(
+                        'OrderNumber' => $orderNumber,
+                        // Centinel requires amounts in pennies
+                        'Amount' => (100 * 0),
+                        'CurrencyCode' => '840',
+                    ),
+                ),
+            );
+
+            if (!class_exists('HeartlandJWT')) {
+                include_once 'class-heartland-jwt.php';
+            }
+            $jwt = HeartlandJWT::encode($this->getEnable3DSecureApiKey(), $data);
+
+            $args['ccaData'] = array(
+                'jwt' => $jwt,
+                'orderNumber' => $orderNumber,
+            );
+        }
+
         $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
@@ -1428,11 +1457,23 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $cpcReq = true;
             }
 
+            $currency = GFCommon::get_currency();
+            file_put_contents(
+                '/tmp/gravity.log',
+                "submission_data = " . print_r($submission_data, true) . "\n" .
+                "payment_amount = " . $submission_data['payment_amount'] . "\n" .
+                "currency = " . $currency . "\n" .
+                "token = " . print_r($token, true) . "\n" .
+                "cardHolder = " . print_r($cardHolder, true) . "\n" .
+                "cpcReq = " . $cpcReq . "\n" .
+                "secureEcommerce = " . print_r($secureEcommerce, true) . "\n",
+                FILE_APPEND
+            );
             $transaction = null;
             if ($isAuth) {
                 $transaction = $service->authorize(
                     $submission_data['payment_amount'],
-                    GFCommon::get_currency(),
+                    $currency,
                     $token,
                     $cardHolder,
                     false,
@@ -1447,7 +1488,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             } else {
                 $transaction = $service->charge(
                     $submission_data['payment_amount'],
-                    GFCommon::get_currency(),
+                    $currency,
                     $token,
                     $cardHolder,
                     false,
@@ -1461,7 +1502,11 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $secureEcommerce
                 );
             }
-
+            file_put_contents(
+                '/tmp/gravity.log',
+                "Transaction:\n" . print_r($transaction, true) . "\n",
+                FILE_APPEND
+            );
             self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
