@@ -16,7 +16,6 @@
         this.ccaData = null;
         this.hps = null;
         this.isInit = false;
-        this.isReadytoSubmit = false;
 
         var prop;
         for (prop in args) {
@@ -181,7 +180,7 @@
                     }
                 };
 
-                // If 3DSecure is enabled, add the JWT and Order Number
+                // If 3DSecure is enabled, add that config
                 if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
                     options.cca = {
                         jwt: SecureSubmitObj.ccaData.jwt,
@@ -211,9 +210,13 @@
             // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
 
-                // Since we have everything we need, we can submit the form.
-                if ($('#securesubmit_cca_data').length
-                    && $('#securesubmit_response').length) {
+                // If we have what we need, we can submit the form.
+                if (SecureSubmitObj.isCCA) {
+                    if ($('#securesubmit_cca_data').length
+                        && $('#securesubmit_response').length) {
+                        return true;
+                    }
+                } else if ($('#securesubmit_response').length) {
                     return true;
                 }
 
@@ -297,7 +300,14 @@
             var i, input;
 
             var heartland = response.heartland || response;
-            var cardinal = response.cardinal;
+            /*
+             * If 3DSecure is enabled, the tokenization
+             * will send back that token as well
+             */
+             var  cardinal = null;
+             if (this.isCCA && response.cardinal) {
+                cardinal = response.cardinal;
+             }
 
             if (!this.isSecure) {
                 // Clear the fields if not using iFrames
@@ -395,20 +405,17 @@
         }
 
         this.cca = function () {
+            /*
+             * If we arleady have the CCA data
+             * then we can skip the CCA process.
+             */
             if ($('#securesubmit_cca_data').length) {
-                this.isReadytoSubmit = true;
                 return true;
             }
             var $form = this.form;
             try {
                 Cardinal.setup('init', {
                     jwt: this.ccaData.jwt
-                });
-
-                Cardinal.configure({
-                    logging: {
-                        debug: "verbose"
-                    }
                 });
 
                 if (!this.isInit) {
@@ -426,12 +433,10 @@
                         cca.value = Heartland.JSON.stringify(data);
                         $form.append($(cca));
 
-                        if ( !$('#securesubmit_cardinal_token').length ) {
-                            if ( data.Token && data.Token.Token ) {
+                        if (!$('#securesubmit_cardinal_token').length
+                            && (data.Token && data.Token.Token)) {
                                 createCardinalTokenNode(data.Token.Token);
-                            }
                         }
-                        this.isReadytoSubmit = true;
                         $form.submit();
                     });
                     this.isInit = true;
@@ -445,17 +450,20 @@
                         Amount: this.getOrderTotal()
                     }
                 };
-                if ( $('#securesubmit_cardinal_token').length ) {
+                if ($('#securesubmit_cardinal_token').length) {
                     options.Token = {
                         Token: $('#securesubmit_cardinal_token').val(),
                         ExpirationMonth: $('#exp_month').val(),
                         ExpirationYear: $('#exp_year').val()
-                    }
+                    };
                 }
                 Cardinal.start('cca', options);
                 return true;
             } catch(e){
-                console.log( (window["Cardinal"] === undefined ? "Cardinal Cruise did not load properly. " : "An error occurred during processing. ") + e );
+                console.log( (window["Cardinal"] === undefined ?
+                    "Cardinal Cruise did not load properly. " :
+                    "An error occurred during processing. ") + e
+                );
             }
         }
 
