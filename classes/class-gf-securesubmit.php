@@ -739,6 +739,15 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function scripts()
     {
+        $this->isCert = (
+            false !== strpos(
+                (string)trim(
+                    $this->get_setting(
+                        'public_api_key', '',
+                        $this->get_plugin_settings()
+                    )
+                ), '_cert_')
+        );
         $scripts = array(
             array(
                 'handle' => 'securesubmit.js',
@@ -754,7 +763,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'handle' => 'songbird.js',
-                'src' => 'https://includestest.ccdc02.com/cardinalcruise/v1/songbird.js',
+                'src' => ( $this->isCert ?
+                    'https://includestest.ccdc02.com/cardinalcruise/v1/songbird.js'
+                    : 'https://includes.ccdc02.com/cardinalcruise/v1/songbird.js'),
                 'version' => $this->_version,
                 'deps' => array(),
                 'enqueue' => array(
@@ -860,7 +871,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         $use_3DSecure = ($this->getEnable3DSecure() === 'yes' ? true : false);
-        
+
         $args = array(
             'apiKey' => $pubKey,
             'formId' => $form['id'],
@@ -871,7 +882,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'isCCA' => $use_3DSecure,
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
         );
-        
+
         if ($use_3DSecure) {
             $orderNumber = str_shuffle('abcdefghijklmnopqrstuvwxyz');
             $data = array(
@@ -1055,7 +1066,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
         file_put_contents(
-            '/tmp/gravity_sumbmit.log', 
+            '/tmp/gravity_sumbmit.log',
             "getSecureSubmitJsResponse:\n" . print_r($isCCData, true) . "\n",
             FILE_APPEND);
 
@@ -2811,7 +2822,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES PACIFIC' => 'AP',
         );
         $state_uc = strtoupper($state);
-        if ( empty($na_state_abbreviations[$state_uc]) 
+        if ( empty($na_state_abbreviations[$state_uc])
           && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
         }
