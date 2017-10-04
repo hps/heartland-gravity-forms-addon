@@ -1462,17 +1462,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             }
 
             $currency = GFCommon::get_currency();
-            file_put_contents(
-                '/tmp/gravity.log',
-                "submission_data = " . print_r($submission_data, true) . "\n" .
-                "payment_amount = " . $submission_data['payment_amount'] . "\n" .
-                "currency = " . $currency . "\n" .
-                "token = " . print_r($token, true) . "\n" .
-                "cardHolder = " . print_r($cardHolder, true) . "\n" .
-                "cpcReq = " . $cpcReq . "\n" .
-                "secureEcommerce = " . print_r($secureEcommerce, true) . "\n",
-                FILE_APPEND
-            );
             $transaction = null;
             if ($isAuth) {
                 $transaction = $service->authorize(
@@ -1506,11 +1495,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $secureEcommerce
                 );
             }
-            file_put_contents(
-                '/tmp/gravity.log',
-                "Transaction:\n" . print_r($transaction, true) . "\n",
-                FILE_APPEND
-            );
             self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
