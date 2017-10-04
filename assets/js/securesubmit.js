@@ -16,6 +16,7 @@
         this.ccaData = null;
         this.hps = null;
         this.isInit = false;
+        this.isReadytoSubmit = false;
 
         var prop;
         for (prop in args) {
@@ -214,6 +215,12 @@
 
             // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
+
+                if ($('#securesubmit_cca_data').length && $('#securesubmit_response').length) {
+                    console.log('Submitting');
+                    return true;
+                }
+
                 var $form = $(this);
                 SecureSubmitObj.form = $form;
 
@@ -268,7 +275,8 @@
                     }
 
                 }
-                if (SecureSubmitObj.isCCA) {
+                // IF 3dSecure is enabled, init and start the CCA process
+                if (SecureSubmitObj.isCCA && !$('#securesubmit_cca_data').length) {
                     console.log('Get CCA Token');
                     SecureSubmitObj.cca();
                     return false;
@@ -303,6 +311,10 @@
                 }
             }
 
+            /*
+             * Create hidden form inputs to capture 
+             * the values passed back from tokenization.
+             */
             var last4 = document.createElement('input');
             var cType = document.createElement('input');
             var expMo = document.createElement('input');
@@ -333,11 +345,19 @@
             $form.append($(expMo));
             $form.append($(expYr));
 
+            // Clear any potentially lingering elements
             $('#securesubmit_response').remove();
             $('#securesubmit_cca_data').remove();
-            $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(response)));
+
+            // Add tokenization response to the form
+            $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(heartland)));
+
             console.log('secureSubmitResponseHandler called');
             console.log($('#securesubmit_response').val());
+            /*
+             * If 3dSecure is enabled, create a hidden form
+             * element top capture the CCA token.
+             */
             if (this.isCCA && cardinal.token_value) {
                 this.createCardinalTokenNode(cardinal.token_value);
                 if ( $('#securesubmit_cardinal_token').length ) {
@@ -345,17 +365,19 @@
                     console.log($('#securesubmit_cardinal_token').val());
                 }
                 this.cca();
-                return;
+                return false;
             }
             console.log('Ready to submit form');
-            return false;
             $form.submit();
         };
 
         this.isCreditCardOnPage = function () {
             var currentPage = this.getCurrentPageNumber();
 
-            // if current page is false or no credit card page number, assume this is not a multi-page form
+            /*
+             * If current page is false or no credit card page number,
+             * assume this is not a multi-page form
+             */
             if (!this.ccPage || !currentPage) {
                 return true;
             }
@@ -379,9 +401,10 @@
             $form.append($(cardinalToken));
         }
 
-        // ginput_container ginput_container_total
         this.getOrderTotal = function () {
-            var $orderTotalElement = $('div.ginput_container_total').find('input[id^="input_' + this.formId + '_"]');
+            var $orderTotalElement = $('div.ginput_container_total').find(
+                'input[id^="input_' + this.formId + '_"]'
+            );
             if ( $orderTotalElement ) {
                 return ($orderTotalElement.val() * 100);
             }
@@ -391,7 +414,8 @@
         this.cca = function () {
             if ( $('#securesubmit_cca_data').length ) {
                 console.log('securesubmit_cca_data has a value already');
-                return;
+                this.isReadytoSubmit = true;
+                return true;
             }
             var $form = this.form;
             try {
@@ -427,7 +451,8 @@
                         }
                         console.log('payments.validated.data');
                         console.log(data);
-                        //$form.submit();
+                        this.isReadytoSubmit = true;
+                        $form.submit();
                     });
                     this.isInit = true;
                 }
@@ -450,6 +475,7 @@
                 console.log('Cardinal.start');
                 console.log(options);
                 Cardinal.start('cca', options);
+                return true;
             } catch(e){
                 // An error occurred
                 console.log( (window["Cardinal"] === undefined ? "Cardinal Cruise did not load properly. " : "An error occurred during processing. ") + e );

@@ -1054,6 +1054,10 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
+        file_put_contents(
+            '/tmp/gravity_sumbmit.log', 
+            "getSecureSubmitJsResponse:\n" . print_r($isCCData, true) . "\n",
+            FILE_APPEND);
 
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
