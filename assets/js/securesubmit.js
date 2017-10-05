@@ -16,12 +16,22 @@
         this.ccaData = null;
         this.hps = null;
         this.isInit = false;
+        this.isCert = false;
 
         var prop;
         for (prop in args) {
             if (args.hasOwnProperty(prop)) {
                 this[prop] = args[prop];
             }
+        }
+
+        // If in development mode, turn up Cardinal logging.
+        if ( this.isCert && this.isCCA ) {
+            Cardinal.configure({
+                logging: {
+                    level: "verbose"
+                }
+            });
         }
 
         this.init = function () {
@@ -190,6 +200,7 @@
 
                 // Create a new HPS object with the above config
                 SecureSubmitObj.hps = new Heartland.HPS(options);
+                console.log(SecureSubmitObj.hps.options);
 
                 /*
                  * The tab indexes get out-of-whack here.
@@ -244,10 +255,10 @@
                         // Not using iFrames
                         var options = {
                             publicKey: SecureSubmitObj.apiKey,
-                            cardNumber: $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
-                            cardCvv: $form.find('#' + ccInputPrefix + '3').val(),
-                            cardExpMonth: $form.find('#' + ccInputPrefix + '2_month').val(),
-                            cardExpYear: $form.find('#' + ccInputPrefix + '2_year').val(),
+                            cardNumber: SecureSubmitObj.form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
+                            cardCvv: SecureSubmitObj.form.find('#' + ccInputPrefix + '3').val(),
+                            cardExpMonth: SecureSubmitObj.form.find('#' + ccInputPrefix + '2_month').val(),
+                            cardExpYear: SecureSubmitObj.form.find('#' + ccInputPrefix + '2_year').val(),
                             success: function (response) {
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             },
@@ -302,12 +313,17 @@
             var heartland = response.heartland || response;
             /*
              * If 3DSecure is enabled, the tokenization
-             * will send back that token as well
+             * will send back the CCA token as well
              */
              var  cardinal = null;
              if (this.isCCA && response.cardinal) {
                 cardinal = response.cardinal;
              }
+
+            console.log('Heartland');
+            console.log(heartland);
+            console.log('Cardinal');
+            console.log(cardinal.error);
 
             if (!this.isSecure) {
                 // Clear the fields if not using iFrames

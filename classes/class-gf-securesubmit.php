@@ -880,6 +880,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'isAjax' => $is_ajax,
             'isSecure' => $cc_field['type'] === 'hpscreditcard',
             'isCCA' => $use_3DSecure,
+            'isCert' => $this->isCert,
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
         );
 
@@ -904,10 +905,19 @@ class GFSecureSubmit extends GFPaymentAddOn
                 include_once 'class-heartland-jwt.php';
             }
             $jwt = HeartlandJWT::encode($this->getEnable3DSecureApiKey(), $data);
+            $verified = HeartlandJWT::verify($jwt, $this->getEnable3DSecureApiKey());
 
             $args['ccaData'] = array(
                 'jwt' => $jwt,
                 'orderNumber' => $orderNumber,
+            );
+            file_put_contents(
+                '/tmp/gravity_jwt.log',
+                "DATA:\n" . print_r($data, true). "\n" .
+                "JWT:\n" . $jwt. "\n" .
+                "JWT-Verify:\n" . $verified. "\n" .
+                "ARGS:\n" . print_r($args, true) . "\n",
+                FILE_APPEND
             );
         }
 
