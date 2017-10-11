@@ -25,11 +25,13 @@
             }
         }
 
-        // If in development mode, turn up Cardinal logging.
-        if ( this.isCert && this.isCCA ) {
+        this.ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
+
+        // If in development mode, turn on CCA logging.
+        if (this.isCert && this.isCCA) {
             Cardinal.configure({
                 logging: {
-                    level: "verbose"
+                    level: "off"
                 }
             });
         }
@@ -200,7 +202,6 @@
 
                 // Create a new HPS object with the above config
                 SecureSubmitObj.hps = new Heartland.HPS(options);
-                console.log(SecureSubmitObj.hps.options);
 
                 /*
                  * The tab indexes get out-of-whack here.
@@ -222,43 +223,36 @@
             $('#gform_' + this.formId).submit(function (event) {
 
                 // If we have what we need, we can submit the form.
-                if (SecureSubmitObj.isCCA) {
-                    if ($('#securesubmit_cca_data').length
-                        && $('#securesubmit_response').length) {
-                        return true;
-                    }
-                } else if ($('#securesubmit_response').length) {
+                if ($('#securesubmit_cca_data').length && $('#securesubmit_response').length) {
                     return true;
                 }
-
+               
                 SecureSubmitObj.form = $(this);
-
-                var ccInputPrefix = 'input_' +
-                    SecureSubmitObj.formId + '_' +
-                    SecureSubmitObj.ccFieldId + '_';
 
                 if (!$('#securesubmit_response').length) {
 
                     if (SecureSubmitObj.isSecure) {
+                        console.log('tokenize with iFrames');
                         // Using iFrames. Tell the iframes to tokenize the data.
                         SecureSubmitObj.hps.Messages.post(
                             {
                                 accumulateData: true,
                                 action: 'tokenize',
-                                message: SecureSubmitObj.apiKey,
+                                /*message: SecureSubmitObj.apiKey,*/
                                 data: SecureSubmitObj.hps.options
                             },
                             'cardNumber'
                         );
                         return false;
                     } else {
+                        console.log('tokenize without iFrames');
                         // Not using iFrames
                         var options = {
                             publicKey: SecureSubmitObj.apiKey,
-                            cardNumber: SecureSubmitObj.form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
-                            cardCvv: SecureSubmitObj.form.find('#' + ccInputPrefix + '3').val(),
-                            cardExpMonth: SecureSubmitObj.form.find('#' + ccInputPrefix + '2_month').val(),
-                            cardExpYear: SecureSubmitObj.form.find('#' + ccInputPrefix + '2_year').val(),
+                            cardNumber: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '1').val().replace(/\D/g, ''),
+                            cardCvv: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '3').val(),
+                            cardExpMonth: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_month').val(),
+                            cardExpYear: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_year').val(),
                             success: function (response) {
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             },
@@ -286,6 +280,7 @@
 
                 // IF 3dSecure is enabled, init and start the CCA process
                 if (SecureSubmitObj.isCCA && !$('#securesubmit_cca_data').length) {
+                    console.log('Form submitted. Calling CCA');
                     SecureSubmitObj.cca();
                     return false;
                 }
@@ -303,10 +298,8 @@
 
             // Clear any potentially lingering elements
             $('#securesubmit_response').remove();
-            $('#securesubmit_cca_data').remove();
 
             var $form = this.form;
-            var ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
             var ccInputSuffixes = ['1', '2_month', '2_year', '3'];
             var i, input;
 
@@ -320,15 +313,14 @@
                 cardinal = response.cardinal;
              }
 
-            console.log('Heartland');
-            console.log(heartland);
             console.log('Cardinal');
             console.log(cardinal.error);
 
-            if (!this.isSecure) {
-                // Clear the fields if not using iFrames
+            if (this.isSecure) {
+                console.log('clear values');
+                // Clear the fields if using iFrames
                 for (i = 0; i < ccInputSuffixes.length; i++) {
-                    input = $form.find('#' + ccInputPrefix + ccInputSuffixes[i]);
+                    input = $form.find('#' + this.ccInputPrefix + ccInputSuffixes[i]);
                     input.val('');
                 }
             }
@@ -368,17 +360,19 @@
             $form.append($(expYr));
 
             // Add tokenization response to the form
-            $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(heartland)));
+            this.createSecureSubmitResponseNode($.toJSON(heartland));
 
             /*
              * If 3dSecure is enabled, create a hidden form
              * element top capture the CCA token.
              */
-            if (this.isCCA && cardinal.token_value) {
+            if (this.isSecure && this.isCCA && cardinal.token_value) {
+                console.log('calling createCardinalTokenNode and then cca');
                 this.createCardinalTokenNode(cardinal.token_value);
                 this.cca();
                 return false;
             }
+            console.log('submit form');
             $form.submit();
         };
 
@@ -410,6 +404,16 @@
             $form.append($(cardinalToken));
         }
 
+        this.createSecureSubmitResponseNode = function (value) {
+            var $form = this.form;
+            var secureSubmitResponse = document.createElement('input');
+            secureSubmitResponse.type = 'hidden';
+            secureSubmitResponse.id = 'securesubmit_response';
+            secureSubmitResponse.name = 'securesubmit_response';
+            secureSubmitResponse.value = value;
+            $form.append($(secureSubmitResponse));
+        }
+
         this.getOrderTotal = function () {
             var $orderTotalElement = $('div.ginput_container_total').find(
                 'input[id^="input_' + this.formId + '_"]'
@@ -421,6 +425,10 @@
         }
 
         this.cca = function () {
+            
+            var ccInputSuffixes = ['1', '2_month', '2_year', '3'];
+            var i, input;
+            
             /*
              * If we arleady have the CCA data
              * then we can skip the CCA process.
@@ -428,8 +436,11 @@
             if ($('#securesubmit_cca_data').length) {
                 return true;
             }
+            
             var $form = this.form;
+            
             try {
+
                 Cardinal.setup('init', {
                     jwt: this.ccaData.jwt
                 });
@@ -440,24 +451,33 @@
                      * after the authentication process completes.
                      */
                     Cardinal.on('payments.validated', function (data, jwt) {
+                        console.log('payments.validated');
                         data.jwt = jwt;
-
-                        var cca = document.createElement('input');
-                        cca.type = 'hidden';
-                        cca.id = 'securesubmit_cca_data';
-                        cca.name = 'securesubmit_cca_data';
-                        cca.value = Heartland.JSON.stringify(data);
-                        $form.append($(cca));
+                        // Create a hidden input element to store the CCA data
+                        var ccaData = document.createElement('input');
+                        ccaData.type = 'hidden';
+                        ccaData.id = 'securesubmit_cca_data';
+                        ccaData.name = 'securesubmit_cca_data';
+                        ccaData.value = Heartland.JSON.stringify(data);
+                        $form.append($(ccaData));
 
                         if (!$('#securesubmit_cardinal_token').length
                             && (data.Token && data.Token.Token)) {
-                                createCardinalTokenNode(data.Token.Token);
+                            var cardinalToken = document.createElement('input');
+                            cardinalToken.type = 'hidden';
+                            cardinalToken.id = 'securesubmit_cardinal_token';
+                            cardinalToken.name = 'securesubmit_cardinal_token';
+                            cardinalToken.value = data.Token.Token;
+                            $form.append($(cardinalToken));
                         }
+                        console.log('submit form');
                         $form.submit();
                     });
+                    console.log('init is true');
                     this.isInit = true;
                 }
 
+                console.log('jwt.update');
                 Cardinal.trigger('jwt.update', this.ccaData.jwt);
 
                 var options = {
@@ -466,15 +486,32 @@
                         Amount: this.getOrderTotal()
                     }
                 };
-                if ($('#securesubmit_cardinal_token').length) {
-                    options.Token = {
-                        Token: $('#securesubmit_cardinal_token').val(),
-                        ExpirationMonth: $('#exp_month').val(),
-                        ExpirationYear: $('#exp_year').val()
+
+                if (this.isSecure) {
+                    if ($('#securesubmit_cardinal_token').length) {
+                        options.Token = {
+                            Token: $('#securesubmit_cardinal_token').val(),
+                            ExpirationMonth: $('#exp_month').val(),
+                            ExpirationYear: $('#exp_year').val()
+                        };
+                    }
+                } else {
+                    /*
+                     * Not using iFrames
+                     * Build Account data
+                     */
+                    options.Consumer = {
+                        Account: {
+                            AccountNumber: $form.find('#' + this.ccInputPrefix + '1').val().replace(/\D/g, ''),
+                            ExpirationMonth: $form.find('#' + this.ccInputPrefix + '2_month').val(),
+                            ExpirationYear: $form.find('#' + this.ccInputPrefix + '2_year').val()
+                        }
                     };
                 }
+                console.log('cca.start');
                 Cardinal.start('cca', options);
                 return true;
+
             } catch(e){
                 console.log( (window["Cardinal"] === undefined ?
                     "Cardinal Cruise did not load properly. " :
