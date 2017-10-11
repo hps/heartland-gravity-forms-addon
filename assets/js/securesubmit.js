@@ -314,7 +314,7 @@
              }
 
             console.log('Cardinal');
-            console.log(cardinal.error);
+            console.log(cardinal);
 
             if (this.isSecure) {
                 console.log('clear values');
@@ -369,6 +369,7 @@
             if (this.isSecure && this.isCCA && cardinal.token_value) {
                 console.log('calling createCardinalTokenNode and then cca');
                 this.createCardinalTokenNode(cardinal.token_value);
+                console.log($('#securesubmit_cardinal_token').val());
                 this.cca();
                 return false;
             }
