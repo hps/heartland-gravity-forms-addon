@@ -265,16 +265,16 @@
                 }
 
                 // IF 3dSecure is enabled, init and start the CCA process
-                if (SecureSubmitObj.isCCA && !$('#securesubmit_cca_data').length) {
-                    SecureSubmitObj.cca();
-                    return false;
+                if (SecureSubmitObj.isCCA) {
+                    if (!$('#securesubmit_cca_data').length) {
+                        SecureSubmitObj.cca();
+                        return false;
+                    }
+                } else {
+                    // 3DSecure is disabled
+                    return true;
                 }
-
-                /*
-                 * Not sure if we have what we need to submit.
-                 * So, lets be sage than sorry and prevent the submit.
-                 */
-                 return false;
+                return false;
             });
         };
 
