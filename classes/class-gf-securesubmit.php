@@ -911,14 +911,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'jwt' => $jwt,
                 'orderNumber' => $orderNumber,
             );
-            file_put_contents(
-                '/tmp/gravity_jwt.log',
-                "DATA:\n" . print_r($data, true). "\n" .
-                "JWT:\n" . $jwt. "\n" .
-                "JWT-Verify:\n" . $verified. "\n" .
-                "ARGS:\n" . print_r($args, true) . "\n",
-                FILE_APPEND
-            );
         }
 
         $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
