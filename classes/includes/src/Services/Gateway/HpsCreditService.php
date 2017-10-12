@@ -26,13 +26,14 @@ class HpsCreditService extends HpsSoapGatewayService
      * @param bool $cpcReq
      * @param null $convenienceAmtInfo
      * @param null $shippingAmtInfo
+     * @param null $secureECommerce
      *
      * @return array|null
      * @throws \HpsException
      * @throws \HpsGatewayException
      * @throws \HpsInvalidRequestException
      */
-    public function authorize($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $convenienceAmtInfo = null, $shippingAmtInfo = null)
+    public function authorize($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $convenienceAmtInfo = null, $shippingAmtInfo = null, $secureECommerce = null)
     {
         HpsInputValidation::checkCurrency($currency);
         $this->_currency = $currency;
@@ -65,7 +66,10 @@ class HpsCreditService extends HpsSoapGatewayService
         if ($txnDescriptor != null && $txnDescriptor != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:TxnDescriptor', $txnDescriptor));
         }
-        
+        if ($secureECommerce != null && $secureECommerce != '') {
+            $hpsBlock1->appendChild($this->_hydrateSecureEcommerce($secureECommerce, $xml));
+        }
+
         $cardData = $xml->createElement('hps:CardData');
         if ($cardOrToken instanceof HpsCreditCard) {
             $cardData->appendChild($this->_hydrateManualEntry($cardOrToken, $xml));
@@ -136,13 +140,18 @@ class HpsCreditService extends HpsSoapGatewayService
      * @param null $directMarketData
      * @param null $convenienceAmtInfo
      * @param null $shippingAmtInfo
+     * @param null $secureECommerce
      *
      * @return array|null
      * @throws \HpsException
      * @throws \HpsGatewayException
      * @throws \HpsInvalidRequestException
      */
-    public function charge($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $directMarketData = null, $convenienceAmtInfo = null, $shippingAmtInfo = null)
+    public function charge($amount, $currency, $cardOrToken, $cardHolder = null, 
+        $requestMultiUseToken = false, $details = null, $txnDescriptor = null, 
+        $allowPartialAuth = false, $cpcReq = false, $directMarketData = null, 
+        $convenienceAmtInfo = null, $shippingAmtInfo = null,
+        $secureECommerce = null)
     {
         HpsInputValidation::checkCurrency($currency);
         $this->_currency = $currency;
@@ -173,6 +182,9 @@ class HpsCreditService extends HpsSoapGatewayService
         }
         if ($txnDescriptor != null && $txnDescriptor != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:TxnDescriptor', $txnDescriptor));
+        }
+        if ($secureECommerce != null && $secureECommerce != '') {
+            $hpsBlock1->appendChild($this->_hydrateSecureEcommerce($secureECommerce, $xml));
         }
 
         $cardData = $xml->createElement('hps:CardData');

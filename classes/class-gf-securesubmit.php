@@ -20,6 +20,11 @@ class GFSecureSubmit extends GFPaymentAddOn
     /**
      * @var bool
      */
+    private $isCert = false;
+
+    /**
+     * @var bool
+     */
     private $isCC = false;
 
     /**
@@ -470,6 +475,47 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'horizontal' => true,
             ),
             array(
+                'name' => 'enable_threedsecure',
+                'label' => __('Enable Cardholder Authentication (3DSecure)', $this->_slug),
+                'type' => 'radio',
+                'default_value' => 'no',
+                'tooltip' => __(
+                    'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.',
+                    $this->_slug
+                ),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal' => true,
+                'onchange' => "SecureSubmitAdmin.toggleEnableThreeDSecureFields(this.value);",
+            ),
+            array(
+                'name' => 'enable_threedsecure_api_identifier',
+                'label' => __('Cardholder Authentication API Identifier', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
+            ),
+            array(
+                'name' => 'enable_threedsecure_org_unit_id',
+                'label' => __('Cardholder Authentication Org Unit ID', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
+            ),
+            array(
+                'name' => 'enable_threedsecure_api_key',
+                'label' => __('Cardholder Authentication API Key', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium',
+            ),
+            array(
                 'name' => 'send_email',
                 'label' => __('Send Email', $this->_slug),
                 'type' => 'radio',
@@ -693,6 +739,15 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function scripts()
     {
+        $this->isCert = (
+            false !== strpos(
+                (string)trim(
+                    $this->get_setting(
+                        'public_api_key', '',
+                        $this->get_plugin_settings()
+                    )
+                ), '_cert_')
+        );
         $scripts = array(
             array(
                 'handle' => 'securesubmit.js',
@@ -704,6 +759,17 @@ class GFSecureSubmit extends GFPaymentAddOn
                         'admin_page' => array('plugin_settings'),
                         'tab' => array($this->_slug, $this->get_short_title()),
                     ),
+                ),
+            ),
+            array(
+                'handle' => 'songbird.js',
+                'src' => ( $this->isCert ?
+                    'https://includestest.ccdc02.com/cardinalcruise/v1/songbird.js'
+                    : 'https://includes.ccdc02.com/cardinalcruise/v1/songbird.js'),
+                'version' => $this->_version,
+                'deps' => array(),
+                'enqueue' => array(
+                    array($this, 'hasFeedCallback'),
                 ),
             ),
             array(
@@ -804,6 +870,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $cc_field = $this->get_hpscredit_card_field($form);
         }
 
+        $use_3DSecure = ($this->getEnable3DSecure() === 'yes' ? true : false);
+
         $args = array(
             'apiKey' => $pubKey,
             'formId' => $form['id'],
@@ -811,8 +879,40 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ccPage' => rgar($cc_field, 'pageNumber'),
             'isAjax' => $is_ajax,
             'isSecure' => $cc_field['type'] === 'hpscreditcard',
+            'isCCA' => $use_3DSecure,
+            'isCert' => $this->isCert,
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
         );
+
+        if ($use_3DSecure) {
+            $orderNumber = str_shuffle('abcdefghijklmnopqrstuvwxyz');
+            $data = array(
+                'jti' => str_shuffle('abcdefghijklmnopqrstuvwxyz'),
+                'iat' => time(),
+                'iss' => $this->getEnable3DSecureApiIdentifier(),
+                'OrgUnitId' => $this->getEnable3DSecureOrgUnitId(),
+                'Payload' => array(
+                    'OrderDetails' => array(
+                        'OrderNumber' => $orderNumber,
+                        // Centinel requires amounts in pennies
+                        'Amount' => (100 * 0),
+                        'CurrencyCode' => '840',
+                    ),
+                ),
+            );
+
+            if (!class_exists('HeartlandJWT')) {
+                include_once 'class-heartland-jwt.php';
+            }
+            $jwt = HeartlandJWT::encode($this->getEnable3DSecureApiKey(), $data);
+            $verified = HeartlandJWT::verify($jwt, $this->getEnable3DSecureApiKey());
+
+            $args['ccaData'] = array(
+                'jwt' => $jwt,
+                'orderNumber' => $orderNumber,
+            );
+        }
+
         $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
@@ -1321,52 +1421,89 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ? $response->token_value
                 : '');
 
-            $transaction = null;
-            if ($isAuth) {
-                if ($this->getAllowLevelII()) {
-                    $transaction = $service->authorize(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder,
-                        false,
-                        null,
-                        null,
-                        false,
-                        true
-                    );
-                } else {
-                    $transaction = $service->authorize(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder
-                    );
+            /**
+             * CardHolder Authentication (3D Secure)
+             *
+             */
+            $secureEcommerce = null;
+            if ($this->getEnable3DSecure() === 'yes'
+                && false !== ($data = json_decode(stripslashes($submission_data['securesubmit_cca_data'])))
+                && isset($data) && isset($data->ActionCode)
+                && in_array($data->ActionCode, array('SUCCESS', 'NOACTION'))
+            ) {
+                $dataSource = '';
+                switch ($submission_data['card_type']) {
+                case 'visa':
+                    $dataSource = 'Visa 3DSecure';
+                    break;
+                case 'mastercard':
+                    $dataSource = 'MasterCard 3DSecure';
+                    break;
+                case 'discover':
+                    $dataSource = 'Discover 3DSecure';
+                    break;
+                case 'amex':
+                    $dataSource = 'AMEX 3DSecure';
+                    break;
                 }
-            } else {
-                if ($this->getAllowLevelII()) {
-                    $transaction = $service->charge(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder,
-                        false,
-                        null,
-                        null,
-                        false,
-                        true,
-                        null
-                    );
-                } else {
-                    $transaction = $service->charge(
-                        $submission_data['payment_amount'],
-                        GFCommon::get_currency(),
-                        $token,
-                        $cardHolder
-                    );
-                }
+
+                $cavv = isset($data->Payment->ExtendedData->CAVV)
+                    ? $data->Payment->ExtendedData->CAVV
+                    : '';
+                $eciFlag = isset($data->Payment->ExtendedData->ECIFlag)
+                    ? substr($data->Payment->ExtendedData->ECIFlag, 1)
+                    : '';
+                $xid = isset($data->Payment->ExtendedData->XID)
+                    ? $data->Payment->ExtendedData->XID
+                    : '';
+
+                $secureEcommerce = new HpsSecureEcommerce();
+                $secureEcommerce->type       = '3DSecure';
+                $secureEcommerce->dataSource = $dataSource;
+                $secureEcommerce->data       = $cavv;
+                $secureEcommerce->eciFlag    = $eciFlag;
+                $secureEcommerce->xid        = $xid;
             }
 
+            $cpcReq = false;
+            if ($this->getAllowLevelII()) {
+                $cpcReq = true;
+            }
+
+            $currency = GFCommon::get_currency();
+            $transaction = null;
+            if ($isAuth) {
+                $transaction = $service->authorize(
+                    $submission_data['payment_amount'],
+                    $currency,
+                    $token,
+                    $cardHolder,
+                    false,
+                    null,
+                    null,
+                    false,
+                    $cpcReq,
+                    null,
+                    null,
+                    $secureEcommerce
+                );
+            } else {
+                $transaction = $service->charge(
+                    $submission_data['payment_amount'],
+                    $currency,
+                    $token,
+                    $cardHolder,
+                    false,
+                    null,
+                    null,
+                    false,
+                    $cpcReq,
+                    null,
+                    null,
+                    null,
+                    $secureEcommerce
+                );
+            }
             self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
@@ -1384,7 +1521,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $transaction->transactionId
             );
 
-            if ($this->getAllowLevelII()
+            if ($cpcReq
                 && ($transaction->cpcIndicator == 'B'
                     || $transaction->cpcIndicator == 'R'
                     || $transaction->cpcIndicator == 'S')
@@ -1787,6 +1924,46 @@ class GFSecureSubmit extends GFPaymentAddOn
         $settings = $this->get_plugin_settings();
 
         return (string)$this->get_setting('send_email', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecure()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecureApiIdentifier()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_api_identifier', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecureOrgUnitId()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_org_unit_id', 'no', $settings);
+    }
+
+    /**
+     * @return string
+     */
+    public function getEnable3DSecureApiKey()
+    {
+        $settings = $this->get_plugin_settings();
+
+        return (string)$this->get_setting('enable_threedsecure_api_key', 'no', $settings);
     }
 
     /**
@@ -2643,7 +2820,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES PACIFIC' => 'AP',
         );
         $state_uc = strtoupper($state);
-        if ( empty($na_state_abbreviations[$state_uc]) 
+        if ( empty($na_state_abbreviations[$state_uc])
           && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
         }

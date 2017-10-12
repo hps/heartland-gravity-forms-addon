@@ -4,7 +4,6 @@
     'use strict';
 
     window.SecureSubmit = function (args) {
-        var prop;
 
         this.form = null;
         this.apiKey = null;
@@ -13,34 +12,44 @@
         this.ccPage = null;
         this.isAjax = null;
         this.isSecure = false;
+        this.isCCA = false;
+        this.ccaData = null;
         this.hps = null;
+        this.isInit = false;
+        this.isCert = false;
 
+        var prop;
         for (prop in args) {
             if (args.hasOwnProperty(prop)) {
                 this[prop] = args[prop];
             }
         }
 
+        this.ccInputSuffixes = ['1', '2_month', '2_year', '3'];
+        this.ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
+
         this.init = function () {
+
             var SecureSubmitObj = this;
 
             if (!this.isCreditCardOnPage()) {
                 return;
             }
 
-            // initialize spinner
+            // Initialize spinner
             if (!this.isAjax) {
                 gformInitSpinner(this.formId);
             }
 
             if (this.isSecure) {
-                // Create a new `HPS` object with the necessary configuration
-                SecureSubmitObj.hps = new Heartland.HPS({
+                var options = {
                     publicKey: SecureSubmitObj.apiKey,
                     type:      'iframe',
-                    // Configure the iframe fields to tell the library where
-                    // the iframe should be inserted into the DOM and some
-                    // basic options
+                    /*
+                    * Configure the iframe fields to tell the library where
+                    * the iframe should be inserted into the DOM and some
+                    * basic options.
+                    */
                     fields: {
                         cardNumber: {
                             target:      'iframesCardNumber',
@@ -55,9 +64,11 @@
                             placeholder: 'CVV'
                         }
                     },
-                    // Collection of CSS to inject into the iframes.
-                    // These properties can match the site's styles
-                    // to create a seamless experience.
+                    /*
+                     * Collection of CSS to inject into the iframes.
+                     * These properties can match the site's styles
+                     * to create a seamless experience.
+                     */
                     style: {
                         '#heartland-field': {
                             'box-sizing':'border-box',
@@ -171,8 +182,23 @@
                     onTokenError: function (response) {
                         SecureSubmitObj.secureSubmitResponseHandler(response);
                     }
-                });
+                };
 
+                // If 3DSecure is enabled, add that config
+                if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
+                    options.cca = {
+                        jwt: SecureSubmitObj.ccaData.jwt,
+                        orderNumber: SecureSubmitObj.ccaData.orderNumber
+                    };
+                }
+
+                // Create a new HPS object with the above config
+                SecureSubmitObj.hps = new Heartland.HPS(options);
+
+                /*
+                 * The tab indexes get out-of-whack here.
+                 * So, tweak the iframe elements after they are loaded.
+                 */
                 var count = 0;
                 Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
                     if (++count === 3) {
@@ -185,77 +211,164 @@
                 });
             }
 
-            // bind SecureSubmit functionality to submit event
+            // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
-                var $form = $(this);
-                var ccInputPrefix = 'input_' + SecureSubmitObj.formId + '_' + SecureSubmitObj.ccFieldId + '_';
+                // If we have what we need, we can submit the form.
+                if ($('#securesubmit_cca_data').length
+                    && $('#securesubmit_response').length) {
+                    return true;
+                }
 
-                SecureSubmitObj.form = $form;
+                SecureSubmitObj.form = $(this);
 
-                if ($('#securesubmit_response').size() === 0) {
+                if (!$('#securesubmit_response').length) {
+
                     if (SecureSubmitObj.isSecure) {
-                        // Tell the iframes to tokenize the data
+
+                        // Using iFrames. Tell the iframes to tokenize the data.
                         SecureSubmitObj.hps.Messages.post(
                             {
                                 accumulateData: true,
                                 action: 'tokenize',
-                                message: SecureSubmitObj.apiKey
+                                message: SecureSubmitObj.apiKey,
+                                data: SecureSubmitObj.hps.options
                             },
                             'cardNumber'
                         );
+                        return false;
+
                     } else {
-                        var hps = new Heartland.HPS({
+
+                        // Not using iFrames. No Cardinal tokenization
+                        var options = {
                             publicKey: SecureSubmitObj.apiKey,
-                            cardNumber: $form.find('#' + ccInputPrefix + '1').val().replace(/\D/g, ''),
-                            cardCvv: $form.find('#' + ccInputPrefix + '3').val(),
-                            cardExpMonth: $form.find('#' + ccInputPrefix + '2_month').val(),
-                            cardExpYear: $form.find('#' + ccInputPrefix + '2_year').val(),
+                            cardNumber: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '1').val().replace(/\D/g, ''),
+                            cardCvv: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '3').val(),
+                            cardExpMonth: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_month').val(),
+                            cardExpYear: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_year').val(),
                             success: function (response) {
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             },
                             error: function (response) {
                                 SecureSubmitObj.secureSubmitResponseHandler(response);
                             }
-                        });
+                        };
+
+                        // Create a new HPS object with the above config
+                        var hps = new Heartland.HPS(options);
 
                         hps.tokenize();
+                        return false;
+
                     }
 
-                    return false;
                 }
 
-                return true;
+                // IF 3dSecure is enabled, init and start the CCA process
+                if (SecureSubmitObj.isCCA) {
+                    if (!$('#securesubmit_cca_data').length) {
+                        SecureSubmitObj.cca();
+                        return false;
+                    }
+                } else {
+                    // 3DSecure is disabled
+                    return true;
+                }
+                return false;
             });
         };
 
+        // Handles tokenization response
         this.secureSubmitResponseHandler = function (response) {
+
+            // Preevent any wierdness
+            if ($('#securesubmit_response').length) {
+                return false;
+            }
+
+            // Clear any potentially lingering elements
+            $('#securesubmit_response').remove();
+            $('#securesubmit_cca_data').remove();
+
             var $form = this.form;
-            var ccInputPrefix = 'input_' + this.formId + '_' + this.ccFieldId + '_';
-            var ccInputSuffixes = ['1', '2_month', '2_year', '3'];
             var i, input;
 
-            $('#securesubmit_response').remove();
+            var heartland = response.heartland || response;
+            /*
+             * If 3DSecure is enabled, the tokenization
+             * will send back the CCA token as well
+             */
+             var  cardinal = null;
+             if (this.isCCA && response.cardinal) {
+                cardinal = response.cardinal;
+             }
 
-            if (!this.isSecure) {
-                for (i = 0; i < ccInputSuffixes.length; i++) {
-                    input = $form.find('#' + ccInputPrefix + ccInputSuffixes[i]);
+            if (this.isSecure) {
+                // Clear the fields if using iFrames
+                for (i = 0; i < this.ccInputSuffixes.length; i++) {
+                    input = $form.find('#' + this.ccInputPrefix + this.ccInputSuffixes[i]);
                     input.val('');
                 }
             }
 
-            $('#securesubmit_response').remove();
-            $form.append($('<input type="hidden" name="securesubmit_response" id="securesubmit_response" />').val($.toJSON(response)));
+            /*
+             * Create hidden form inputs to capture
+             * the values passed back from tokenization.
+             */
+            var last4 = document.createElement('input');
+            last4.type = 'hidden';
+            last4.id = 'last_four';
+            last4.name = 'last_four';
+            last4.value = heartland.last_four;
+            $form.append($(last4));
+
+            var cType = document.createElement('input');
+            cType.type = 'hidden';
+            cType.id = 'card_type';
+            cType.name = 'card_type';
+            cType.value = heartland.card_type;
+            $form.append($(cType));
+
+            var expMo = document.createElement('input');
+            expMo.type = 'hidden';
+            expMo.id = 'exp_month';
+            expMo.name = 'exp_month';
+            expMo.value = heartland.exp_month;
+            $form.append($(expMo));
+
+            var expYr = document.createElement('input');
+            expYr.type = 'hidden';
+            expYr.id = 'exp_year';
+            expYr.name = 'exp_year';
+            expYr.value = heartland.exp_year;
+            $form.append($(expYr));
+
+            // Add tokenization response to the form
+            this.createSecureSubmitResponseNode($.toJSON(heartland));
+
+            /*
+             * If 3dSecure is enabled, create a hidden form
+             * element top capture the CCA token.
+             */
+            if (this.isSecure && this.isCCA && cardinal.token_value) {
+                this.createCardinalTokenNode(cardinal.token_value);
+                this.cca();
+                return false;
+            }
+
             $form.submit();
+            return false;
         };
 
         this.isCreditCardOnPage = function () {
+            /*
+             * If current page is false or no credit card page number,
+             * assume this is not a multi-page form
+             */
             var currentPage = this.getCurrentPageNumber();
-
-            // if current page is false or no credit card page number, assume this is not a multi-page form
             if (!this.ccPage || !currentPage) {
                 return true;
             }
-
             return this.ccPage === currentPage;
         };
 
@@ -263,6 +376,124 @@
             var currentPageInput = $('#gform_source_page_number_' + this.formId);
             return currentPageInput.length > 0 ? parseInt(currentPageInput.val(), 10) : false;
         };
+
+        this.createCardinalTokenNode = function (value) {
+            var $form = this.form;
+            var cardinalToken = document.createElement('input');
+            cardinalToken.type = 'hidden';
+            cardinalToken.id = 'securesubmit_cardinal_token';
+            cardinalToken.name = 'securesubmit_cardinal_token';
+            cardinalToken.value = value;
+            $form.append($(cardinalToken));
+        }
+
+        this.createSecureSubmitResponseNode = function (value) {
+            var $form = this.form;
+            var secureSubmitResponse = document.createElement('input');
+            secureSubmitResponse.type = 'hidden';
+            secureSubmitResponse.id = 'securesubmit_response';
+            secureSubmitResponse.name = 'securesubmit_response';
+            secureSubmitResponse.value = value;
+            $form.append($(secureSubmitResponse));
+        }
+
+        this.getOrderTotal = function () {
+            var $orderTotalElement = $('div.ginput_container_total').find(
+                'input[id^="input_' + this.formId + '_"]'
+            );
+            if ($orderTotalElement) {
+                return ($orderTotalElement.val() * 100);
+            }
+            return 0;
+        }
+
+        this.cca = function () {
+            /*
+             * If we arleady have the CCA data
+             * then we can skip the CCA process.
+             */
+            if ($('#securesubmit_cca_data').length) {
+                return true;
+            }
+
+            var $form = this.form;
+
+            try {
+
+                Cardinal.setup('init', {
+                    jwt: this.ccaData.jwt
+                });
+
+                if (!this.isInit) {
+                    /*
+                     * The below callback function will be called
+                     * after the authentication process completes.
+                     */
+                    Cardinal.on('payments.validated', function (data, jwt) {
+                        data.jwt = jwt;
+                        // Create a hidden input element to store the CCA data
+                        var ccaData = document.createElement('input');
+                        ccaData.type = 'hidden';
+                        ccaData.id = 'securesubmit_cca_data';
+                        ccaData.name = 'securesubmit_cca_data';
+                        ccaData.value = Heartland.JSON.stringify(data);
+                        $form.append($(ccaData));
+
+                        if (!$('#securesubmit_cardinal_token').length
+                            && (data.Token && data.Token.Token)) {
+                            var cardinalToken = document.createElement('input');
+                            cardinalToken.type = 'hidden';
+                            cardinalToken.id = 'securesubmit_cardinal_token';
+                            cardinalToken.name = 'securesubmit_cardinal_token';
+                            cardinalToken.value = data.Token.Token;
+                            $form.append($(cardinalToken));
+                        }
+                        $form.submit();
+                    });
+                    this.isInit = true;
+                }
+
+                Cardinal.trigger('jwt.update', this.ccaData.jwt);
+
+                var options = {
+                    OrderDetails: {
+                        OrderNumber: this.ccaData.orderNumber + 'cca',
+                        Amount: this.getOrderTotal()
+                    }
+                };
+
+                if (this.isSecure) {
+                    if ($('#securesubmit_cardinal_token').length) {
+                        options.Token = {
+                            Token: $('#securesubmit_cardinal_token').val(),
+                            ExpirationMonth: $('#exp_month').val(),
+                            ExpirationYear: $('#exp_year').val()
+                        };
+                    }
+                } else {
+                    /*
+                     * Not using iFrames
+                     * Build Account data
+                     */
+                    options.Consumer = {
+                        Account: {
+                            AccountNumber: $form.find('#' + this.ccInputPrefix + '1').val().replace(/\D/g, ''),
+                            ExpirationMonth: $form.find('#' + this.ccInputPrefix + '2_month').val(),
+                            ExpirationYear: $form.find('#' + this.ccInputPrefix + '2_year').val()
+                        }
+                    };
+                }
+
+                Cardinal.start('cca', options);
+                return true;
+
+            } catch(e){
+                console.log( (window["Cardinal"] === undefined ?
+                    "Cardinal Cruise did not load properly. " :
+                    "An error occurred during processing. ") + e
+                );
+            }
+        }
 
         this.init();
     };
