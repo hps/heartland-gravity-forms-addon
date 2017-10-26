@@ -1645,6 +1645,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function buildCardHolder($feed, $submission_data, $entry)
     {
+        $this->log_debug('card holder details=>'.print_r($submission_data,1));
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
@@ -2472,7 +2473,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             $paymentMethod->paymentMethodIdentifier = $this->getIdentifier('Credit' . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             /** @noinspection PhpUndefinedFieldInspection */
-            $paymentMethod->country = $customer->country;
+            $paymentMethod->firstName = $customer->firstName;
+			$paymentMethod->lastName = $customer->lastName;
+			$paymentMethod->country = $customer->country;
+            $paymentMethod->zipPostalCode = $customer->zipPostalCode;
             $paymentMethod->customerKey = $customer->customerKey;
             $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
             $paymentMethod->paymentToken = $acct;
@@ -2819,7 +2823,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES EUROPE' => 'AE',
             'ARMED FORCES PACIFIC' => 'AP',
         );
-        $state_uc = strtoupper($state);
+		$state_uc = strtoupper($state);
         if ( empty($na_state_abbreviations[$state_uc])
           && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
