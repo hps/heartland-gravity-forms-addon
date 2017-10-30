@@ -1645,7 +1645,6 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function buildCardHolder($feed, $submission_data, $entry)
     {
-        $this->log_debug('card holder details=>'.print_r($submission_data,1));
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
