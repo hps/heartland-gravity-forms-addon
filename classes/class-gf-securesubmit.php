@@ -2473,8 +2473,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             /** @noinspection PhpUndefinedFieldInspection */
             $paymentMethod->firstName = $customer->firstName;
-			$paymentMethod->lastName = $customer->lastName;
-			$paymentMethod->country = $customer->country;
+            $paymentMethod->lastName = $customer->lastName;
+            $paymentMethod->country = $customer->country;
             $paymentMethod->zipPostalCode = $customer->zipPostalCode;
             $paymentMethod->customerKey = $customer->customerKey;
             $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
@@ -2822,7 +2822,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES EUROPE' => 'AE',
             'ARMED FORCES PACIFIC' => 'AP',
         );
-		$state_uc = strtoupper($state);
+        $state_uc = strtoupper($state);
         if ( empty($na_state_abbreviations[$state_uc])
           && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
