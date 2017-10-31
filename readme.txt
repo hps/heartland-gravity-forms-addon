@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.5 =
+* Fix issue with missing billing zip code for subscription payment methods
+
 = 1.3.4 =
 * Added 3DSecure to Secure Credit Card and native Credit Card form types
 
