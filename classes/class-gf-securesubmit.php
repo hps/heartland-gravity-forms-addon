@@ -2472,7 +2472,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             $paymentMethod->paymentMethodIdentifier = $this->getIdentifier('Credit' . $acct);
             $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
             /** @noinspection PhpUndefinedFieldInspection */
+            $paymentMethod->firstName = $customer->firstName;
+            $paymentMethod->lastName = $customer->lastName;
             $paymentMethod->country = $customer->country;
+            $paymentMethod->zipPostalCode = $customer->zipPostalCode;
             $paymentMethod->customerKey = $customer->customerKey;
             $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
             $paymentMethod->paymentToken = $acct;
