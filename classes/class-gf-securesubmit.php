@@ -1169,6 +1169,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $response = $service->sale($submission_data['payment_amount'])
                 ->withCheck($check)/**@throws HpsCheckException on error */
                 ->execute();
+            do_action('heartland_gravityforms_transaction_success', $response);
 
             $type = 'Payment';
             $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
@@ -1191,6 +1192,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
             );
         } catch (HpsCheckException $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             $err = null;
             if (is_array($e->details)) {
                 foreach ($e->details as $error) {
@@ -1225,6 +1227,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $auth = $this->authorization_error($err);
             $auth['transaction_id'] = (string)$e->transactionId;
         } catch (HpsException $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             // if advanced fraud is enabled, increment the error count
             if ($enable_fraud) {
                 if (empty($HeartlandHPS_FailCount)) {
@@ -1248,6 +1251,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             $auth = $this->authorization_error($e->getMessage());
         } catch (Exception $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             $auth = $this->authorization_error($e->getMessage());
         }
         return $auth;
@@ -1504,6 +1508,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $secureEcommerce
                 );
             }
+            do_action('heartland_gravityforms_transaction_success', $transaction);
             self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
@@ -1561,6 +1566,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
             );
         } catch (HpsException $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             // if advanced fraud is enabled, increment the error count
             if ($enable_fraud) {
                 if (empty($HeartlandHPS_FailCount)) {
@@ -1583,6 +1589,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             }
             $auth = $this->authorization_error($e->getMessage());
         } catch (Exception $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             $auth = $this->authorization_error($e->getMessage());
         }
 
@@ -2267,6 +2274,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $payPlanPaymentMethod,
                     $planSchedule
                 );
+                do_action('heartland_gravityforms_transaction_success', $response);
             }
 
             $subscribResult = array(
@@ -2276,6 +2284,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'amount' => $payment_amount,
             ); // array
         } catch (Exception $e) {
+            do_action('heartland_gravityforms_transaction_failure', $e);
             $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             // Return authorization error.
             return $this->authorization_error($userError . $e->getMessage());
