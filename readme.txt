@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.6 =
+* Add transaction success and failure actions
+
 = 1.3.5 =
 * Fix issue with missing billing zip code for subscription payment methods
 
