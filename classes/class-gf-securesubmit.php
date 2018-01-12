@@ -2549,7 +2549,11 @@ class GFSecureSubmit extends GFPaymentAddOn
         $schedule->reprocessingCount = 1;
 
         if ($numberOfPayments !== HpsPayPlanScheduleDuration::ONGOING) {
-            $schedule->numberOfPayments = intval($feed['meta']['recurringTimes']) - 1;
+            $schedule->numberOfPayments = intval($feed['meta']['recurringTimes']);
+            
+            if ($trial_period_days != null && $trial_period_days != 0) {
+                $schedule->numberOfPayments = $schedule->numberOfPayments - 1;
+            }
         }
 
         return $schedule;
