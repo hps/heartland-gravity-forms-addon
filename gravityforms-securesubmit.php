@@ -3,7 +3,7 @@
  * Plugin Name: Heartland Secure Submit Addon for Gravity Forms
  * Plugin URI: https://developer.heartlandpaymentsystems.com/securesubmit
  * Description: Integrates Gravity Forms with SecureSubmit, enabling end users to purchase goods and services through Gravity Forms.
- * Version: 1.3.6
+ * Version: 1.3.7
  * Author: SecureSubmit
  * Author URI: https://developer.heartlandpaymentsystems.com/securesubmit
  */
