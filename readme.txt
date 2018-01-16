@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.7 =
+* Fix subscription payments with limited number of payments to schedule correct number of payments
+
 = 1.3.6 =
 * Add transaction success and failure actions
 
