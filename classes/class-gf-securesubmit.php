@@ -1713,6 +1713,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function buildAddress($feed, $submission_data, $entry)
     {
+        $isRecurring = isset($feed['meta']['transactionType']) && $feed['meta']['transactionType'] == 'subscription';
         $address = new HpsAddress();
 
         $address->address = rgar($submission_data, 'address')
@@ -1737,9 +1738,9 @@ class GFSecureSubmit extends GFPaymentAddOn
             $address->zip = $entry[ $feed['meta']['billingInformation_zip'] ];
         }
 
-        $address->country = $this->normalizeCountry(rgar($submission_data, 'country'));
+        $address->country = $this->normalizeCountry(rgar($submission_data, 'country'), $isRecurring);
         if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
-            $address->country = $this->normalizeCountry($entry[ $feed['meta']['billingInformation_country'] ]);
+            $address->country = $this->normalizeCountry($entry[ $feed['meta']['billingInformation_country'] ], $isRecurring);
         }
 
         return $address;
@@ -2425,7 +2426,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         //'United States' 'Canada'
 
         /** @noinspection PhpUndefinedFieldInspection */
-        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country);
+        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country, true);
 
         // Convert states names to abbreviations
         $acctHolder->address->state = $this->normalizeState($acctHolder->address->state);
@@ -2550,7 +2551,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         if ($numberOfPayments !== HpsPayPlanScheduleDuration::ONGOING) {
             $schedule->numberOfPayments = intval($feed['meta']['recurringTimes']);
-            
+
             if ($trial_period_days != null && $trial_period_days != 0) {
                 $schedule->numberOfPayments = $schedule->numberOfPayments - 1;
             }
@@ -2756,7 +2757,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $metadata;
     }
 
-    protected function normalizeCountry($country)
+    protected function normalizeCountry($country, $isRecurring = false)
     {
         switch (strtolower($country)) {
             case null:
@@ -2773,7 +2774,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             case 'canada':
                 return 'CAN';
             default:
-                throw new Exception(sprintf('Country "%s" is currently not supported', $country));
+                if ($isRecurring) {
+                    throw new Exception(sprintf('Country "%s" is currently not supported', $country));
+                }
+                return null;
         }
     }
 
