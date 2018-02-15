@@ -7,6 +7,7 @@
 
         this.form = null;
         this.apiKey = null;
+        this.pageNo = null;
         this.formId = null;
         this.ccFieldId = null;
         this.ccPage = null;
@@ -374,7 +375,13 @@
 
         this.getCurrentPageNumber = function () {
             var currentPageInput = $('#gform_source_page_number_' + this.formId);
-            return currentPageInput.length > 0 ? parseInt(currentPageInput.val(), 10) : false;
+            var currentInput = currentPageInput.val();
+            if(currentInput == 0)
+            {
+                currentInput = this.pageNo;
+                $('#gform_source_page_number_' + this.formId).val(currentInput);
+            }
+            return currentPageInput.length > 0 ? parseInt(currentInput, 10) : false;
         };
 
         this.createCardinalTokenNode = function (value) {

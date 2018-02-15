@@ -881,6 +881,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'isSecure' => $cc_field['type'] === 'hpscreditcard',
             'isCCA' => $use_3DSecure,
             'isCert' => $this->isCert,
+            'pageNo' => rgpost('gform_source_page_number_'.$form['id'].''),
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
         );
 
