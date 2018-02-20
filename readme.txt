@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.9 =
+* Fix feed validation miscategorizing missing credit card and/or ACH payment data
+
 = 1.3.8 =
 * Allow non-US/CAN cardholders to submit proper billing address for non-subscription payments
 
