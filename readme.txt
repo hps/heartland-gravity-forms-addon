@@ -42,6 +42,9 @@ Features of SecureSubmit:
 
 == Changelog ==
 
+= 1.3.10 =
+* Delegate account/routing number validation to check processor for ACH payments
+
 = 1.3.9 =
 * Fix feed validation miscategorizing missing credit card and/or ACH payment data
 
