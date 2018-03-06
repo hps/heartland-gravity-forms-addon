@@ -110,19 +110,6 @@ class GF_Field_HPSach extends GF_Field
                 "Please enter your account holder name and avoid special characters.",
                 'gravityforms'
             );
-        } elseif (!filter_var($account_number, FILTER_VALIDATE_INT, array('min_range' => 1000, 'default' => 0))) {
-            $this->failed_validation = true;
-            $this->validation_message = esc_html__('Invalid account number.', 'gravityforms');
-        } elseif (!filter_var(
-            $routing_number,
-            FILTER_VALIDATE_INT,
-            array('min_range' => 99999999, 'max_range' => 999999999, 'default' => 0)
-        )) {
-            $this->failed_validation = true;
-            $this->validation_message = esc_html__(
-                'Invalid routing number must be exactly 9 digits.',
-                'gravityforms'
-            );
         } elseif ($account_type !== '2' && $account_type !== '1') {
             $this->failed_validation = true;
             $this->validation_message = esc_html__('Please select the type of account.', 'gravityforms');
