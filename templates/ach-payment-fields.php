@@ -11,7 +11,7 @@
       </label>
 
       <input type="text" name="<?php echo GF_Field_HPSach::HPS_ACH_CHECK_HOLDER_FIELD_NAME; ?>" id="<?php echo $field_id; ?>_5"
-             placeholder="JON DOE" value="<?php echo $account_name_value; ?>" <?php echo $account_name_tabindex; ?> <?php echo $disabled_text; ?>/>
+             placeholder="JOHN DOE" value="<?php echo $account_name_value; ?>" <?php echo $account_name_tabindex; ?> <?php echo $disabled_text; ?>/>
     </span>
 
 
