@@ -41,6 +41,8 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.3.11 =
+* Fix subscription setup fee not being applied during initial payment
 
 = 1.3.10 =
 * Delegate account/routing number validation to check processor for ACH payments

@@ -2200,7 +2200,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
         $setupFeeEnabled = rgar($feed['meta'], 'setupFee_enabled');
         $setupFeeField = rgar($feed['meta'], 'setupFee_product');
-        $setupFeePaymentAmount = 0;//HpsInputValidation::checkAmount();
+        $setupFeePaymentAmount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
         $trialEnabled = rgars($feed, 'meta/trial_enabled');
         $trial_period_days = $trialEnabled ? rgars($feed, 'meta/trial_product') : null;
         $currency = rgar($entry, 'currency');
@@ -2841,7 +2841,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES PACIFIC' => 'AP',
         );
         $state_uc = strtoupper($state);
-        if ( empty($na_state_abbreviations[$state_uc])
+        if (empty($na_state_abbreviations[$state_uc])
           && !in_array($state_uc, $na_state_abbreviations, true)) {
             throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
         }
