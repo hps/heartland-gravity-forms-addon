@@ -2788,6 +2788,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected function normalizeState($state)
     {
         $na_state_abbreviations  = array(
+            // United States
             'ALABAMA' => 'AL',
             'ALASKA' => 'AK',
             'ARIZONA' => 'AZ',
@@ -2842,12 +2843,32 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES AMERICAS' => 'AA',
             'ARMED FORCES EUROPE' => 'AE',
             'ARMED FORCES PACIFIC' => 'AP',
+            // Canada
+            'ALBERTA' => 'AB',
+            'BRITISH COLUMBIA' => 'BC',
+            'MANITOBA' => 'MB',
+            'NEW BRUNSWICK' => 'NB',
+            'NEWFOUNDLAND AND LABRADOR' => 'NL',
+            'NORTHWEST TERRITORIES' => 'NT',
+            'NOVA SCOTIA' => 'NS',
+            'NUNAVUT' => 'NU',
+            'ONTARIO' => 'ON',
+            'PRINCE EDWARD ISLAND' => 'PE',
+            'QUEBEC' => 'QC',
+            'SASKATCHEWAN' => 'SK',
+            'YUKON' => 'YT',
         );
+
         $state_uc = strtoupper($state);
-        if (empty($na_state_abbreviations[$state_uc])
-          && !in_array($state_uc, $na_state_abbreviations, true)) {
-            throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
+
+        if (!empty($na_state_abbreviations[$state_uc])) {
+            return $na_state_abbreviations[$state_uc];
         }
-        return $na_state_abbreviations[$state_uc];
+
+        if (in_array($state_uc, $na_state_abbreviations, true)) {
+            return $state_uc;
+        }
+
+        throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
     }
 }
