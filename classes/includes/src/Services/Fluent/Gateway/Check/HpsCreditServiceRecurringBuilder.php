@@ -47,7 +47,7 @@ class HpsCheckServiceRecurringBuilder extends HpsBuilderAbstract
         $hpsTransaction = $xml->createElement('hps:Transaction');
         $hpsCheckSale = $xml->createElement('hps:CheckSale');
         $hpsBlock1 = $xml->createElement('hps:Block1');
-
+        
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', sprintf("%0.2f", round($this->amount, 3))));
         $hpsBlock1->appendChild($xml->createElement('hps:CheckAction', 'SALE'));
         $hpsBlock1->appendChild($xml->createElement('hps:PaymentMethodKey', $this->paymentMethodKey));
@@ -66,7 +66,7 @@ class HpsCheckServiceRecurringBuilder extends HpsBuilderAbstract
         $hpsCheckSale->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsCheckSale);
 
-        return $this->service->_submitTransaction($hpsTransaction, 'CheckSale');
+        return $this->_submitTransaction($hpsTransaction, 'CheckSale', $clientTransactionId);
     }
 
     /**
@@ -102,6 +102,6 @@ class HpsCheckServiceRecurringBuilder extends HpsBuilderAbstract
      */
     protected function paymentMethodKeyNotNull($actionCounts)
     {
-        return isset($actionCounts['paymentMethodKey']) && $actionCounts['paymentMethodKey'] == 1;
+        return isset($actionCounts['paymentMethodKey']);
     }
 }
