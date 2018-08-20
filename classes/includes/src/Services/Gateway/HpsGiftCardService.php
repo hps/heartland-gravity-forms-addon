@@ -34,14 +34,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $amount));
-
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
 
         $hpsGiftCard->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsGiftCard);
@@ -68,14 +61,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $amount));
-
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
 
         $hpsGiftCard->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsGiftCard);
@@ -100,14 +86,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
 
         $hpsBlock1->appendChild($xml->createElement('hps:Action', strtoupper($action)));
         $hpsBlock1->appendChild($xml->createElement('hps:Alias', $aliasStr));
-
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
 
         $hpsGiftCardAlias->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsGiftCardAlias);
@@ -128,13 +107,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsGiftCard = $xml->createElement('hps:'. $txnType);
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
 
         $hpsGiftCard->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsGiftCard);
@@ -155,13 +128,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsGiftCard = $xml->createElement('hps:'. $txnType);
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
 
         $hpsGiftCard->appendChild($hpsBlock1);
         $hpsTransaction->appendChild($hpsGiftCard);
@@ -192,14 +159,14 @@ class HpsGiftCardService extends HpsSoapGatewayService
         return $this->_submitTransaction($hpsTransaction, $txnType);
     }
     /**
-     * @param        $giftCard
+     * @param        $cardData
      * @param        $amount
      * @param string $currency
      *
      * @return \HpsGiftCardAlias|string
      * @throws \HpsInvalidRequestException
      */
-    public function reverse($giftCard, $amount, $currency = 'usd')
+    public function reverse($cardData, $amount, $currency = 'usd')
     {
         $txnType = 'GiftCardReversal';
 
@@ -212,13 +179,10 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $amount));
-        if ($giftCard instanceof HpsGiftCard) {
-            $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
-        } else if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
+        if ($cardData instanceof HpsGiftCard) {
+            $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
         } else {
-            $hpsBlock1->appendChild($xml->createElement('hps:GatewayTxnId', $giftCard));
+            $hpsBlock1->appendChild($xml->createElement('hps:GatewayTxnId', $cardData));
         }
 
         $hpsGiftCard->appendChild($hpsBlock1);
@@ -249,15 +213,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $amount));
-
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
-
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
         if (strtolower($currency) == 'usd' || $currency == 'points') {
             $hpsBlock1->appendChild($xml->createElement('hps:Currency', (strtolower($currency) == 'usd' ? 'USD' : 'POINTS')));
         }
@@ -296,14 +252,7 @@ class HpsGiftCardService extends HpsSoapGatewayService
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $amount));
-
-        if ( $giftCard instanceof HpsTokenData ) {
-            $cardData = new HpsGiftCard();
-            $cardData->tokenValue = $giftCard->tokenValue;
-        } else {
-            $cardData = $giftCard;
-        }
-        $hpsBlock1->appendChild($this->_hydrateGiftCardData($cardData, $xml));
+        $hpsBlock1->appendChild($this->_hydrateGiftCardData($giftCard, $xml));
         if (strtolower($currency) == 'usd' || $currency == 'points') {
             $hpsBlock1->appendChild($xml->createElement('hps:Currency', (strtolower($currency) == 'usd' ? 'USD' : 'POINTS')));
         }

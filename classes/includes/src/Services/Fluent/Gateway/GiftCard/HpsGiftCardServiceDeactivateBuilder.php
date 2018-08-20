@@ -5,16 +5,12 @@
  * transaction through the HpsGiftCardService.
  *
  * @method HpsGiftCardServiceDeactivateBuilder withCard(HpsGiftCard $card)
- * @method HpsGiftCardServiceDeactivateBuilder withToken(HpsTokenData $token)
  */
 class HpsGiftCardServiceDeactivateBuilder extends HpsBuilderAbstract
 {
     /** @var HpsGiftCard|null */
     protected $card     = null;
 
-    /** @var HpsTokenData|null */
-    protected $token    = null;
-    
     /**
      * Instatiates a new HpsGiftCardServiceDeactivateBuilder
      *
@@ -34,12 +30,6 @@ class HpsGiftCardServiceDeactivateBuilder extends HpsBuilderAbstract
         parent::execute();
 
         $deactivateSvc = new HpsGiftCardService($this->service->servicesConfig());
-        if ($this->token != null && ($this->token instanceof HpsTokenData)) {
-            if ($this->card == null) {
-                $this->card = new HpsGiftCard();
-            }
-            $this->card->tokenValue = $this->token->tokenValue;
-        }
         return $deactivateSvc->deactivate(
             $this->card
         );
@@ -53,30 +43,9 @@ class HpsGiftCardServiceDeactivateBuilder extends HpsBuilderAbstract
     private function setUpValidations()
     {
         $this
-            ->addValidation(array($this, 'onlyOnePaymentMethod'), 'HpsArgumentException', 'Deactivate can only use one payment method');
+            ->addValidation(array($this, 'cardNotNull'), 'HpsArgumentException', 'Deactivate needs a card');
     }
 
-    /**
-     * Ensures there is only one payment method, and checks that
-     * there is only one card or one token in use. Both cannot be
-     * used.
-     *
-     * @param array $actionCounts
-     *
-     * @return bool
-     */
-    public function onlyOnePaymentMethod($actionCounts)
-    {
-        $methods = 0;
-        if (isset($actionCounts['card']) && $actionCounts['card'] == 1) {
-            $methods++;
-        }
-        if (isset($actionCounts['token']) && $actionCounts['token'] == 1) {
-            $methods++;
-        }
-        return $methods == 1;
-    }
-    
     /**
      * Ensures a card has been set.
      *

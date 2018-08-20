@@ -231,10 +231,7 @@ class HpsDebitService extends HpsSoapGatewayService
                 throw new HpsGatewayException(
                     HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR,
                     'Error occurred while reversing a charge due to HPS gateway timeout',
-                    $e,
-                    null,
-                    null,
-                    $transactionId
+                    $e
                 );
             }
         }

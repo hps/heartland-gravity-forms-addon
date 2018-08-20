@@ -5,7 +5,6 @@
  * transaction through the HpsGiftCardService.
  *
  * @method HpsGiftCardServiceRewardBuilder withCard(HpsGiftCard $card)
- * @method HpsGiftCardServiceRewardBuilder withToken(HpsTokenData $token)
  * @method HpsGiftCardServiceRewardBuilder withAmount(double $amount)
  * @method HpsGiftCardServiceRewardBuilder withCurrency(string $currency)
  * @method HpsGiftCardServiceRewardBuilder withGratuity(double $gratuity)
@@ -15,9 +14,6 @@ class HpsGiftCardServiceRewardBuilder extends HpsBuilderAbstract
 {
     /** @var HpsGiftCard|null */
     protected $card     = null;
-
-    /** @var HpsTokenData|null */
-    protected $token    = null;
 
     /** @var double|null */
     protected $amount   = null;
@@ -50,12 +46,6 @@ class HpsGiftCardServiceRewardBuilder extends HpsBuilderAbstract
         parent::execute();
 
         $rewardSvc = new HpsGiftCardService($this->service->servicesConfig());
-        if ($this->token != null && ($this->token instanceof HpsTokenData)) {
-            if ($this->card == null) {
-                $this->card = new HpsGiftCard();
-            }
-            $this->card->tokenValue = $this->token->tokenValue;
-        }
         return $rewardSvc->reward(
             $this->card,
             $this->amount,
@@ -73,29 +63,8 @@ class HpsGiftCardServiceRewardBuilder extends HpsBuilderAbstract
     private function setUpValidations()
     {
         $this
-            ->addValidation(array($this, 'onlyOnePaymentMethod'), 'HpsArgumentException', 'Reward can only use one payment method')
+            ->addValidation(array($this, 'cardNotNull'), 'HpsArgumentException', 'Reward needs a card')
             ->addValidation(array($this, 'amountNotNull'), 'HpsArgumentException', 'Reward needs an amount');
-    }
-
-    /**
-     * Ensures there is only one payment method, and checks that
-     * there is only one card or one token in use. Both cannot be
-     * used.
-     *
-     * @param array $actionCounts
-     *
-     * @return bool
-     */
-    public function onlyOnePaymentMethod($actionCounts)
-    {
-        $methods = 0;
-        if (isset($actionCounts['card']) && $actionCounts['card'] == 1) {
-            $methods++;
-        }
-        if (isset($actionCounts['token']) && $actionCounts['token'] == 1) {
-            $methods++;
-        }
-        return $methods == 1;
     }
 
     /**

@@ -625,7 +625,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             );
 
             $default_settings = $this->add_field_after('paymentAmount', $authorize_or_charge_field, $default_settings);
-            $default_settings = $this->add_field_after('recurringAmount', $authorize_or_charge_field, $default_settings);
         }
 
         if ($this->getAllowAPIKeysOverride() == 'yes') {
@@ -645,8 +644,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             );
             $default_settings = $this->add_field_after('paymentAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
-            $default_settings = $this->add_field_after('recurringAmount', $public_api_key_field, $default_settings);
-            $default_settings = $this->add_field_after('recurringAmount', $secret_api_key_field, $default_settings);
         }
 
         if ($this->getAllowLevelII() == 'yes') {
@@ -2788,7 +2785,6 @@ class GFSecureSubmit extends GFPaymentAddOn
     protected function normalizeState($state)
     {
         $na_state_abbreviations  = array(
-            // United States
             'ALABAMA' => 'AL',
             'ALASKA' => 'AK',
             'ARIZONA' => 'AZ',
@@ -2843,32 +2839,12 @@ class GFSecureSubmit extends GFPaymentAddOn
             'ARMED FORCES AMERICAS' => 'AA',
             'ARMED FORCES EUROPE' => 'AE',
             'ARMED FORCES PACIFIC' => 'AP',
-            // Canada
-            'ALBERTA' => 'AB',
-            'BRITISH COLUMBIA' => 'BC',
-            'MANITOBA' => 'MB',
-            'NEW BRUNSWICK' => 'NB',
-            'NEWFOUNDLAND AND LABRADOR' => 'NL',
-            'NORTHWEST TERRITORIES' => 'NT',
-            'NOVA SCOTIA' => 'NS',
-            'NUNAVUT' => 'NU',
-            'ONTARIO' => 'ON',
-            'PRINCE EDWARD ISLAND' => 'PE',
-            'QUEBEC' => 'QC',
-            'SASKATCHEWAN' => 'SK',
-            'YUKON' => 'YT',
         );
-
         $state_uc = strtoupper($state);
-
-        if (!empty($na_state_abbreviations[$state_uc])) {
-            return $na_state_abbreviations[$state_uc];
+        if (empty($na_state_abbreviations[$state_uc])
+          && !in_array($state_uc, $na_state_abbreviations, true)) {
+            throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
         }
-
-        if (in_array($state_uc, $na_state_abbreviations, true)) {
-            return $state_uc;
-        }
-
-        throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
+        return $na_state_abbreviations[$state_uc];
     }
 }

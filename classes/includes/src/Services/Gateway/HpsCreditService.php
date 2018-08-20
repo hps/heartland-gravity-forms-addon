@@ -26,13 +26,14 @@ class HpsCreditService extends HpsSoapGatewayService
      * @param bool $cpcReq
      * @param null $convenienceAmtInfo
      * @param null $shippingAmtInfo
+     * @param null $secureECommerce
      *
      * @return array|null
      * @throws \HpsException
      * @throws \HpsGatewayException
      * @throws \HpsInvalidRequestException
      */
-    public function authorize($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $convenienceAmtInfo = null, $shippingAmtInfo = null)
+    public function authorize($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $convenienceAmtInfo = null, $shippingAmtInfo = null, $secureECommerce = null)
     {
         HpsInputValidation::checkCurrency($currency);
         $this->_currency = $currency;
@@ -50,12 +51,12 @@ class HpsCreditService extends HpsSoapGatewayService
         if ($convenienceAmtInfo != null && $convenienceAmtInfo != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:ConvenienceAmtInfo', $convenienceAmtInfo));
         }
-
+        
          //update shippingAmtInfo if passed
         if ($shippingAmtInfo != null && $shippingAmtInfo != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:ShippingAmtInfo', $shippingAmtInfo));
         }
-
+        
         if ($cardHolder != null) {
             $hpsBlock1->appendChild($this->_hydrateCardHolderData($cardHolder, $xml));
         }
@@ -64,6 +65,9 @@ class HpsCreditService extends HpsSoapGatewayService
         }
         if ($txnDescriptor != null && $txnDescriptor != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:TxnDescriptor', $txnDescriptor));
+        }
+        if ($secureECommerce != null && $secureECommerce != '') {
+            $hpsBlock1->appendChild($this->_hydrateSecureEcommerce($secureECommerce, $xml));
         }
 
         $cardData = $xml->createElement('hps:CardData');
@@ -136,13 +140,18 @@ class HpsCreditService extends HpsSoapGatewayService
      * @param null $directMarketData
      * @param null $convenienceAmtInfo
      * @param null $shippingAmtInfo
+     * @param null $secureECommerce
      *
      * @return array|null
      * @throws \HpsException
      * @throws \HpsGatewayException
      * @throws \HpsInvalidRequestException
      */
-    public function charge($amount, $currency, $cardOrToken, $cardHolder = null, $requestMultiUseToken = false, $details = null, $txnDescriptor = null, $allowPartialAuth = false, $cpcReq = false, $directMarketData = null, $convenienceAmtInfo = null, $shippingAmtInfo = null)
+    public function charge($amount, $currency, $cardOrToken, $cardHolder = null, 
+        $requestMultiUseToken = false, $details = null, $txnDescriptor = null, 
+        $allowPartialAuth = false, $cpcReq = false, $directMarketData = null, 
+        $convenienceAmtInfo = null, $shippingAmtInfo = null,
+        $secureECommerce = null)
     {
         HpsInputValidation::checkCurrency($currency);
         $this->_currency = $currency;
@@ -160,7 +169,7 @@ class HpsCreditService extends HpsSoapGatewayService
         if ($convenienceAmtInfo != null && $convenienceAmtInfo != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:ConvenienceAmtInfo', $convenienceAmtInfo));
         }
-
+        
          //update shippingAmtInfo if passed
         if ($shippingAmtInfo != null && $shippingAmtInfo != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:ShippingAmtInfo', $shippingAmtInfo));
@@ -173,6 +182,9 @@ class HpsCreditService extends HpsSoapGatewayService
         }
         if ($txnDescriptor != null && $txnDescriptor != '') {
             $hpsBlock1->appendChild($xml->createElement('hps:TxnDescriptor', $txnDescriptor));
+        }
+        if ($secureECommerce != null && $secureECommerce != '') {
+            $hpsBlock1->appendChild($this->_hydrateSecureEcommerce($secureECommerce, $xml));
         }
 
         $cardData = $xml->createElement('hps:CardData');
@@ -570,10 +582,7 @@ class HpsCreditService extends HpsSoapGatewayService
                 throw new HpsGatewayException(
                     HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR,
                     'Error occurred while reversing a charge due to HPS gateway timeout',
-                    $e,
-                    null,
-                    null,
-                    $transactionId
+                    $e
                 );
             }
         }

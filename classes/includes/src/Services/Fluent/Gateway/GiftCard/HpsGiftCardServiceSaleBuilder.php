@@ -5,7 +5,6 @@
  * transaction through the HpsGiftCardService.
  *
  * @method HpsGiftCardServiceSaleBuilder withCard(HpsGiftCard $card)
- * @method HpsGiftCardServiceSaleBuilder withToken(HpsTokenData $token)
  * @method HpsGiftCardServiceSaleBuilder withAmount(double $amount)
  * @method HpsGiftCardServiceSaleBuilder withCurrency(string $currency)
  * @method HpsGiftCardServiceRewardBuilder withGratuity(double $gratuity)
@@ -15,9 +14,6 @@ class HpsGiftCardServiceSaleBuilder extends HpsBuilderAbstract
 {
     /** @var HpsGiftCard|null */
     protected $card     = null;
-
-    /** @var HpsTokenData|null */
-    protected $token    = null;
 
     /** @var double|null */
     protected $amount   = null;
@@ -58,14 +54,7 @@ class HpsGiftCardServiceSaleBuilder extends HpsBuilderAbstract
         $hpsBlock1 = $xml->createElement('hps:Block1');
 
         $hpsBlock1->appendChild($xml->createElement('hps:Amt', $this->amount));
-        if ($this->token != null && ($this->token instanceof HpsTokenData)) {
-            if ($this->card == null) {
-                $this->card = new HpsGiftCard();
-            }
-            $this->card->tokenValue = $this->token->tokenValue;
-        }
-        $cardData = $this->service->_hydrateGiftCardData($this->card, $xml);
-        $hpsBlock1->appendChild($cardData);
+        $hpsBlock1->appendChild($this->service->_hydrateGiftCardData($this->card, $xml));
 
         if (in_array($this->currency, array('points', 'usd'))) {
             $hpsBlock1->appendChild($xml->createElement('hps:Currency', strtoupper($this->currency)));
@@ -93,30 +82,9 @@ class HpsGiftCardServiceSaleBuilder extends HpsBuilderAbstract
     private function setUpValidations()
     {
         $this
-            ->addValidation(array($this, 'onlyOnePaymentMethod'), 'HpsArgumentException', 'Sale can only use one payment method')
+            ->addValidation(array($this, 'cardNotNull'), 'HpsArgumentException', 'Sale needs a card')
             ->addValidation(array($this, 'amountNotNull'), 'HpsArgumentException', 'Sale needs an amount')
             ->addValidation(array($this, 'currencyNotNull'), 'HpsArgumentException', 'Sale needs a currency');
-    }
-
-    /**
-     * Ensures there is only one payment method, and checks that
-     * there is only one card or one token in use. Both cannot be
-     * used.
-     *
-     * @param array $actionCounts
-     *
-     * @return bool
-     */
-    public function onlyOnePaymentMethod($actionCounts)
-    {
-        $methods = 0;
-        if (isset($actionCounts['card']) && $actionCounts['card'] == 1) {
-            $methods++;
-        }
-        if (isset($actionCounts['token']) && $actionCounts['token'] == 1) {
-            $methods++;
-        }
-        return $methods == 1;
     }
 
     /**
