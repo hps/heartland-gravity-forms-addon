@@ -33,6 +33,9 @@ class HpsCreditServiceChargeBuilder extends HpsBuilderAbstract
 
     /** @var HpsTokenData|null */
     protected $token                    = null;
+    
+    /** @var HpsTrackData|null */
+    protected $trackData                = null;
 
     /** @var HpsCardHolder|null */
     protected $cardHolder               = null;
