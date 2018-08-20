@@ -625,6 +625,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             );
 
             $default_settings = $this->add_field_after('paymentAmount', $authorize_or_charge_field, $default_settings);
+            $default_settings = $this->add_field_after('recurringAmount', $authorize_or_charge_field, $default_settings);
         }
 
         if ($this->getAllowAPIKeysOverride() == 'yes') {
@@ -644,6 +645,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             );
             $default_settings = $this->add_field_after('paymentAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('paymentAmount', $secret_api_key_field, $default_settings);
+            $default_settings = $this->add_field_after('recurringAmount', $public_api_key_field, $default_settings);
+            $default_settings = $this->add_field_after('recurringAmount', $secret_api_key_field, $default_settings);
         }
 
         if ($this->getAllowLevelII() == 'yes') {
