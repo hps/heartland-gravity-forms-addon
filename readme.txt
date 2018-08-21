@@ -41,6 +41,12 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.3.12 =
+* Allow payment action override for subscription feeds
+* Allow API keys override for subscription feeds
+* Add supported Canadian provinces
+* Fix handling of state in address when abbreviation is used
+
 = 1.3.11 =
 * Fix subscription setup fee not being applied during initial payment
 
