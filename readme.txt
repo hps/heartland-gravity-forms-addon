@@ -41,6 +41,10 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.3.13 =
+* Fix handling of special characters in ACH/eCheck account holder name
+* Update spelling of ACH/eCheck account holder name in input placeholder
+
 = 1.3.12 =
 * Allow payment action override for subscription feeds
 * Allow API keys override for subscription feeds
