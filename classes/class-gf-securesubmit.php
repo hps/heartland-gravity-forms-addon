@@ -1690,7 +1690,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $checkHolder = new HpsCheckHolder();
         $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
-        $checkHolder->checkName = rgar($submission_data, 'ach_check_holder'); //'check holder';
+        $checkHolder->checkName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
 
         $firstName = '';
         $lastName = '';
@@ -1703,8 +1703,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $firstName = rgar($submission_data, 'ach_check_holder');
         }
 
-        $checkHolder->firstName = $firstName;
-        $checkHolder->lastName = $lastName;
+        $checkHolder->firstName = htmlspecialchars($firstName);
+        $checkHolder->lastName = htmlspecialchars($lastName);
         return $checkHolder;
     }
 
