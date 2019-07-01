@@ -2394,12 +2394,16 @@ class GFSecureSubmit extends GFPaymentAddOn
         if (null === $creditService) {
             $creditService = new HpsFluentCreditService($this->getHpsServicesConfig($this->getSecretApiKey($feed)));
         }
+        
+        $details = new HpsTransactionDetails();
+        $details->customerId = $payPlanPaymentMethod->customerIdentifier;
 
         return $creditService
             ->recurring()
             ->withAmount($payment_amount)
             ->withPaymentMethodKey($payPlanPaymentMethod->paymentMethodKey)
             ->withSchedule($planSchedule->scheduleKey)
+            ->withDetails($details)
             ->execute();
     }
 
