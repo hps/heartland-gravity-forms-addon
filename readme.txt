@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.0 =
+* Add customer identifier to initial subscription payments
+
 = 1.3.13 =
 * Fix handling of special characters in ACH/eCheck account holder name
 * Update spelling of ACH/eCheck account holder name in input placeholder
