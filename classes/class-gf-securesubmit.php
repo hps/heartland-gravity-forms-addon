@@ -12,8 +12,11 @@ use GlobalPayments\Api\Entities\Customer;
 use GlobalPayments\Api\Entities\TransactionSummary;
 use GlobalPayments\Api\Entities\Enums\AccountType;
 use GlobalPayments\Api\Entities\Enums\CheckType;
+use GlobalPayments\Api\Entities\Enums\EntryMethod;
 use GlobalPayments\Api\Entities\Enums\SecCode;
+use GlobalPayments\Api\PaymentMethods\ECheck;
 use GlobalPayments\Api\Entities\EcommerceInfo;
+
 
 
 if (!class_exists('GF_Field_HPSach')) {
@@ -1159,20 +1162,18 @@ class GFSecureSubmit extends GFPaymentAddOn
             /** @var HpsCheck $check */
             /** @var string $note displayed message for consumer */
 
-            $check = new HpsCheck();
+            $check = new ECheck();
             $check->accountNumber = $submission_data['ach_number']; // from form $account_number_field_input
             $check->routingNumber = $submission_data['ach_route'];  // from form $routing_number_field_input
-
-            $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);//$account_name_field_input
-            $check->secCode = HpsSECCode::WEB;
-            $check->dataEntryMode = HpsDataEntryMode::MANUAL;
+            $check->checkHolderName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //$account_name_field_input
+            $check->secCode = SecCode::WEB;
+            $check->entryMode = EntryMethod::MANUAL;
             //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
             $check->checkType = $submission_data['ach_check_type'];
             //HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
             $check->accountType = $submission_data['ach_account_type'];
             $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-
-            $service = new HpsFluentCheckService($config);
+            $address = $this->buildAddress($feed, $submission_data, $entry);
 
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
@@ -1185,9 +1186,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
 
-            $response = $service->sale($submission_data['payment_amount'])
-                ->withCheck($check)/**@throws HpsCheckException on error */
-                ->execute();
+            $response = $check->charge($submission_data['payment_amount'])
+            ->withCurrency('USD')
+            ->withAddress($address)
+            ->execute();
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $response, null);
 
             $type = 'Payment';
@@ -1684,9 +1686,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function buildCheckHolder($feed, $submission_data, $entry)
     {
-        $checkHolder = new HpsCheckHolder();
+        $checkHolder = new ECheck();
         $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
-        $checkHolder->checkName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
+        $checkHolder->checkHolderName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
 
         $firstName = '';
         $lastName = '';
