@@ -1426,7 +1426,6 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         try {
             $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-            
             $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
             $address = $this->buildAddress($feed, $submission_data, $entry);
 
@@ -1440,7 +1439,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
-
+            $tokenValue = $this->getSecureSubmitJsResponse();
+            $cardHolder->token = ($tokenValue != null
+            ? $tokenValue->token_value
+            : '');
             /**
              * CardHolder Authentication (3D Secure)
              *
@@ -1485,11 +1487,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $secureEcommerce->xid        = $xid;
             }
 
-            $cpcReq = false;
-            if ($this->getAllowLevelII()) {
-                $cpcReq = true;
-            }
-
             $currency = GFCommon::get_currency();
             $transaction = null;
             if ($isAuth) {
@@ -1522,10 +1519,9 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $amount_formatted,
                 $transaction->transactionId
             );
-            if ($cpcReq
-                && ($transaction->commercialIndicator == 'B'
+            if ($transaction->commercialIndicator == 'B'
                     || $transaction->commercialIndicator == 'R'
-                    || $transaction->commercialIndicator == 'S')
+                    || $transaction->commercialIndicator == 'S'
             ) {
                 $CardHolderPONbr = $this->getLevelIICustomerPO($feed);
 
@@ -1670,10 +1666,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $cardHolder = new CreditCardData();
         $cardHolder->firstName = $firstName;
         $cardHolder->lastName = $lastName;
-        $response = $this->getSecureSubmitJsResponse();
-        $cardHolder->token = ($response != null
-        ? $response->token_value
-        : '');
         return $cardHolder;
     }
 
