@@ -472,6 +472,7 @@
                 if (this.isSecure) {
                     if ($('#securesubmit_cardinal_token').length) {
                         options.Token = {
+                            CardCode: 0,
                             Token: $('#securesubmit_cardinal_token').val(),
                             ExpirationMonth: $('#exp_month').val(),
                             ExpirationYear: $('#exp_year').val()
