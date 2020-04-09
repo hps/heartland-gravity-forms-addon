@@ -666,7 +666,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             $default_settings = $this->add_field_after('recurringAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('recurringAmount', $secret_api_key_field, $default_settings);
         }
-
         if ($this->getAllowLevelII() == 'yes') {
             $tax_type_field = array(
                 'name' => 'mappedFields',
@@ -1165,7 +1164,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $check = new ECheck();
             $check->accountNumber = $submission_data['ach_number']; // from form $account_number_field_input
             $check->routingNumber = $submission_data['ach_route'];  // from form $routing_number_field_input
-            $check->checkHolderName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //$account_name_field_input
+            
+            $check->checkHolder = $this->checkHolderData($feed, $submission_data, $entry);
             $check->secCode = SecCode::WEB;
             $check->entryMode = EntryMethod::MANUAL;
             //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
@@ -1426,7 +1426,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         try {
             $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-            $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
+            $cardHolder = $this->cardHolderData($feed, $submission_data, $entry);
             $address = $this->buildAddress($feed, $submission_data, $entry);
 
             /**
@@ -1447,7 +1447,7 @@ class GFSecureSubmit extends GFPaymentAddOn
              * CardHolder Authentication (3D Secure)
              *
              */
-            $secureEcommerce = null;
+            $secureEcommerce = '';
             if ($this->getEnable3DSecure() === 'yes'
                 && false !== ($data = json_decode(stripslashes($submission_data['securesubmit_cca_data'])))
                 && isset($data) && isset($data->ActionCode)
@@ -1486,21 +1486,35 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $secureEcommerce->eci    = $eciFlag;
                 $secureEcommerce->xid        = $xid;
             }
+            
+            
+            $cpcReq = false;
+            if ($this->getAllowLevelII() === 'yes') {
+                $cpcReq = true;
+            }
 
             $currency = GFCommon::get_currency();
             $transaction = null;
             if ($isAuth) {
-                $transaction = $cardHolder->authorize($submission_data['payment_amount'])
+                $auth_transaction = $cardHolder->authorize($submission_data['payment_amount'])
                                 ->withCurrency($currency)
                                 ->withAddress($address)
                                 ->withAllowDuplicates(true)
-                                ->execute();
+                                ->withCommercialRequest($cpcReq);
+                if($secureEcommerce){
+                    $transaction = $auth_transaction->withEcommerceInfo($secureEcommerce);
+                }
+                $transaction = $auth_transaction->execute();
             } else {
-                $transaction = $cardHolder->charge($submission_data['payment_amount'])
+                $capt_transaction = $cardHolder->charge($submission_data['payment_amount'])
                                 ->withCurrency($currency)
                                 ->withAddress($address)
                                 ->withAllowDuplicates(true)
-                                ->execute();       
+                                ->withCommercialRequest($cpcReq);
+                if($secureEcommerce){
+                    $transaction = $capt_transaction->withEcommerceInfo($secureEcommerce);
+                }
+                $transaction = $capt_transaction->execute();                                    
             }
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
             self::get_instance()->transaction_response = $transaction;
@@ -1519,7 +1533,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $amount_formatted,
                 $transaction->transactionId
             );
-            if ($transaction->commercialIndicator == 'B'
+            if ($cpcReq  && $transaction->commercialIndicator == 'B'
                     || $transaction->commercialIndicator == 'R'
                     || $transaction->commercialIndicator == 'S'
             ) {
@@ -1646,8 +1660,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @return HpsCardHolder|HpsAddress
      */
-    private function buildCardHolder($feed, $submission_data, $entry)
+    private function cardHolderData($feed, $submission_data, $entry)
     {
+        $cardHolder = new CreditCardData();
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
@@ -1662,8 +1677,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         } catch (Exception $ex) {
             $firstName = rgar($submission_data, 'card_name');
         }
-
-        $cardHolder = new CreditCardData();
         $cardHolder->firstName = $firstName;
         $cardHolder->lastName = $lastName;
         return $cardHolder;
@@ -1676,11 +1689,10 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @return HpsCheckHolder|HpsAddress
      */
-    private function buildCheckHolder($feed, $submission_data, $entry)
+    private function checkHolderData($feed, $submission_data, $entry)
     {
         $checkHolder = new ECheck();
-        $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
-        $checkHolder->checkHolderName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
+        $checkHolder->checkName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
 
         $firstName = '';
         $lastName = '';
@@ -2405,7 +2417,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @used-by  GFSecureSubmit::subscribe()
      * @uses     GFAddOn::log_debug()
-     * @uses     \GFSecureSubmit::buildCardHolder
+     * @uses     \GFSecureSubmit::CardHolderData
      * @uses     \GFSecureSubmit::getIdentifier
      *
      * @param array $feed  The feed currently being processed.
@@ -2419,7 +2431,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function create_customer($feed, $submission_data, $entry)
     {
-        $acctHolder = $this->buildCardHolder($feed, $submission_data, $entry);
+        $acctHolder = $this->cardHolderData($feed, $submission_data, $entry);
         $meta = $this->get_address_card_field($feed);
         //'United States' 'Canada'
 
@@ -2656,13 +2668,12 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         static $config = null;
         if (empty($config)) {
-            /*$config = new HpsServicesConfig();
-            $config->secretApiKey = $key;
-            $config->developerId = '002914';
-            $config->versionNumber = '1916';*/
             $config = new ServicesConfig();
             $config->secretApiKey = $key;
-            $config->serviceUrl = "https://cert.api2.heartlandportico.com";
+            $env = $config->environment;
+            $config->serviceUrl = ($env != "TEST")?
+                'https://api2.heartlandportico.com': 
+                'https://cert.api2.heartlandportico.com'; 
             $service =  ServicesContainer::configure($config);
         }
 
