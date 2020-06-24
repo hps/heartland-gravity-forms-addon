@@ -146,7 +146,12 @@ class HpsFluentCheckService extends HpsSoapGatewayService
         HpsGatewayResponseValidation::checkResponse($rsp, $txnType);
         $response = HpsCheckResponse::fromDict($rsp, $txnType);
 
-        if ($response->responseCode != 0) {
+    if ($response->responseCode != 30) {
+        if ($response->responseCode == 0) {
+            // do a CheckVoid here
+            $this->void();
+        }
+
             throw new HpsCheckException(
                 $rsp->Header->GatewayTxnId,
                 $response->details,
