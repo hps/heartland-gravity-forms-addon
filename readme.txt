@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.2 =
+* Perform automatic void on ACH transaction timeouts
+
 = 1.4.1 =
 * Add CardCode property to Cardinal request object with a default of 0
 
