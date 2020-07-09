@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.3 =
+* Fix: Page won't allow new ACH transaction attempt after a decline/fail
+
 = 1.4.2 =
 * Perform automatic void on ACH transaction timeouts
 
