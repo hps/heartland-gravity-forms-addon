@@ -2551,12 +2551,22 @@ class GFSecureSubmit extends GFPaymentAddOn
         $schedule->totalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
         $schedule->frequency = $this->validPayPlanCycle($feed);
 
-        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
-        if (!in_array($schedule->frequency, array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY, HpsPayPlanScheduleFrequency::ANNUALLY))) {
+        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually.*/
+        if (!in_array($schedule->frequency, array(
+            HpsPayPlanScheduleFrequency::WEEKLY,
+            HpsPayPlanScheduleFrequency::BIWEEKLY,
+            HpsPayPlanScheduleFrequency::SEMIMONTHLY,
+            HpsPayPlanScheduleFrequency::ANNUALLY
+        ))) {
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
+
+        if (HpsPayPlanScheduleFrequency::SEMIMONTHLY === $schedule->frequency) {
+            $schedule->processingDateInfo = $schedule->startDate;
+        }
+
         $numberOfPayments = $feed['meta']['recurringTimes'] === '0'
             ? HpsPayPlanScheduleDuration::ONGOING
             : HpsPayPlanScheduleDuration::LIMITED_NUMBER;
