@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.4 =
+* Fix: Recurring schedules with frequency 'semi-monthly' had incorrect parameters included in the request, causing it to fail.
+
 = 1.4.3 =
 * Fix: Page won't allow new ACH transaction attempt after a decline/fail
 
