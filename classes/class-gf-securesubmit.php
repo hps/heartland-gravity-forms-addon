@@ -2555,18 +2555,16 @@ class GFSecureSubmit extends GFPaymentAddOn
         if (!in_array($schedule->frequency, array(
             HpsPayPlanScheduleFrequency::WEEKLY,
             HpsPayPlanScheduleFrequency::BIWEEKLY,
-            // HpsPayPlanScheduleFrequency::SEMIMONTHLY,
+            HpsPayPlanScheduleFrequency::SEMIMONTHLY,
             HpsPayPlanScheduleFrequency::ANNUALLY
         ))) {
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
-        } elseif ($schedule->frequency === HpsPayPlanScheduleFrequency::SEMIMONTHLY) {
-            $schedule->processingDateInfo = "Last";
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
 
         if (HpsPayPlanScheduleFrequency::SEMIMONTHLY === $schedule->frequency) {
-            $schedule->processingDateInfo = $schedule->startDate;
+            $schedule->processingDateInfo = "Last";
         }
 
         $numberOfPayments = $feed['meta']['recurringTimes'] === '0'
