@@ -2555,10 +2555,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         if (!in_array($schedule->frequency, array(
             HpsPayPlanScheduleFrequency::WEEKLY,
             HpsPayPlanScheduleFrequency::BIWEEKLY,
-            HpsPayPlanScheduleFrequency::SEMIMONTHLY,
+            // HpsPayPlanScheduleFrequency::SEMIMONTHLY,
             HpsPayPlanScheduleFrequency::ANNUALLY
         ))) {
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
+        } elseif ($schedule->frequency === HpsPayPlanScheduleFrequency::SEMIMONTHLY) {
+            $schedule->processingDateInfo = "Last";
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
@@ -2635,7 +2637,11 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $period = date('mdY', strtotime('+2 week'));
                     break;
                 case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
-                    $period = 'Last';
+                    if (intval(date('d', strtotime('+15 day'))) < 15) {
+                        $period = date('m15Y', strtotime('+15 day'));
+                    } else {
+                        $period = date('mtY', strtotime('+15 day'));
+                    }
                     break;
                 case HpsPayPlanScheduleFrequency::MONTHLY:
                     $period = date('mdY', strtotime('+1 month'));
