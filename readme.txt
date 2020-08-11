@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.5 =
+* Fix: Send correct start date for recurring payments when frequency is semi-monthly
+
 = 1.4.4 =
 * Fix: Recurring schedules with frequency 'semi-monthly' had incorrect parameters included in the request, causing it to fail.
 
