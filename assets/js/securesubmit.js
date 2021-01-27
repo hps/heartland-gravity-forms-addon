@@ -48,140 +48,31 @@
                 return;
             }
 
-            console.log(this.gatewayConfig);
             GlobalPayments.configure(this.gatewayConfig);
+            console.log(this.gatewayConfig);
             
-            var cardForm = GlobalPayments.ui.form({
+            window.cardForm = GlobalPayments.ui.form({
             	/*
                  * Configure the iframe fields to tell the library where
                  * the iframe should be inserted into the DOM and some
                  * basic options.
                  */
                  fields: {
-                     cardNumber: {
+                     "card-number": {
                          target:      '#iframesCardNumber',
                          placeholder: '•••• •••• •••• ••••'
                      },
-                     cardExpiration: {
+                     "card-expiration": {
                          target:      '#iframesCardExpiration',
                          placeholder: 'MM / YYYY'
                      },
-                     cardCvv: {
+                     "card-cvv": {
                          target:      '#iframesCardCvv',
                          placeholder: 'CVV'
-                     }
-                 },
-                 /*
-                  * Collection of CSS to inject into the iframes.
-                  * These properties can match the site's styles
-                  * to create a seamless experience.
-                  */
-                 style: {
-                     '#heartland-field': {
-                         'box-sizing':'border-box',
-                         'display': 'block',
-                         'width': '100%',
-                         'height': '48px',
-                         'padding': '6px 12px',
-                         'font-size': '14px',
-                         'line-height': '1.42857143',
-                         'color': '#555',
-                         'background-color': '#fff',
-                         'background-image': 'none',
-                         'border': '1px solid #b5b5b5',
-                         '-webkit-box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
-                         'box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
-                         '-webkit-transition': 'border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s',
-                         '-o-transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s',
-                         'transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s'
                      },
-                     '#heartland-field:focus':{
-                         'border-color': '#3989e3',
-                         'outline': '0',
-                         '-webkit-box-shadow': 'none',
-                         'box-shadow': 'none'
-                     },
-                     '#heartland-field[placeholder]' :{
-                         'letter-spacing':'3px',
-                         'font-size':'small !important',
-                         'text-transform':'uppercase !important',
-                         'color':'#333333'
-                     },
-                     'input#heartland-field[name=cardCvv]' : {
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/cvv1.png) no-repeat right',
-                         'background-size' :'63px 40px'
-                     },
-                     'input#heartland-field[name=cardNumber]' : {
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-inputcard-blank@2x.png) no-repeat right',
-                         'background-size' :'55px 35px'
-                     },
-                     '#heartland-field.invalid.card-type-visa' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-visa@2x.png) no-repeat right',
-                         'background-size' :'83px 88px',
-                         'background-position-y':'-44px'
-                     },
-                     '#heartland-field.valid.card-type-visa' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-visa@2x.png) no-repeat right top',
-                         'background-size' :'82px 86px'
-                     },
-                     '#heartland-field.invalid.card-type-discover' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-discover@2x.png) no-repeat right bottom',
-                         'background-size' :'85px',
-                         'background-position-y':'-44px'
-                     },
-                     '#heartland-field.valid.card-type-discover' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-discover@2x.png) no-repeat right top',
-                         'background-size' :'85px'
-                     },
-                     '#heartland-field.invalid.card-type-amex' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-savedcards-amex@2x.png) no-repeat right',
-                         'background-size' :'50px 90px',
-                         'background-position-y':'-44px'
-                     },
-                     '#heartland-field.valid.card-type-amex' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-savedcards-amex@2x.png) no-repeat right top',
-                         'background-size' :'50px 90px'
-                     },
-                     '#heartland-field.invalid.card-type-mastercard' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-mastercard.png) no-repeat right',
-                         'background-size' :'62px 105px',
-                         'background-position-y':'-55px'
-                     },
-                     '#heartland-field.valid.card-type-mastercard' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-mastercard.png) no-repeat right',
-                         'background-size' :'62px 105px',
-                         'background-position-y':'-4px'
-                     },
-                     '#heartland-field.invalid.card-type-jcb' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-jcb@2x.png) no-repeat right',
-                         'background-size' :'65px 98px',
-                         'background-position-y':'-47px'
-                     },
-                     '#heartland-field.valid.card-type-jcb' :{
-                         'background':'transparent url(' + SecureSubmitObj.baseUrl
-                             + '/assets/images/ss-saved-jcb@2x.png) no-repeat right top',
-                         'background-size' :'65px 98px',
-                         'background-position-y':'1px'
-                     },
-                     'input#heartland-field[name=cardNumber]::-ms-clear' : {
-                         'display':'none'
-                     },
-                     '#heartland-field-wrapper' : {
-                         'width':'100%'
-                     }
-                 },
-
+                     
+                 }                 
+                 
               });
 
               cardForm.on("token-success", this.secureSubmitResponseHandler.bind(this));
@@ -189,7 +80,6 @@
             
 
             if (this.isSecure) {
-            	/*
                 // If 3DSecure is enabled, add that config
                 if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
                     options.cca = {
@@ -199,24 +89,11 @@
                 }
 
                 // Create a new HPS object with the above config
-                SecureSubmitObj.hps = new Heartland.HPS(options);
+                //SecureSubmitObj.hps = new Heartland.HPS(options);
 
-                /*
-                 * The tab indexes get out-of-whack here.
-                 * So, tweak the iframe elements after they are loaded.
-                 */
-            	/*
-                var count = 0;
-                Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
-                    if (++count === 3) {
-                        $('#HPS_secure_cc iframe').each(function (i, el) {
-                            var $el = $(el);
-                            $el.attr('tabindex', $el.parent().attr('tabindex'));
-                            $el.parent().removeAttr('tabindex')
-                        });
-                    }
-                });
-                */
+                
+            
+            	
             }
         
             // Bind SecureSubmit functionality to submit event.

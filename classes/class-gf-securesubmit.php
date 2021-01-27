@@ -275,6 +275,10 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         return array(
             array(
+                'title' => __('General Settings', $this->_slug),
+                'fields' => $this->sdkGeneralSettingsFields(),
+            ),
+            array(
                 'title' => __('SecureSubmit API', $this->_slug),
                 'fields' => $this->sdkSettingsFields(),
             ),
@@ -393,17 +397,16 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
         );
     }
-
     
     /**
      * @return array
      */
-    public function sdkSettingsFields()
+    public function sdkGeneralSettingsFields()
     {
         return array(
             array(
                 'name' => 'payment_type',
-                'label' => __('Payment Type', $this->_slug),
+                'label' => __('Payment Method', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'securesubmit',
                 'tooltip' => __(
@@ -424,7 +427,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'horizontal' => true,
             ),
             array(
-                'name' => 'hps_sandbox_mode',
+                'name' => 'is_sandbox_mode',
                 'label' => __('Sandbox Mode', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'yes',
@@ -445,6 +448,16 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
                 'horizontal' => true,
             ),
+        );
+    }
+    
+    
+    /**
+     * @return array
+     */
+    public function sdkSettingsFields()
+    {
+        return array( 
             array(
                 'name' => 'public_api_key',
                 'label' => __('Public Key', $this->_slug),
@@ -631,29 +644,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function sdkTransITSettingsFields()
     {
-        return array(
-            array(
-                'name' => 'transit_sandbox_mode',
-                'label' => __('Sandbox Mode', $this->_slug),
-                'type' => 'radio',
-                'default_value' => 'yes',
-                'tooltip' => __(
-                    'Is Sandbox Mode',
-                    $this->_slug
-                    ),
-                'choices' => array(
-                    array(
-                        'label' => __('No', $this->_slug),
-                        'value' => 'no'
-                    ),
-                    array(
-                        'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',
-                        'selected' => true,
-                    ),
-                ),
-                'horizontal' => true,
-            ),
+        return array(            
             array(
                 'name' => 'authorize_or_charge',
                 'label' => __('Payment Action', $this->_slug),
@@ -2813,9 +2804,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             
             $paymentType = (string)trim($this->get_setting("payment_type", '', $settings));
             
-            $is_sandbox_mode = false;
+            $is_sandbox_mode = (string)trim($this->get_setting('is_sandbox_mode', '', $settings));
             if($paymentType === 'transit'){
-                $is_sandbox_mode = (string)trim($this->get_setting('transit_sandbox_mode', '', $settings));
                 $config = new TransitConfig();
                 $config->merchantId = (string)trim($this->get_setting('merchant_id', '', $settings));
                 $config->username = (string)trim($this->get_setting('username', '', $settings));
@@ -2827,7 +2817,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             } else {
                 $config = new PorticoConfig();
                 $config->secretApiKey = $key;
-                $is_sandbox_mode = (string)trim($this->get_setting('hps_sandbox_mode', '', $settings));
             }
             
             $config->environment = ($is_sandbox_mode === 'yes') ? 'TEST' : 'PRODUCTION';            
