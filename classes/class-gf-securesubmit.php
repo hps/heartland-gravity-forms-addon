@@ -394,12 +394,35 @@ class GFSecureSubmit extends GFPaymentAddOn
         );
     }
 
+    
     /**
      * @return array
      */
     public function sdkSettingsFields()
     {
         return array(
+            array(
+                'name' => 'enable_heartland',
+                'label' => __('Enable Heartland', $this->_slug),
+                'type' => 'radio',
+                'default_value' => 'no',
+                'tooltip' => __(
+                    'Enable Heartland Payment.',
+                    $this->_slug
+                    ),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal' => true,
+            ),
             array(
                 'name' => 'public_api_key',
                 'label' => __('Public Key', $this->_slug),
@@ -422,14 +445,14 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'tooltip' => __(
                     'Choose whether you wish to capture funds immediately or authorize payment only.',
                     $this->_slug
-                ),
+                    ),
                 'choices' => array(
                     array(
                         'label' => __('Capture', $this->_slug),
                         'value' => 'capture',
                         'selected' => true,
                     ),
-                   array(
+                    array(
                         'label' => __('Authorize', $this->_slug),
                         'value' => 'authorize',
                     ),
@@ -443,7 +466,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'tooltip' => __(
                     'Allows a SecureSubmit Feed to override the default payment action (authorize / capture).',
                     $this->_slug
-                ),
+                    ),
                 'choices' => array(
                     array(
                         'label' => __('No', $this->_slug),
@@ -484,7 +507,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'tooltip' => __(
                     'Allows a SecureSubmit Feed to override the default set of API keys.',
                     $this->_slug
-                ),
+                    ),
                 'choices' => array(
                     array(
                         'label' => __('No', $this->_slug),
@@ -506,7 +529,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'tooltip' => __(
                     'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.',
                     $this->_slug
-                ),
+                    ),
                 'choices' => array(
                     array(
                         'label' => __('No', $this->_slug),
@@ -547,7 +570,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'tooltip' => __(
                     'Sends email with transaction details independent of GF notification system.',
                     $this->_slug
-                ),
+                    ),
                 'choices' => array(
                     array(
                         'label' => __('No', $this->_slug),
@@ -580,7 +603,118 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
         );
     }
-
+    
+    /**
+     * @return array
+     */
+    public function sdkTransITSettingsFields()
+    {
+        return array(
+            array(
+                'name' => 'enable_transit',
+                'label' => __('Enable TransIT', $this->_slug),
+                'type' => 'radio',
+                'default_value' => 'no',
+                'tooltip' => __(
+                    'Enable TransIT Payment.',
+                    $this->_slug
+                    ),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal' => true,
+            ),
+            array(
+                'name' => 'is_sandbox_mode',
+                'label' => __('Sandbox Mode', $this->_slug),
+                'type' => 'radio',
+                'default_value' => 'yes',
+                'tooltip' => __(
+                    'Is Sandbox Mode',
+                    $this->_slug
+                    ),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no'
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                        'selected' => true,
+                    ),
+                ),
+                'horizontal' => true,
+            ),
+            array(
+                'name' => 'authorize_or_charge',
+                'label' => __('Payment Action', $this->_slug),
+                'type' => 'select',
+                'default_value' => 'capture',
+                'tooltip' => __(
+                    'Choose whether you wish to capture funds immediately or authorize payment only.',
+                    $this->_slug
+                    ),
+                'choices' => array(
+                    array(
+                        'label' => __('Capture', $this->_slug),
+                        'value' => 'capture',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Authorize', $this->_slug),
+                        'value' => 'authorize',
+                    ),
+                ),
+            ),
+            array(
+                'name' => 'merchant_id',
+                'label' => __('Merchant Id', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+            array(
+                'name' => 'username',
+                'label' => __('User Name', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+            array(
+                'name' => 'device_id',
+                'label' => __('Device Id', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+            array(
+                'name' => 'developer_id',
+                'label' => __('Developer Id', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+            array(
+                'name' => 'transaction_key',
+                'label' => __('Transaction Key', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+            array(
+                'name' => 'password',
+                'label' => __('Password', $this->_slug),
+                'type' => 'text',
+                'class' => 'medium'
+            ),
+        );
+    }
+    
+    
     /**
      * @return array
      */
