@@ -44,14 +44,12 @@
             }
             
             if (!GlobalPayments) {
-                console.log('Warning! Payment fields cannot be loaded Securesubmit');
+                console.log('Warning! Securesubmit Payment fields cannot be loaded ');
                 return;
             }
 
-            GlobalPayments.configure(this.gatewayConfig);
-            console.log(this.gatewayConfig);
-            
-            window.cardForm = GlobalPayments.ui.form({
+            GlobalPayments.configure(JSON.parse(this.gatewayConfig));
+            var cardForm = GlobalPayments.ui.form({
             	/*
                  * Configure the iframe fields to tell the library where
                  * the iframe should be inserted into the DOM and some
@@ -70,104 +68,24 @@
                          target:      '#iframesCardCvv',
                          placeholder: 'CVV'
                      },
-                     
+                     "submit": {
+                         text: "Get Token",
+                         target: "#iframesGetTokenButton"
+                       }
                  }                 
                  
               });
 
               cardForm.on("token-success", this.secureSubmitResponseHandler.bind(this));
               cardForm.on("token-error", this.secureSubmitResponseHandler.bind(this));
-            
-
-            if (this.isSecure) {
-                // If 3DSecure is enabled, add that config
-                if (SecureSubmitObj.isCCA && SecureSubmitObj.ccaData) {
-                    options.cca = {
-                        jwt: SecureSubmitObj.ccaData.jwt,
-                        orderNumber: SecureSubmitObj.ccaData.orderNumber
-                    };
-                }
-
-                // Create a new HPS object with the above config
-                //SecureSubmitObj.hps = new Heartland.HPS(options);
-
-                
-            
-            	
-            }
-        
-            // Bind SecureSubmit functionality to submit event.
-            $('#gform_' + this.formId).submit(function (event) {
-                // If we have what we need, we can submit the form.
-                if ($('#securesubmit_cca_data').length
-                    && $('#securesubmit_response').length) {
-                    return true;
-                }
-
-                SecureSubmitObj.form = $(this);
-
-                if (!$('#securesubmit_response').length) {
-
-                    if (SecureSubmitObj.isSecure) {
-
-                        // Using iFrames. Tell the iframes to tokenize the data.
-                        SecureSubmitObj.hps.Messages.post(
-                            {
-                                accumulateData: true,
-                                action: 'tokenize',
-                                message: SecureSubmitObj.apiKey,
-                                data: SecureSubmitObj.hps.options
-                            },
-                            'cardNumber'
-                        );
-                        return false;
-
-                    } else {
-
-                        // Not using iFrames. No Cardinal tokenization
-                        var options = {
-                            publicKey: SecureSubmitObj.apiKey,
-                            cardNumber: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '1').val().replace(/\D/g, ''),
-                            cardCvv: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '3').val(),
-                            cardExpMonth: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_month').val(),
-                            cardExpYear: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_year').val(),
-                            success: function (response) {
-                                SecureSubmitObj.secureSubmitResponseHandler(response);
-                            },
-                            error: function (response) {
-                                SecureSubmitObj.secureSubmitResponseHandler(response);
-                            }
-                        };
-
-                        // Create a new HPS object with the above config
-                        var hps = new Heartland.HPS(options);
-
-                        hps.tokenize();
-                        return false;
-
-                    }
-
-                }
-
-                // IF 3dSecure is enabled, init and start the CCA process
-                if (SecureSubmitObj.isCCA) {
-                    if (!$('#securesubmit_cca_data').length) {
-                        SecureSubmitObj.cca();
-                        return false;
-                    }
-                } else {
-                    // 3DSecure is disabled
-                    return true;
-                }
-                return false;
-            });
         };
 
         // Handles tokenization response
         this.secureSubmitResponseHandler = function (response) {
 
+        	alert(response);
             // Preevent any wierdness
-            if ($('#securesubmit_response').length) {
+            if ($('#securesubmit_response').length !== 0) {
                 return false;
             }
 
@@ -175,14 +93,15 @@
             $('#securesubmit_response').remove();
             $('#securesubmit_cca_data').remove();
 
-            var $form = this.form;
+            var $form = $('#gform_' + this.formId);
             var i, input;
 
-            var heartland = response.heartland || response;
+            var heartland = response.details || response;
             /*
              * If 3DSecure is enabled, the tokenization
              * will send back the CCA token as well
              */
+            /*
              var  cardinal = null;
              if (this.isCCA && response.cardinal) {
                 cardinal = response.cardinal;
@@ -195,7 +114,7 @@
                     input.val('');
                 }
             }
-
+			*/
             /*
              * Create hidden form inputs to capture
              * the values passed back from tokenization.
@@ -204,43 +123,43 @@
             last4.type = 'hidden';
             last4.id = 'last_four';
             last4.name = 'last_four';
-            last4.value = heartland.last_four;
+            last4.value = heartland.cardLast4;
             $form.append($(last4));
 
             var cType = document.createElement('input');
             cType.type = 'hidden';
             cType.id = 'card_type';
             cType.name = 'card_type';
-            cType.value = heartland.card_type;
+            cType.value = heartland.cardType;
             $form.append($(cType));
 
             var expMo = document.createElement('input');
             expMo.type = 'hidden';
             expMo.id = 'exp_month';
             expMo.name = 'exp_month';
-            expMo.value = heartland.exp_month;
+            expMo.value = heartland.expiryMonth;
             $form.append($(expMo));
 
             var expYr = document.createElement('input');
             expYr.type = 'hidden';
             expYr.id = 'exp_year';
             expYr.name = 'exp_year';
-            expYr.value = heartland.exp_year;
+            expYr.value = heartland.expiryYear;
             $form.append($(expYr));
-
+            
             // Add tokenization response to the form
-            this.createSecureSubmitResponseNode($.toJSON(heartland));
+            this.createSecureSubmitResponseNode($.toJSON(response));
 
             /*
              * If 3dSecure is enabled, create a hidden form
              * element top capture the CCA token.
              */
             if (this.isSecure && this.isCCA && cardinal.token_value) {
-                this.createCardinalTokenNode(cardinal.token_value);
-                this.cca();
-                return false;
+                //this.createCardinalTokenNode(cardinal.token_value);
+                //this.cca();
+                //return false;
             }
-			
+            
             $form.submit();
             return false;
         };
@@ -279,7 +198,7 @@
         }
 
         this.createSecureSubmitResponseNode = function (value) {
-            var $form = this.form;
+            var $form = $('#gform_' + this.formId);
             var secureSubmitResponse = document.createElement('input');
             secureSubmitResponse.type = 'hidden';
             secureSubmitResponse.id = 'securesubmit_response';

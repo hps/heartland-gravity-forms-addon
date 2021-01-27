@@ -406,11 +406,11 @@ class GFSecureSubmit extends GFPaymentAddOn
         return array(
             array(
                 'name' => 'payment_type',
-                'label' => __('Payment Method', $this->_slug),
+                'label' => __('Active Payment API', $this->_slug),
                 'type' => 'radio',
                 'default_value' => 'securesubmit',
                 'tooltip' => __(
-                    'Select Payment Type.',
+                    'Select active Payment method. Respective API key is mandatory in below settings.',
                     $this->_slug
                     ),
                 'choices' => array(
@@ -448,6 +448,27 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
                 'horizontal' => true,
             ),
+            array(
+                'name' => 'authorize_or_charge',
+                'label' => __('Payment Action', $this->_slug),
+                'type' => 'select',
+                'default_value' => 'capture',
+                'tooltip' => __(
+                    'Choose whether you wish to capture funds immediately or authorize payment only.',
+                    $this->_slug
+                    ),
+                'choices' => array(
+                    array(
+                        'label' => __('Capture', $this->_slug),
+                        'value' => 'capture',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Authorize', $this->_slug),
+                        'value' => 'authorize',
+                    ),
+                ),
+            ),
         );
     }
     
@@ -471,28 +492,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'type' => 'text',
                 'class' => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",
-            ),
-            array(
-                'name' => 'authorize_or_charge',
-                'label' => __('Payment Action', $this->_slug),
-                'type' => 'select',
-                'default_value' => 'capture',
-                'tooltip' => __(
-                    'Choose whether you wish to capture funds immediately or authorize payment only.',
-                    $this->_slug
-                    ),
-                'choices' => array(
-                    array(
-                        'label' => __('Capture', $this->_slug),
-                        'value' => 'capture',
-                        'selected' => true,
-                    ),
-                    array(
-                        'label' => __('Authorize', $this->_slug),
-                        'value' => 'authorize',
-                    ),
-                ),
-            ),
+            ),            
             array(
                 'name' => 'allow_payment_action_override',
                 'label' => __('Allow Payment Action Override', $this->_slug),
@@ -644,28 +644,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function sdkTransITSettingsFields()
     {
-        return array(            
-            array(
-                'name' => 'authorize_or_charge',
-                'label' => __('Payment Action', $this->_slug),
-                'type' => 'select',
-                'default_value' => 'capture',
-                'tooltip' => __(
-                    'Choose whether you wish to capture funds immediately or authorize payment only.',
-                    $this->_slug
-                    ),
-                'choices' => array(
-                    array(
-                        'label' => __('Capture', $this->_slug),
-                        'value' => 'capture',
-                        'selected' => true,
-                    ),
-                    array(
-                        'label' => __('Authorize', $this->_slug),
-                        'value' => 'authorize',
-                    ),
-                ),
-            ),
+        return array(           
             array(
                 'name' => 'merchant_id',
                 'label' => __('Merchant Id', $this->_slug),
@@ -1573,7 +1552,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             }
             $tokenValue = $this->getSecureSubmitJsResponse();
             $cardHolder->token = ($tokenValue != null
-            ? $tokenValue->token_value
+                ? $tokenValue->paymentReference
             : '');
             /**
              * CardHolder Authentication (3D Secure)
@@ -1748,7 +1727,6 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function updateAuthorizationEntry($entry, $result = array())
     {
-		print_r($result);die;
         if (isset($result['securesubmit_payment_action'])
             && $result['securesubmit_payment_action'] == 'authorize'
             && isset($result['is_success'])
@@ -2839,7 +2817,8 @@ class GFSecureSubmit extends GFPaymentAddOn
             $gatewayConfig['deviceId'] = $config->deviceId;
             $gatewayConfig['manifest'] = $manifest;
         } else {
-            $gatewayConfig['publicKey'] = $publicKey;
+            //$gatewayConfig['publicApiKey'] = $publicKey;
+            $gatewayConfig = ['publicApiKey' =>  $publicKey, 'env' => 'local'];
         }
         
         return $gatewayConfig;
