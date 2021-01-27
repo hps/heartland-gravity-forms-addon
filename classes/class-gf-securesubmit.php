@@ -402,23 +402,23 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         return array(
             array(
-                'name' => 'enable_heartland',
-                'label' => __('Enable Heartland', $this->_slug),
+                'name' => 'payment_type',
+                'label' => __('Payment Type', $this->_slug),
                 'type' => 'radio',
-                'default_value' => 'yes',
+                'default_value' => 'securesubmit',
                 'tooltip' => __(
-                    'Enable Heartland Payment.',
+                    'Select Payment Type.',
                     $this->_slug
                     ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
-                        'value' => 'no',
+                        'label' => __('Secure Submit', $this->_slug),
+                        'value' => 'securesubmit',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',
+                        'label' => __('Trans IT', $this->_slug),
+                        'value' => 'transit',
                     ),
                 ),
                 'horizontal' => true,
@@ -632,28 +632,6 @@ class GFSecureSubmit extends GFPaymentAddOn
     public function sdkTransITSettingsFields()
     {
         return array(
-            array(
-                'name' => 'enable_transit',
-                'label' => __('Enable TransIT', $this->_slug),
-                'type' => 'radio',
-                'default_value' => 'no',
-                'tooltip' => __(
-                    'Enable TransIT Payment.',
-                    $this->_slug
-                    ),
-                'choices' => array(
-                    array(
-                        'label' => __('No', $this->_slug),
-                        'value' => 'no',
-                        'selected' => true,
-                    ),
-                    array(
-                        'label' => __('Yes', $this->_slug),
-                        'value' => 'yes',
-                    ),
-                ),
-                'horizontal' => true,
-            ),
             array(
                 'name' => 'transit_sandbox_mode',
                 'label' => __('Sandbox Mode', $this->_slug),
@@ -1065,7 +1043,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             'isCert' => $this->isCert,
             'pageNo' => rgpost('gform_source_page_number_'.$form['id'].''),
             'baseUrl' => plugins_url('', dirname(__FILE__) . '../'),
-            'gatewayConfig' => json_encode($this->setTransItJsScriptsValue())            
+            'gatewayConfig' => json_encode($this->setTransItJsScriptsValue($pubKey))            
         );
         
         if ($use_3DSecure) {
@@ -2833,15 +2811,10 @@ class GFSecureSubmit extends GFPaymentAddOn
         if (empty($config)) {
             $settings = $this->get_plugin_settings();
             
-            $enable_heartland = (string)trim($this->get_setting("enable_heartland", '', $settings));
-            $enable_transit = (string)trim($this->get_setting("enable_transit", '', $settings));
+            $paymentType = (string)trim($this->get_setting("payment_type", '', $settings));
             
             $is_sandbox_mode = false;
-            if($enable_heartland === 'yes'){
-                $config = new PorticoConfig();
-                $config->secretApiKey = $key;            
-                $is_sandbox_mode = (string)trim($this->get_setting('hps_sandbox_mode', '', $settings));
-            } else if($enable_transit === 'yes'){
+            if($paymentType === 'transit'){
                 $is_sandbox_mode = (string)trim($this->get_setting('transit_sandbox_mode', '', $settings));
                 $config = new TransitConfig();
                 $config->merchantId = (string)trim($this->get_setting('merchant_id', '', $settings));
@@ -2851,6 +2824,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $config->transactionKey = (string)trim($this->get_setting('transaction_key', '', $settings));
                 $config->developerId = (string)trim($this->get_setting('developer_id', '', $settings));                
                 $config->acceptorConfig = new AcceptorConfig();                    
+            } else {
+                $config = new PorticoConfig();
+                $config->secretApiKey = $key;
+                $is_sandbox_mode = (string)trim($this->get_setting('hps_sandbox_mode', '', $settings));
             }
             
             $config->environment = ($is_sandbox_mode === 'yes') ? 'TEST' : 'PRODUCTION';            
@@ -2859,22 +2836,24 @@ class GFSecureSubmit extends GFPaymentAddOn
         return $config;
     }
     
-    private function setTransItJsScriptsValue(){
+    private function setTransItJsScriptsValue($publicKey = null){
         $config = $this->getHpsServicesConfig(null);
-        if(!empty($config->deviceId)){
+        $gatewayConfig = [
+            'gatewayProvider' => strtolower($config->gatewayProvider),
+            'env' => $config->environment
+        ];
+        if($gatewayConfig['gatewayProvider'] === 'transit'){
             //create new manifest for tokenization and return config details
             $provider = ServicesContainer::instance()->getClient('default');
             $manifest = $provider->createManifest();
             
-            $gatewayConfig = [
-                'deviceId' => $config->deviceId,
-                'manifest' => $manifest,
-                'env' => $config->environment
-            ];
-            
-            return $gatewayConfig;
+            $gatewayConfig['deviceId'] = $config->deviceId;
+            $gatewayConfig['manifest'] = $manifest;
+        } else {
+            $gatewayConfig['publicKey'] = $publicKey;
         }
-        return null;
+        
+        return $gatewayConfig;
     }
 
     /**
