@@ -1,7 +1,7 @@
 === Heartland Secure Submit Addon for Gravity Forms ===
 Contributors: markhagan
 Tags: gravity, forms, gravityforms, heartland, payment, systems, gateway, token, tokenize
-Tested up to: 5.5.1
+Tested up to: 5.2
 Stable tag: trunk
 License: GPLv2
 License URI: https://github.com/hps/heartland-gravity-forms-addon/blob/master/LICENSE.md
@@ -41,21 +41,6 @@ Features of SecureSubmit:
 
 
 == Changelog ==
-= 1.4.5 =
-* Fix: Send correct start date for recurring payments when frequency is semi-monthly
-
-= 1.4.4 =
-* Fix: Recurring schedules with frequency 'semi-monthly' had incorrect parameters included in the request, causing it to fail.
-
-= 1.4.3 =
-* Fix: Page won't allow new ACH transaction attempt after a decline/fail
-
-= 1.4.2 =
-* Perform automatic void on ACH transaction timeouts
-
-= 1.4.1 =
-* Add CardCode property to Cardinal request object with a default of 0
-
 = 1.4.0 =
 * Add customer identifier to initial subscription payments
 

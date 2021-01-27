@@ -39,7 +39,7 @@
 
             // Initialize spinner
             if (!this.isAjax) {
-                gformInitSpinner(this.formId);
+                //gformInitSpinner(this.formId);
             }
 
             if (this.isSecure) {
@@ -356,7 +356,7 @@
                 this.cca();
                 return false;
             }
-
+			
             $form.submit();
             return false;
         };
@@ -472,7 +472,6 @@
                 if (this.isSecure) {
                     if ($('#securesubmit_cardinal_token').length) {
                         options.Token = {
-                            CardCode: 0,
                             Token: $('#securesubmit_cardinal_token').val(),
                             ExpirationMonth: $('#exp_month').val(),
                             ExpirationYear: $('#exp_year').val()

@@ -1,6 +1,26 @@
 <?php
 GFForms::include_payment_addon_framework();
 
+use GlobalPayments\Api\Entities\EncryptionData;
+use GlobalPayments\Api\PaymentMethods\CreditCardData;
+use GlobalPayments\Api\PaymentMethods\CreditTrackData;
+use GlobalPayments\Api\Services\CreditService;
+use GlobalPayments\Api\ServicesConfig;
+use GlobalPayments\Api\ServicesContainer;
+use GlobalPayments\Api\Entities\Address;
+use GlobalPayments\Api\Entities\Customer;
+use GlobalPayments\Api\Entities\TransactionSummary;
+use GlobalPayments\Api\Entities\Enums\AccountType;
+use GlobalPayments\Api\Entities\Enums\CheckType;
+use GlobalPayments\Api\Entities\Enums\EntryMethod;
+use GlobalPayments\Api\Entities\Enums\SecCode;
+use GlobalPayments\Api\PaymentMethods\ECheck;
+use GlobalPayments\Api\Entities\EcommerceInfo;
+use GlobalPayments\Api\ServiceConfigs\AcceptorConfig;
+use GlobalPayments\Api\ServiceConfigs\Gateways\TransitConfig;
+use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
+
+
 if (!class_exists('GF_Field_HPSach')) {
     include_once 'class-gf-field-hpsach.php';
 }
@@ -257,6 +277,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             array(
                 'title' => __('SecureSubmit API', $this->_slug),
                 'fields' => $this->sdkSettingsFields(),
+            ),
+            array(
+                'title' => __('TransIT API', $this->_slug),
+                'fields' => $this->sdkTransITSettingsFields(),
             ),
             array(
                 'title' => __('Velocity Limits', $this->_slug),
@@ -648,7 +672,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             $default_settings = $this->add_field_after('recurringAmount', $public_api_key_field, $default_settings);
             $default_settings = $this->add_field_after('recurringAmount', $secret_api_key_field, $default_settings);
         }
-
         if ($this->getAllowLevelII() == 'yes') {
             $tax_type_field = array(
                 'name' => 'mappedFields',
@@ -1007,13 +1030,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->isCC = false;
         foreach ($validation_result['form']['fields'] as $field) {
             $current_page = GFFormDisplay::get_source_page($validation_result['form']['id']);
-
-            if ($current_page > 0) {
-                $field_on_curent_page = $field['pageNumber'] == $current_page;
-            } else {
-                $field_on_curent_page = true;
-            }
-
+            $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
             $fieldType = GFFormsModel::get_input_type($field);
 
             if ($fieldType == 'hpsACH' && $field_on_curent_page) {
@@ -1150,20 +1167,19 @@ class GFSecureSubmit extends GFPaymentAddOn
             /** @var HpsCheck $check */
             /** @var string $note displayed message for consumer */
 
-            $check = new HpsCheck();
+            $check = new ECheck();
             $check->accountNumber = $submission_data['ach_number']; // from form $account_number_field_input
             $check->routingNumber = $submission_data['ach_route'];  // from form $routing_number_field_input
-
-            $check->checkHolder = $this->buildCheckHolder($feed, $submission_data, $entry);//$account_name_field_input
-            $check->secCode = HpsSECCode::WEB;
-            $check->dataEntryMode = HpsDataEntryMode::MANUAL;
+            
+            $check->checkHolder = $this->checkHolderData($feed, $submission_data, $entry);
+            $check->secCode = SecCode::WEB;
+            $check->entryMode = EntryMethod::MANUAL;
             //HpsCheckType::BUSINESS; // drop down choice PERSONAL or BUSINESS $check_type_input
             $check->checkType = $submission_data['ach_check_type'];
             //HpsAccountType::CHECKING; // drop down choice CHECKING or SAVINGS $account_type_input
             $check->accountType = $submission_data['ach_account_type'];
             $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-
-            $service = new HpsFluentCheckService($config);
+            $address = $this->buildAddress($feed, $submission_data, $entry);
 
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
@@ -1176,9 +1192,10 @@ class GFSecureSubmit extends GFPaymentAddOn
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
 
-            $response = $service->sale($submission_data['payment_amount'])
-                ->withCheck($check)/**@throws HpsCheckException on error */
-                ->execute();
+            $response = $check->charge($submission_data['payment_amount'])
+            ->withCurrency('USD')
+            ->withAddress($address)
+            ->execute();
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $response, null);
 
             $type = 'Payment';
@@ -1323,12 +1340,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         $accountType = rgpost(GF_Field_HPSach::HPS_ACH_TYPE_FIELD_NAME);
         $checkType = rgpost(GF_Field_HPSach::HPS_ACH_CHECK_FIELD_NAME);
         $accountTypeOptions = array(
-            1 => HpsAccountType::CHECKING,
-            2 => HpsAccountType::SAVINGS,
+            1 => AccountType::CHECKING,
+            2 => AccountType::SAVINGS,
         );
         $checkTypeOptions = array(
-            1 => HpsCheckType::PERSONAL,
-            2 => HpsCheckType::BUSINESS,
+            1 => CheckType::PERSONAL,
+            2 => CheckType::BUSINESS,
         );
 
         if (key_exists($accountType, $accountTypeOptions) && key_exists($checkType, $checkTypeOptions)) {
@@ -1414,10 +1431,9 @@ class GFSecureSubmit extends GFPaymentAddOn
         $isAuth = $this->getAuthorizeOrCharge($feed) == 'authorize';
 
         try {
-            $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
-            $service = new HpsCreditService($config);
-
-            $cardHolder = $this->buildCardHolder($feed, $submission_data, $entry);
+            $config = $this->getHpsServicesConfig();
+            $cardHolder = $this->cardHolderData($feed, $submission_data, $entry);
+            $address = $this->buildAddress($feed, $submission_data, $entry);
 
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
@@ -1429,17 +1445,15 @@ class GFSecureSubmit extends GFPaymentAddOn
                 return $this->authorization_error(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
-            $response = $this->getSecureSubmitJsResponse();
-            $token = new HpsTokenData();
-            $token->tokenValue = ($response != null
-                ? $response->token_value
-                : '');
-
+            $tokenValue = $this->getSecureSubmitJsResponse();
+            $cardHolder->token = ($tokenValue != null
+            ? $tokenValue->token_value
+            : '');
             /**
              * CardHolder Authentication (3D Secure)
              *
              */
-            $secureEcommerce = null;
+            $secureEcommerce = '';
             if ($this->getEnable3DSecure() === 'yes'
                 && false !== ($data = json_decode(stripslashes($submission_data['securesubmit_cca_data'])))
                 && isset($data) && isset($data->ActionCode)
@@ -1471,52 +1485,42 @@ class GFSecureSubmit extends GFPaymentAddOn
                     ? $data->Payment->ExtendedData->XID
                     : '';
 
-                $secureEcommerce = new HpsSecureEcommerce();
+                $secureEcommerce = new EcommerceInfo();
                 $secureEcommerce->type       = '3DSecure';
-                $secureEcommerce->dataSource = $dataSource;
-                $secureEcommerce->data       = $cavv;
-                $secureEcommerce->eciFlag    = $eciFlag;
+                $secureEcommerce->paymentDataSource  = $dataSource;
+                $secureEcommerce->cavv       = $cavv;
+                $secureEcommerce->eci    = $eciFlag;
                 $secureEcommerce->xid        = $xid;
             }
-
+            
+            
             $cpcReq = false;
-            if ($this->getAllowLevelII()) {
+            if ($this->getAllowLevelII() === 'yes') {
                 $cpcReq = true;
             }
 
             $currency = GFCommon::get_currency();
             $transaction = null;
             if ($isAuth) {
-                $transaction = $service->authorize(
-                    $submission_data['payment_amount'],
-                    $currency,
-                    $token,
-                    $cardHolder,
-                    false,
-                    null,
-                    null,
-                    false,
-                    $cpcReq,
-                    null,
-                    null,
-                    $secureEcommerce
-                );
+                $auth_transaction = $cardHolder->authorize($submission_data['payment_amount'])
+                                ->withCurrency($currency)
+                                ->withAddress($address)
+                                ->withAllowDuplicates(true)
+                                ->withCommercialRequest($cpcReq);
+                if($secureEcommerce){
+                    $transaction = $auth_transaction->withEcommerceInfo($secureEcommerce);
+                }
+                $transaction = $auth_transaction->execute();
             } else {
-                $transaction = $service->charge(
-                    $submission_data['payment_amount'],
-                    $currency,
-                    $token,
-                    $cardHolder,
-                    false,
-                    null,
-                    null,
-                    false,
-                    $cpcReq,
-                    null,
-                    null,
-                    null,
-                    $secureEcommerce
-                );
+                $capt_transaction = $cardHolder->charge($submission_data['payment_amount'])
+                                ->withCurrency($currency)
+                                ->withAddress($address)
+                                ->withAllowDuplicates(true)
+                                ->withCommercialRequest($cpcReq);
+                if($secureEcommerce){
+                    $transaction = $capt_transaction->withEcommerceInfo($secureEcommerce);
+                }
+                $transaction = $capt_transaction->execute();                                    
             }
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
             self::get_instance()->transaction_response = $transaction;
@@ -1535,27 +1539,29 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $amount_formatted,
                 $transaction->transactionId
             );
-
-            if ($cpcReq
-                && ($transaction->cpcIndicator == 'B'
-                    || $transaction->cpcIndicator == 'R'
-                    || $transaction->cpcIndicator == 'S')
+            if ($cpcReq  && $transaction->commercialIndicator == 'B'
+                    || $transaction->commercialIndicator == 'R'
+                    || $transaction->commercialIndicator == 'S'
             ) {
-                $cpcData = new HpsCPCData();
-                $cpcData->CardHolderPONbr = $this->getLevelIICustomerPO($feed);
+                $CardHolderPONbr = $this->getLevelIICustomerPO($feed);
 
                 if ($this->getLevelIITaxType($feed) == "SALES_TAX") {
-                    $cpcData->TaxType = HpsTaxType::SALES_TAX;
+                    $TaxType = HpsTaxType::SALES_TAX;
                 } elseif ($this->getLevelIITaxType($feed) == "NOTUSED") {
-                    $cpcData->TaxType = HpsTaxType::NOTUSED;
+                    $TaxType = HpsTaxType::NOTUSED;
                 } elseif ($this->getLevelIITaxType($feed) == "TAXEXEMPT") {
-                    $cpcData->TaxType = HpsTaxType::TAXEXEMPT;
+                    $TaxType = HpsTaxType::TAXEXEMPT;
                 }
 
-                $cpcData->TaxAmt = $this->getLevelIICustomerTaxAmount($feed);
+                $TaxAmt = $this->getLevelIICustomerTaxAmount($feed);
 
-                if (!empty($cpcData->CardHolderPONbr) && !empty($cpcData->TaxType) && !empty($cpcData->TaxAmt)) {
+                if (!empty($CardHolderPONbr) && !empty($TaxType) && !empty($TaxAmt)) {
                     $cpcResponse = $service->cpcEdit($transaction->transactionId, $cpcData);
+                    $cpcResponse = $response->edit()
+                    ->withPoNumber($CardHolderPONbr)
+                    ->withTaxType($TaxType)
+                    ->withTaxAmount($TaxAmt)
+                    ->execute();
                     $note .= sprintf(__(' CPC Response Code: %s', $this->_slug), $cpcResponse->responseCode);
                 }
             }
@@ -1616,6 +1622,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function updateAuthorizationEntry($entry, $result = array())
     {
+		print_r($result);die;
         if (isset($result['securesubmit_payment_action'])
             && $result['securesubmit_payment_action'] == 'authorize'
             && isset($result['is_success'])
@@ -1660,8 +1667,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @return HpsCardHolder|HpsAddress
      */
-    private function buildCardHolder($feed, $submission_data, $entry)
+    private function cardHolderData($feed, $submission_data, $entry)
     {
+        $cardHolder = new CreditCardData();
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
@@ -1676,12 +1684,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         } catch (Exception $ex) {
             $firstName = rgar($submission_data, 'card_name');
         }
-
-        $cardHolder = new HpsCardHolder();
-        $cardHolder->firstName = $firstName;
-        $cardHolder->lastName = $lastName;
-        $cardHolder->address = $this->buildAddress($feed, $submission_data, $entry);
-
+        $cardHolder->cardHolderName = $firstName . ' '. $lastName;
         return $cardHolder;
     }
 
@@ -1692,10 +1695,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @return HpsCheckHolder|HpsAddress
      */
-    private function buildCheckHolder($feed, $submission_data, $entry)
+    private function checkHolderData($feed, $submission_data, $entry)
     {
-        $checkHolder = new HpsCheckHolder();
-        $checkHolder->address = $this->buildAddress($feed, $submission_data, $entry);
+        $checkHolder = new ECheck();
         $checkHolder->checkName = htmlspecialchars(rgar($submission_data, 'ach_check_holder')); //'check holder';
 
         $firstName = '';
@@ -1724,7 +1726,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     private function buildAddress($feed, $submission_data, $entry)
     {
         $isRecurring = isset($feed['meta']['transactionType']) && $feed['meta']['transactionType'] == 'subscription';
-        $address = new HpsAddress();
+        $address = new Address();
 
         $address->address = rgar($submission_data, 'address')
             . rgar($submission_data, 'address2');
@@ -1794,7 +1796,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function includeSecureSubmitSDK()
     {
-        require_once plugin_dir_path(__FILE__) . 'includes/Hps.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/vendor/autoload.php';
         do_action('gform_securesubmit_post_include_api');
     }
 
@@ -2421,7 +2423,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @used-by  GFSecureSubmit::subscribe()
      * @uses     GFAddOn::log_debug()
-     * @uses     \GFSecureSubmit::buildCardHolder
+     * @uses     \GFSecureSubmit::CardHolderData
      * @uses     \GFSecureSubmit::getIdentifier
      *
      * @param array $feed  The feed currently being processed.
@@ -2435,7 +2437,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function create_customer($feed, $submission_data, $entry)
     {
-        $acctHolder = $this->buildCardHolder($feed, $submission_data, $entry);
+        $acctHolder = $this->cardHolderData($feed, $submission_data, $entry);
         $meta = $this->get_address_card_field($feed);
         //'United States' 'Canada'
 
@@ -2551,22 +2553,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         $schedule->totalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
         $schedule->frequency = $this->validPayPlanCycle($feed);
 
-        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually.*/
-        if (!in_array($schedule->frequency, array(
-            HpsPayPlanScheduleFrequency::WEEKLY,
-            HpsPayPlanScheduleFrequency::BIWEEKLY,
-            HpsPayPlanScheduleFrequency::SEMIMONTHLY,
-            HpsPayPlanScheduleFrequency::ANNUALLY
-        ))) {
+        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
+        if (!in_array($schedule->frequency, array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY, HpsPayPlanScheduleFrequency::ANNUALLY))) {
             $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
-
-        if (HpsPayPlanScheduleFrequency::SEMIMONTHLY === $schedule->frequency) {
-            $schedule->processingDateInfo = "Last";
-        }
-
         $numberOfPayments = $feed['meta']['recurringTimes'] === '0'
             ? HpsPayPlanScheduleDuration::ONGOING
             : HpsPayPlanScheduleDuration::LIMITED_NUMBER;
@@ -2635,11 +2627,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $period = date('mdY', strtotime('+2 week'));
                     break;
                 case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
-                    if (intval(date('d', strtotime('+15 day'))) < 15) {
-                        $period = date('m15Y', strtotime('+15 day'));
-                    } else {
-                        $period = date('mtY', strtotime('+15 day'));
-                    }
+                    $period = 'Last';
                     break;
                 case HpsPayPlanScheduleFrequency::MONTHLY:
                     $period = date('mdY', strtotime('+1 month'));
@@ -2686,12 +2674,29 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         static $config = null;
         if (empty($config)) {
-            $config = new HpsServicesConfig();
-            $config->secretApiKey = $key;
-            $config->developerId = '002914';
-            $config->versionNumber = '1916';
+            $settings = $this->get_plugin_settings();
+            
+            $enable_heartland = (string)trim($this->get_setting("enable_heartland", '', $settings));
+            $enable_transit = (string)trim($this->get_setting("enable_transit", '', $settings));
+            
+            if($enable_heartland === 'yes'){
+                $config = new PorticoConfig();
+                $config->secretApiKey = $key;                
+            } else if($enable_transit === 'yes'){
+                $config = new TransitConfig();
+                $config->merchantId = (string)trim($this->get_setting('merchant_id', '', $settings));
+                $config->username = (string)trim($this->get_setting('username', '', $settings));
+                $config->password = (string)trim($this->get_setting('password', '', $settings));
+                $config->deviceId = (string)trim($this->get_setting('device_id', '', $settings));
+                $config->transactionKey = (string)trim($this->get_setting('transaction_key', '', $settings));
+                $config->developerId = (string)trim($this->get_setting('developer_id', '', $settings));                
+                $config->acceptorConfig = new AcceptorConfig();
+            }
+            
+            $is_sandbox_mode = (string)trim($this->get_setting('is_sandbox_mode', '', $settings));
+            $config->environment = ($is_sandbox_mode === 'yes') ? 'TEST' : 'PRODUCTION';            
+            ServicesContainer::configureService($config);
         }
-
         return $config;
     }
 
