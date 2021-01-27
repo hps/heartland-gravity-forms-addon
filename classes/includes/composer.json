@@ -1,0 +1,10 @@
+{
+    "require": {
+        "globalpayments/php-sdk": "*"
+    },
+	"autoload": {
+        "psr-4": {
+            "GlobalPayments\\Api\\": ""
+        }
+    }
+}

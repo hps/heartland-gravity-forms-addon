@@ -24,6 +24,7 @@ class GF_SecureSubmit_Bootstrap
         }
 
         require_once 'classes/class-gf-securesubmit.php';
+        require_once __DIR__ . '/classes/includes/vendor/autoload.php';        
 
         GFAddOn::register('GFSecureSubmit');
     }
