@@ -1191,6 +1191,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function authorize($feed, $submission_data, $form, $entry)
     {
+        
         $auth = array(
             'is_authorized' => false,
             'captured_payment' => array('is_success' => false),
@@ -1199,7 +1200,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
-
+   
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
         } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
@@ -1539,7 +1540,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             $config = $this->getHpsServicesConfig();
             $cardHolder = $this->cardHolderData($feed, $submission_data, $entry);
             $address = $this->buildAddress($feed, $submission_data, $entry);
-
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
              * far too many failures have been tried
@@ -1551,9 +1551,13 @@ class GFSecureSubmit extends GFPaymentAddOn
                 //throw new HpsException(wp_sprintf('%s %s', $fraud_message, $issuerResponse));
             }
             $tokenValue = $this->getSecureSubmitJsResponse();
+            
             $cardHolder->token = ($tokenValue != null
                 ? $tokenValue->paymentReference
             : '');
+            $cardHolder->expMonth = $tokenValue->details->expiryMonth;
+            $cardHolder->expYear = $tokenValue->details->expiryYear;
+            
             /**
              * CardHolder Authentication (3D Secure)
              *
@@ -1627,6 +1631,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
                 $transaction = $capt_transaction->execute();                                    
             }
+            
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
             self::get_instance()->transaction_response = $transaction;
 
@@ -1832,10 +1837,10 @@ class GFSecureSubmit extends GFPaymentAddOn
         $isRecurring = isset($feed['meta']['transactionType']) && $feed['meta']['transactionType'] == 'subscription';
         $address = new Address();
 
-        $address->address = rgar($submission_data, 'address')
+        $address->streetAddress1 = rgar($submission_data, 'address')
             . rgar($submission_data, 'address2');
         if (empty($address->address) && in_array('billingInformation_address', $feed['meta'])) {
-            $address->address
+            $address->streetAddress2
                 = $entry[ $feed['meta']['billingInformation_address'] ] . $entry[ $feed['meta']['billingInformation_address2'] ];
         }
 
@@ -2794,7 +2799,8 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $config->acceptorConfig = new AcceptorConfig();                    
             } else {
                 $config = new PorticoConfig();
-                $config->secretApiKey = $key;
+                
+                $config->secretApiKey = !empty($key) ? $key : (string)trim($this->get_setting('secret_api_key', '', $settings)); 
             }
             
             $config->environment = ($is_sandbox_mode === 'yes') ? 'TEST' : 'PRODUCTION';            
@@ -2804,10 +2810,9 @@ class GFSecureSubmit extends GFPaymentAddOn
     }
     
     private function setTransItJsScriptsValue($publicKey = null){
-        $config = $this->getHpsServicesConfig(null);
+        $config = $this->getHpsServicesConfig();
         $gatewayConfig = [
-            'gatewayProvider' => strtolower($config->gatewayProvider),
-            'env' => $config->environment
+            'gatewayProvider' => strtolower($config->gatewayProvider)
         ];
         if($gatewayConfig['gatewayProvider'] === 'transit'){
             //create new manifest for tokenization and return config details
@@ -2816,9 +2821,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             
             $gatewayConfig['deviceId'] = $config->deviceId;
             $gatewayConfig['manifest'] = $manifest;
+            $gatewayConfig['env'] = ($config->environment === 'TEST') ? 'sandbox' : $config->environment;
         } else {
-            //$gatewayConfig['publicApiKey'] = $publicKey;
-            $gatewayConfig = ['publicApiKey' =>  $publicKey, 'env' => 'local'];
+            $gatewayConfig['publicApiKey'] = $publicKey;
+            $gatewayConfig['env'] = ($config->environment === 'TEST') ? 'local' : $config->environment;
         }
         
         return $gatewayConfig;

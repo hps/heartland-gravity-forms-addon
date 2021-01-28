@@ -18,9 +18,7 @@
       <label for="iframesCardCvv">Card CVV<span class="red">*</span></label>
       <div class="iframeholder" id="iframesCardCvv" <?php echo $this->get_tabindex(); ?>></div>
     </div>
-    <div id="get-token" class="form-group">
-      <div class="iframeholder" id="iframesGetTokenButton" <?php echo $this->get_tabindex(); ?>></div>
-    </div>
+    <div id="iframesGetTokenButton" <?php echo $this->get_tabindex(); ?>></div>
   </div>
 </div>
 

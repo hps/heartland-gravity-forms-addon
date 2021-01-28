@@ -47,7 +47,6 @@
                 console.log('Warning! Securesubmit Payment fields cannot be loaded ');
                 return;
             }
-
             GlobalPayments.configure(JSON.parse(this.gatewayConfig));
             var cardForm = GlobalPayments.ui.form({
             	/*
@@ -69,9 +68,9 @@
                          placeholder: 'CVV'
                      },
                      "submit": {
-                         text: "Get Token",
+                         text: "Get Token and Submit",
                          target: "#iframesGetTokenButton"
-                       }
+                     }
                  }                 
                  
               });
@@ -82,8 +81,6 @@
 
         // Handles tokenization response
         this.secureSubmitResponseHandler = function (response) {
-
-        	alert(response);
             // Preevent any wierdness
             if ($('#securesubmit_response').length !== 0) {
                 return false;
@@ -147,6 +144,9 @@
             expYr.value = heartland.expiryYear;
             $form.append($(expYr));
             
+            //assign value to token_value for server process
+            response.token_value = response.paymentReference;
+            
             // Add tokenization response to the form
             this.createSecureSubmitResponseNode($.toJSON(response));
 
@@ -159,7 +159,6 @@
                 //this.cca();
                 //return false;
             }
-            
             $form.submit();
             return false;
         };
@@ -198,6 +197,7 @@
         }
 
         this.createSecureSubmitResponseNode = function (value) {
+        	
             var $form = $('#gform_' + this.formId);
             var secureSubmitResponse = document.createElement('input');
             secureSubmitResponse.type = 'hidden';
