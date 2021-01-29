@@ -1200,7 +1200,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
-   
+                
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
         } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
@@ -1631,7 +1631,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
                 $transaction = $capt_transaction->execute();                                    
             }
-            
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
             self::get_instance()->transaction_response = $transaction;
 
@@ -1854,16 +1853,16 @@ class GFSecureSubmit extends GFPaymentAddOn
             $address->state = $entry[ $feed['meta']['billingInformation_state'] ];
         }
 
-        $address->zip = rgar($submission_data, 'zip');
+        $zip = rgar($submission_data, 'zip');
         if (empty($address->zip) && in_array('billingInformation_zip', $feed['meta'])) {
-            $address->zip = $entry[ $feed['meta']['billingInformation_zip'] ];
+            $zip = $entry[ $feed['meta']['billingInformation_zip'] ];
         }
-
+        $address->postalCode = $address->zip = $zip;
+        
         $address->country = $this->normalizeCountry(rgar($submission_data, 'country'), $isRecurring);
         if (empty($address->country) && in_array('billingInformation_country', $feed['meta'])) {
             $address->country = $this->normalizeCountry($entry[ $feed['meta']['billingInformation_country'] ], $isRecurring);
         }
-
         return $address;
     }
 
