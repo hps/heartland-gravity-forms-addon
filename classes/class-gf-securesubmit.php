@@ -1687,20 +1687,20 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
 
-            $check_avs_cvv = $this->get_setting("check_avs_cvv", '', $settings);
+            $checkAvsCvv = $this->get_setting("check_avs_cvv", '', $settings);
             
-            $avs_settings = $this->get_setting("avs_reject_conditions", '', $settings);            
-            $avs_reject_conditions = $this->get_avs_cvv_result($avs_settings);
+            $avsSettings = $this->get_setting("avs_reject_conditions", '', $settings);            
+            $avsRejectConditions = $this->getAvsCvvResult($avsSettings);
             
-            $cvn_settings = $this->get_setting("cvn_reject_conditions", '', $settings);
-            $cvn_reject_conditions = $this->get_avs_cvv_result($cvn_settings);
+            $cvnSettings = $this->get_setting("cvn_reject_conditions", '', $settings);
+            $cvnRejectConditions = $this->getAvsCvvResult($cvnSettings);
             
             //reverse incase of AVS/CVN failure
-            if(!empty($transaction->transactionReference->transactionId) && !empty($check_avs_cvv)){
-                if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){
+            if(!empty($transaction->transactionReference->transactionId) && !empty($checkAvsCvv)){
+                if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){                    
                     //check admin selected decline condtions
-                    if(in_array($transaction->avsResponseCode, $avs_reject_conditions) ||
-                    in_array($transaction->cvnResponseCode, $cvn_reject_conditions)){
+                    if(in_array($transaction->avsResponseCode, $avsRejectConditions) ||
+                    in_array($transaction->cvnResponseCode, $cvnRejectConditions)){
                         Transaction::fromId( $transaction->transactionReference->transactionId )
                         ->reverse( $submission_data['payment_amount'] )
                         ->execute();
@@ -3201,16 +3201,16 @@ class GFSecureSubmit extends GFPaymentAddOn
         );
     }
     
-    public function get_avs_cvv_result($admin_settings)
+    public function getAvsCvvResult($admin_settings)
     {
-        $result_codes = [];
+        $resultCodes = [];
         if(!empty($admin_settings)){
             foreach($admin_settings as $key => $value){
-                if($value === 1){
-                    $result_codes[] = $key;
+                if($value == 1){
+                    $resultCodes[] = $key;
                 }
             }
         }
-        return $result_codes;
+        return $resultCodes;
     }
 }
