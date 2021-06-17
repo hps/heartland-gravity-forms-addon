@@ -19,6 +19,7 @@ use GlobalPayments\Api\Entities\EcommerceInfo;
 use GlobalPayments\Api\ServiceConfigs\AcceptorConfig;
 use GlobalPayments\Api\ServiceConfigs\Gateways\TransitConfig;
 use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
+use GlobalPayments\Api\Entities\Transaction;
 
 
 if (!class_exists('GF_Field_HPSach')) {
@@ -289,6 +290,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             array(
                 'title' => __('Velocity Limits', $this->_slug),
                 'fields' => $this->vmcSettingsFields(),
+            ),
+            array(
+                'title' => __('AVS/CVV Settings', $this->_slug),
+                'fields' => $this->avsCvvFields(),
             ),
         );
     }
@@ -983,6 +988,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function registerInitScripts($form, $field_values, $is_ajax)
     {
+        
+        $settings = $this->get_plugin_settings();
+        
         if (!$this->has_feed($form['id'])) {
             return;
         }
@@ -1679,6 +1687,29 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
 
+            $check_avs_cvv = $this->get_setting("check_avs_cvv", '', $settings);
+            
+            $avs_settings = $this->get_setting("avs_reject_conditions", '', $settings);            
+            $avs_reject_conditions = $this->get_avs_cvv_result($avs_settings);
+            
+            $cvn_settings = $this->get_setting("cvn_reject_conditions", '', $settings);
+            $cvn_reject_conditions = $this->get_avs_cvv_result($cvn_settings);
+            
+            //reverse incase of AVS/CVN failure
+            if(!empty($transaction->transactionReference->transactionId) && !empty($check_avs_cvv)){
+                if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){
+                    //check admin selected decline condtions
+                    if(in_array($transaction->avsResponseCode, $avs_reject_conditions) ||
+                    in_array($transaction->cvnResponseCode, $cvn_reject_conditions)){
+                        Transaction::fromId( $transaction->transactionReference->transactionId )
+                        ->reverse( $submission_data['payment_amount'] )
+                        ->execute();
+                        
+                        return false;
+                    }
+                }
+            }
+            
             $auth = array(
                 'is_authorized' => true,
                 'captured_payment' => array(
@@ -3028,5 +3059,158 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
+    }
+    
+    /**
+     * @return array
+     */
+    public function avsCvvFields()
+    {
+        
+        
+        return array(
+            array(
+                'name' => 'check_avs_cvv',
+                'label' => __( 'Check AVS/CVN result codes.'),
+                'type' => 'radio',
+                'default_value' => 'no',
+                'tooltip' => __('This will check AVS/CVN result codes and reverse transaction.', $this->_slug),
+                'choices' => array(
+                    array(
+                        'label' => __('No', $this->_slug),
+                        'value' => 'no',
+                        'selected' => true,
+                    ),
+                    array(
+                        'label' => __('Yes', $this->_slug),
+                        'value' => 'yes',
+                    ),
+                ),
+                'horizontal' => true,
+            ),
+            array(
+                'name' => 'avs_reject_conditions',
+                'label' => __('AVS Reject Conditions', $this->_slug),
+                'type' => 'checkbox',
+                'tooltip' => __('Choose for which AVS result codes, the transaction must be auto reveresed', $this->_slug),
+                'choices' => $this->avsDeclineCodes()
+            ),
+            array(
+                'name' => 'cvn_reject_conditions',
+                'label' => __('CVN Reject Conditions', $this->_slug),
+                'type' => 'checkbox',
+                'tooltip' => __('Choose for which CVN result codes, the transaction must be auto reveresed', $this->_slug),
+                'choices' => $this->cvnDeclineCodes()
+            ),            
+        );
+    }
+    
+    public function avsDeclineCodes()
+    {
+        return array(
+            array(
+                'name' => "avs_reject_conditions[A]",
+                'label' => __('Address matches, zip No Match', $this->_slug),
+            ),
+            array(
+                'name' => "avs_reject_conditions[N]",
+                'label' => __('Neither address or zip code match', $this->_slug),
+            ),
+            array(
+                'name' => "avs_reject_conditions[R]",
+                'label' => __('Retry - system unable to respond', $this->_slug)
+            ),
+            array(
+                'name' => "avs_reject_conditions[U]",
+                'label' => __('Visa / Discover card AVS not supported')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[S]',
+                'label' => __('Master / Amex card AVS not supported')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[Z]',
+                'label' => __('Visa / Discover card 9-digit zip code match, address no match')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[W]',
+                'label' => __('Master / Amex card 9-digit zip code match, address no match')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[Y]',
+                'label' => __('Visa / Discover card 5-digit zip code and address match')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[X]',
+                'label' => __('Master / Amex card 5-digit zip code and address match')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[G]',
+                'label' => __('Address not verified for International transaction')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[B]',
+                'label' => __('Address match, Zip not verified')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[C]',
+                'label' => __('Address and zip mismatch')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[D]',
+                'label' => __('Address and zip match')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[I]',
+                'label' => __('AVS not verified for International transaction')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[M]',
+                'label' => __('Street address and postal code matches')
+            ),
+            array(
+                'name' => 'avs_reject_conditions[P]',
+                'label' => __('Address and Zip not verified')
+            )
+        );
+    }
+    
+    public function cvnDeclineCodes()
+    {
+        return array(
+            array(
+                'name' => 'cvn_reject_conditions[N]',
+                'label' => __('Not Matching'),
+            ),
+            array(
+                'name' => 'cvn_reject_conditions[P]',
+                'label' => __('Not Processed'),
+            ),
+            array(
+                'name' => 'cvn_reject_conditions[S]',
+                'label' => __('Result not present'),
+            ),
+            array(
+                'name' => 'cvn_reject_conditions[U]',
+                'label' => __('Issuer not certified'),
+            ),
+            array(
+                'name' => 'cvn_reject_conditions[?]',
+                'label' => __('CVV unrecognized'),
+            ),
+        );
+    }
+    
+    public function get_avs_cvv_result($admin_settings)
+    {
+        $result_codes = [];
+        if(!empty($admin_settings)){
+            foreach($admin_settings as $key => $value){
+                if($value === 1){
+                    $result_codes[] = $key;
+                }
+            }
+        }
+        return $result_codes;
     }
 }
