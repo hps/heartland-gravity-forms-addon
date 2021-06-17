@@ -3194,8 +3194,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $cvnSettings = $this->get_setting("cvn_reject_conditions", '', $settings);
         $cvnRejectConditions = $this->getAvsCvvResult($cvnSettings);
         
-        $transaction->avsResponseCode = 'A';
-        
         //reverse incase of AVS/CVN failure
         if(!empty($transaction->transactionReference->transactionId)){
             if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){
