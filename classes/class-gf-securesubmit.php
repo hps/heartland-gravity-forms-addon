@@ -1639,6 +1639,13 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
                 $transaction = $capt_transaction->execute();                                    
             }
+            
+            //reverse incase of avs/cvv failure
+            $checkAvsCvv = $this->get_setting("check_avs_cvv", '', $settings);
+            if(!empty($checkAvsCvv)){
+                $this->checkAvsCvvResults($settings, $transaction, $submission_data['payment_amount']);
+            }
+            
             do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
             self::get_instance()->transaction_response = $transaction;
 
@@ -1687,28 +1694,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
 
-            $checkAvsCvv = $this->get_setting("check_avs_cvv", '', $settings);
             
-            $avsSettings = $this->get_setting("avs_reject_conditions", '', $settings);            
-            $avsRejectConditions = $this->getAvsCvvResult($avsSettings);
-            
-            $cvnSettings = $this->get_setting("cvn_reject_conditions", '', $settings);
-            $cvnRejectConditions = $this->getAvsCvvResult($cvnSettings);
-            
-            //reverse incase of AVS/CVN failure
-            if(!empty($transaction->transactionReference->transactionId) && !empty($checkAvsCvv)){
-                if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){                    
-                    //check admin selected decline condtions
-                    if(in_array($transaction->avsResponseCode, $avsRejectConditions) ||
-                    in_array($transaction->cvnResponseCode, $cvnRejectConditions)){
-                        Transaction::fromId( $transaction->transactionReference->transactionId )
-                        ->reverse( $submission_data['payment_amount'] )
-                        ->execute();
-                        
-                        return false;
-                    }
-                }
-            }
             
             $auth = array(
                 'is_authorized' => true,
@@ -3199,6 +3185,33 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'label' => __('CVV unrecognized'),
             ),
         );
+    }
+    
+    public function checkAvsCvvResults($settings, $transaction, $amount){
+        $avsSettings = $this->get_setting("avs_reject_conditions", '', $settings);
+        $avsRejectConditions = $this->getAvsCvvResult($avsSettings);
+        
+        $cvnSettings = $this->get_setting("cvn_reject_conditions", '', $settings);
+        $cvnRejectConditions = $this->getAvsCvvResult($cvnSettings);
+        
+        $transaction->avsResponseCode = 'A';
+        
+        //reverse incase of AVS/CVN failure
+        if(!empty($transaction->transactionReference->transactionId)){
+            if(!empty($transaction->avsResponseCode) || !empty($transaction->cvnResponseCode)){
+                
+                //check admin selected decline condtions
+                if(in_array($transaction->avsResponseCode, $avsRejectConditions) ||
+                in_array($transaction->cvnResponseCode, $cvnRejectConditions)){
+                    Transaction::fromId( $transaction->transactionReference->transactionId )
+                    ->reverse( $amount )
+                    ->execute();
+                    
+                    throw new Exception('Transaction reversed due to AVS/CVV failure.');
+                }
+            }
+        }
+        
     }
     
     public function getAvsCvvResult($admin_settings)
