@@ -1693,8 +1693,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             if ($isAuth) {
                 $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
             }
-
-            
             
             $auth = array(
                 'is_authorized' => true,
@@ -3205,7 +3203,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     ->reverse( $amount )
                     ->execute();
                     
-                    throw new Exception('Transaction reversed due to AVS/CVV failure.');
+                    throw new Exception('Transaction failed due to AVS/CVV failure. Contact merchant!');
                 }
             }
         }
