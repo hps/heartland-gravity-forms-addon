@@ -39,7 +39,7 @@
 
             // Initialize spinner
             if (!this.isAjax) {
-                gformInitSpinner(this.formId);
+                //gformInitSpinner(this.formId);
             }
 
             if (this.isSecure) {
@@ -281,7 +281,6 @@
 
         // Handles tokenization response
         this.secureSubmitResponseHandler = function (response) {
-
             // Preevent any wierdness
             if ($('#securesubmit_response').length) {
                 return false;

@@ -13,9 +13,15 @@ use GlobalPayments\Api\Entities\TransactionSummary;
 use GlobalPayments\Api\Entities\Enums\AccountType;
 use GlobalPayments\Api\Entities\Enums\CheckType;
 use GlobalPayments\Api\Entities\Enums\EntryMethod;
+use GlobalPayments\Api\Entities\Enums\ExceptionCodes;
+use GlobalPayments\Api\Entities\Enums\ScheduleFrequency;
 use GlobalPayments\Api\Entities\Enums\SecCode;
 use GlobalPayments\Api\PaymentMethods\ECheck;
 use GlobalPayments\Api\Entities\EcommerceInfo;
+use GlobalPayments\Api\Services\ReportingService;
+use GlobalPayments\Api\Entities\Exceptions\ApiException;
+use GlobalPayments\Api\Entities\Exceptions\GatewayException;
+use GlobalPayments\Api\Entities\Exceptions\ArgumentException;
 
 
 
@@ -248,16 +254,14 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->includeSecureSubmitSDK();
         $config = $this->getHpsServicesConfig(rgpost('key'));
 
-        $service = new HpsCreditService($config);
+        $service = new ReportingService();
 
         $is_valid = true;
 
         try {
-            $service->get('1');
-        } catch (HpsAuthenticationException $e) {
+            $service->transactionDetail("1")->execute();
+        } catch (ApiException $e) {
             $is_valid = false;
-        } catch (HpsException $e) {
-            // Transaction was authenticated, but failed for another reason
         }
 
         $response = $is_valid
@@ -1079,7 +1083,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      * ]
      */
     public function authorize($feed, $submission_data, $form, $entry)
-    {
+    {	
         $auth = array(
             'is_authorized' => false,
             'captured_payment' => array('is_success' => false),
@@ -1088,6 +1092,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
         $isCCData = $this->getSecureSubmitJsResponse();
+		
 
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
@@ -1212,7 +1217,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'note' => $note,
                 ),
             );
-        } catch (HpsCheckException $e) {
+        } catch (GatewayException $e) {
             do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
             $err = null;
             if (is_array($e->details)) {
@@ -1247,7 +1252,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             $auth = $this->authorization_error($err);
             $auth['transaction_id'] = (string)$e->transactionId;
-        } catch (HpsException $e) {
+        } catch (Exception $e) {
             do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
             // if advanced fraud is enabled, increment the error count
             if ($enable_fraud) {
@@ -1428,7 +1433,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $config = $this->getHpsServicesConfig($this->getSecretApiKey($feed));
             $cardHolder = $this->cardHolderData($feed, $submission_data, $entry);
             $address = $this->buildAddress($feed, $submission_data, $entry);
-
+            
             /**
              * if fraud_velocity_attempts is less than the $HeartlandHPS_FailCount then we know
              * far too many failures have been tried
@@ -1516,7 +1521,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
                 $transaction = $capt_transaction->execute();                                    
             }
-            do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, $response);
+            do_action('heartland_gravityforms_transaction_success', $form, $entry, $transaction, null);			
             self::get_instance()->transaction_response = $transaction;
 
             if ($this->getSendEmail() == 'yes') {
@@ -1570,12 +1575,12 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'is_success' => true,
                     'transaction_id' => $transaction->transactionId,
                     'amount' => $submission_data['payment_amount'],
-                    'payment_method' => $response->card_type,
+                    'payment_method' => $transaction->cardType,
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
                     'note' => $note,
                 ),
-            );
-        } catch (HpsException $e) {
+            );            
+        } catch (GatewayException $e) {
             do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
             // if advanced fraud is enabled, increment the error count
             if ($enable_fraud) {
@@ -1662,7 +1667,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function cardHolderData($feed, $submission_data, $entry)
     {
-        $cardHolder = new CreditCardData();
+        $cardHolder = new \stdClass();
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
@@ -2182,6 +2187,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     public function subscribe($feed, $submission_data, $form, $entry)
     {
+        
         /** @var array $subscribResult */
         // Include HPS API library.
         $this->includeSecureSubmitSDK();
@@ -2201,11 +2207,31 @@ class GFSecureSubmit extends GFPaymentAddOn
             return $this->authorization_error($userError . 'Currently ACH is not supported for subscriptions');
         }
 
-        // Prepare payment amount and trial period data.
-        $payment_amount = HpsInputValidation::checkAmount(rgar($submission_data, 'payment_amount'));
+        //check amount        
+        $payment_amount = rgar($submission_data, 'payment_amount');
+        if ($payment_amount < 0 || $payment_amount === null) {
+            $this->log_debug(__METHOD__ . '(): Amount error: ' . $this->getSecureSubmitJsError());
+            
+            return $this->authorization_error($userError . 'Invalid amount value.');
+        } else {
+            $payment_amount = preg_replace('/[^0-9\.]/', '', $payment_amount);
+            $payment_amount = sprintf("%0.2f", round($payment_amount, 3));
+        }
+        
+        //check setup fee
+        $setupFeePaymentAmount = rgar($submission_data, 'setup_fee');
+        if ($setupFeePaymentAmount < 0 || $setupFeePaymentAmount === null) {
+            $this->log_debug(__METHOD__ . '(): Set up Fee error: ' . $this->getSecureSubmitJsError());
+            
+            return $this->authorization_error($userError . 'Invalid Set up fee.');
+        } else {
+            $setupFeePaymentAmount = preg_replace('/[^0-9\.]/', '', $setupFeePaymentAmount);
+            $setupFeePaymentAmount = sprintf("%0.2f", round($setupFeePaymentAmount, 3));
+        }
+        
+        // Prepare payment amount and trial period data.        
         $setupFeeEnabled = rgar($feed['meta'], 'setupFee_enabled');
         $setupFeeField = rgar($feed['meta'], 'setupFee_product');
-        $setupFeePaymentAmount = HpsInputValidation::checkAmount(rgar($submission_data, 'setup_fee'));
         $trialEnabled = rgars($feed, 'meta/trial_enabled');
         $trial_period_days = $trialEnabled ? rgars($feed, 'meta/trial_product') : null;
         $currency = rgar($entry, 'currency');
@@ -2215,37 +2241,42 @@ class GFSecureSubmit extends GFPaymentAddOn
         $planSchedule = null;
 
         try {
-            $payPlanService = $this->getPayPlanService($this->getSecretApiKey($feed));
+            
+            $this->getHpsServicesConfig($this->getSecretApiKey($feed));
 
             // while it could be ACH here for the Payplan Customer record it is the same difference
             // Prepare customer metadata.
-            $customer = $this->create_customer($feed, $submission_data, $entry);
-
             $this->log_debug(__METHOD__ . '(): Create customer.');
-            /** @var HpsPayPlanCustomer $payPlanCustomer */
-            $payPlanCustomer = $payPlanService->addCustomer($customer);
-
-            if (null === $payPlanCustomer->customerKey) {
+            $customer = $this->create_customer($feed, $submission_data, $entry);
+            $payPlanCustomer = $customer->create();
+                        
+            if (null === $payPlanCustomer->key) {
                 $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Customer');
 
                 return $this->authorization_error($userError);
             }
 
             $this->log_debug(__METHOD__ . '(): Create payment method.');
-            $paymentMethod = $this->createPaymentMethod($payPlanCustomer);
-            /** @var HpsPayPlanPaymentMethod $payPlanPaymentMethod */
-            $payPlanPaymentMethod = $payPlanService->addPaymentMethod($paymentMethod);
-
-            if (null === $payPlanPaymentMethod->paymentMethodKey) {
+            
+            $card = new CreditCardData();
+            $card->token = $this->getSecureSubmitJsResponse()->token_value;
+            
+            /** @var RecurringPaymentMethod $payPlanPaymentMethod */
+            $payPlanPaymentMethod = $payPlanCustomer->addPaymentMethod(
+                                $this->getIdentifier('Credit' . $card->token),
+                                $card
+                         )->create();
+                        
+            if (null === $payPlanPaymentMethod->key) {
                 $this->log_debug(__METHOD__ . '(): Could not create Pay Plan payment method');
 
                 return $this->authorization_error($userError);
             }
 
             // Get HPS plan for feed.
-            $this->log_debug(__METHOD__ . '(): Create Schedule.');
+            $this->log_debug(__METHOD__ . '(): Add Schedule.');
             /** @var HpsPayPlanSchedule $plan */
-            $plan = $this->create_plan(
+            $planSchedule = $this->create_plan(
                 $payPlanPaymentMethod,
                 $feed,
                 $payment_amount,
@@ -2253,14 +2284,8 @@ class GFSecureSubmit extends GFPaymentAddOn
                 $currency
             );
 
-            // If error was returned when retrieving plan, return plan.
-
-            /** @var HpsPayPlanSchedule $planSchedule */
-            $this->log_debug(__METHOD__ . '(): Add Schedule.');
-            $planSchedule = $payPlanService->addSchedule($plan);
-
             // Create the plan unless there is no key.
-            if (null === $planSchedule->scheduleKey) {
+            if (null === $planSchedule->key) {
                 $this->log_debug(__METHOD__ . '(): Could not create Pay Plan Schedule');
 
                 return $this->authorization_error($userError);
@@ -2286,19 +2311,19 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             $subscribResult = array(
                 'is_success' => true,
-                'subscription_id' => $planSchedule->scheduleKey,
-                'customer_id' => $customer->customerKey,
+                'subscription_id' => $planSchedule->key,
+                'customer_id' => $customer->key,
                 'amount' => $payment_amount,
             ); // array
         } catch (Exception $e) {
             do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
-            $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
+            $this->rollbackPayPlanResources($payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             // Return authorization error.
             return $this->authorization_error($userError . $e->getMessage());
         }
 
         if (!isset($subscribResult)) {
-            $this->rollbackPayPlanResources($payPlanService, $payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
+            $this->rollbackPayPlanResources($payPlanCustomer, $payPlanPaymentMethod, $planSchedule);
             $this->log_debug(__METHOD__ . '(): Unknown error ');
             return $this->authorization_error($userError);
         } // if
@@ -2360,22 +2385,18 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
     }
 
-    protected function rollbackPayPlanResources($service, $customer, $paymentMethod, $schedule)
+    protected function rollbackPayPlanResources($customer, $paymentMethod, $schedule)
     {
-        if ($service === null) {
-            return;
-        }
-
         if ($schedule !== null) {
-            $service->deleteSchedule($schedule);
+            $schedule->delete();
         }
 
         if ($paymentMethod !== null) {
-            $service->deletePaymentMethod($paymentMethod);
+            $paymentMethod->delete();
         }
 
         if ($customer !== null) {
-            $service->deleteCustomer($customer);
+            $customer->delete();
         }
     }
 
@@ -2387,26 +2408,16 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @param $payPlanPaymentMethod
      * @param $planSchedule
      *
-     * @return array|\HpsBuilderAbstract|\HpsReportTransactionDetails|\HpsReportTransactionSummary|\HpsTransaction|mixed|null
+     * @return array|\Transaction|mixed|null
      */
     private function processRecurring($payment_amount, $feed, $payPlanPaymentMethod, $planSchedule)
     {
-        static $creditService = null;
 
-        if (null === $creditService) {
-            $creditService = new HpsFluentCreditService($this->getHpsServicesConfig($this->getSecretApiKey($feed)));
-        }
-        
-        $details = new HpsTransactionDetails();
-        $details->customerId = $payPlanPaymentMethod->customerIdentifier;
-
-        return $creditService
-            ->recurring()
-            ->withAmount($payment_amount)
-            ->withPaymentMethodKey($payPlanPaymentMethod->paymentMethodKey)
-            ->withSchedule($planSchedule->scheduleKey)
-            ->withDetails($details)
-            ->execute();
+        return $payPlanPaymentMethod->charge($payment_amount)
+                ->withCurrency(GFCommon::get_currency())
+                ->withScheduleId($planSchedule->key)
+                ->withOneTimePayment(false)
+                ->execute();
     }
 
     /**
@@ -2424,7 +2435,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @param array $submission_data
      * @param array $entry The entry currently being processed.
      *
-     * @return \HpsPayPlanCustomer The HPS customer object.
+     * @return Customer The HPS customer object.
      * @internal param array $customer_meta The customer properties.
      * @internal param array $form The form which created the current entry.
      *
@@ -2432,77 +2443,24 @@ class GFSecureSubmit extends GFPaymentAddOn
     private function create_customer($feed, $submission_data, $entry)
     {
         $acctHolder = $this->cardHolderData($feed, $submission_data, $entry);
-        $meta = $this->get_address_card_field($feed);
-        //'United States' 'Canada'
-
-        /** @noinspection PhpUndefinedFieldInspection */
-        $acctHolder->address->country = $this->normalizeCountry($acctHolder->address->country, true);
-
-        // Convert states names to abbreviations
-        $acctHolder->address->state = $this->normalizeState($acctHolder->address->state);
-
-        // Log the customer to be created.
-        $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
-
+        $address = $this->buildAddress($feed, $submission_data, $entry);
+        
         /** @var string $modifier This value helps semi uniqely identify the customer */
         $modifier = $this->getSecureSubmitJsResponse()->last_four . $this->getSecureSubmitJsResponse()->card_type;
-
-        $customer = new HpsPayPlanCustomer();
-        $customer->customerIdentifier = $this->getIdentifier($modifier . $acctHolder->firstName . $acctHolder->lastName);
+        
+        $customer = new Customer();
+        $customer->id = $this->getIdentifier($modifier . $acctHolder->firstName . $acctHolder->lastName);
         $customer->firstName = $acctHolder->firstName;
         $customer->lastName = $acctHolder->lastName;
-        $customer->primaryEmail = rgar($submission_data, 'email');
-        $customer->customerStatus = HpsPayPlanCustomerStatus::ACTIVE;
-        $customer->addressLine1 = $acctHolder->address->address;
-        $customer->city = $acctHolder->address->city;
-        $customer->stateProvince = $acctHolder->address->state;
-        $customer->zipPostalCode = $acctHolder->address->zip;
-        /** @noinspection PhpUndefinedFieldInspection */
-        $customer->country = $acctHolder->address->country;
-
+        $customer->status = 'Active';
+        $customer->email = rgar($submission_data, 'email');
+        $customer->address = $address;
+        
+        // Log the customer to be created.
+        $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($customer, 1));
+        
         return $customer;
-    }
-
-    /**
-     * Retrieve a specific customer from HPS.
-     *
-     * @since    Unknown
-     * @access   protected
-     *
-     * @used-by  GFSecureSubmit::subscribe()
-     * @uses     GFAddOn::log_debug()
-     * @uses     HpsPayPlanService::getCustomer()
-     * @uses     \GFSecureSubmit::getSecureSubmitJsResponse
-     * @uses     \GFSecureSubmit::getIdentifier
-     *
-     * @param array              $submission_data
-     * @param HpsPayPlanCustomer $customer
-     *
-     * @return bool|\HpsPayPlanPaymentMethod Contains customer data if available. Otherwise, false.
-     *
-     * @internal param \HpsPayPlanService $payPlanService
-     */
-    private function createPaymentMethod($customer)
-    {
-        $paymentMethod = null;
-        $acct = $this->getSecureSubmitJsResponse()->token_value;
-
-        if (!empty($acct)) {
-            $paymentMethod = new HpsPayPlanPaymentMethod();
-            $paymentMethod->paymentMethodIdentifier = $this->getIdentifier('Credit' . $acct);
-            $paymentMethod->nameOnAccount = $customer->firstName . ' ' . $customer->lastName;
-            /** @noinspection PhpUndefinedFieldInspection */
-            $paymentMethod->firstName = $customer->firstName;
-            $paymentMethod->lastName = $customer->lastName;
-            $paymentMethod->country = $customer->country;
-            $paymentMethod->zipPostalCode = $customer->zipPostalCode;
-            $paymentMethod->customerKey = $customer->customerKey;
-            $paymentMethod->paymentMethodType = HpsPayPlanPaymentMethodType::CREDIT_CARD;
-            $paymentMethod->paymentToken = $acct;
-        }
-
-        return $paymentMethod;
-    }
+     }
 
     /**
      * Create and return a HPS plan with the specified properties.
@@ -2520,7 +2478,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @uses    HpsPayPlanAmount
      * @uses    GFAddOn::log_debug()
      *
-     * @param HpsPayPlanPaymentMethod    $plan           The plan ID.
+     * @param RecurringPaymentMethod    $plan           The plan ID.
      * @param array     $feed              The feed currently being processed.
      * @param float|int $payment_amount    The recurring amount.
      * @param string    $customerKey       The Custyomer ID used by HPS.
@@ -2533,41 +2491,27 @@ class GFSecureSubmit extends GFPaymentAddOn
         $plan,
         $feed,
         $payment_amount,
-        $trial_period_days = 0
+        $trial_period_days = 0,
+        $currency
     ) {
-        // Log the plan to be created.
-        $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r(func_get_args(), 1));
-        //(HpsPayPlanService $service, $customerKey, $paymentMethodKey, $amount)
-        $schedule = new HpsPayPlanSchedule();
-        $schedule->scheduleIdentifier = $this->getIdentifier($feed['meta']['feedName'] . $plan->paymentMethodKey);
-        $schedule->customerKey = $plan->customerKey;
-        $schedule->scheduleStatus = HpsPayPlanScheduleStatus::ACTIVE;
-        $schedule->paymentMethodKey = $plan->paymentMethodKey;
-        $schedule->subtotalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount) * 100);
-        $schedule->totalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
-        $schedule->frequency = $this->validPayPlanCycle($feed);
+        $subtotalAmount = $payment_amount * 100;
+        $totalAmount = $payment_amount;
+        $frequency = $this->validPayPlanCycle($feed);
+        $startDate = $this->getStartDateInfo($frequency, $trial_period_days);       
+        $startDate = \DateTime::createFromFormat('Ymd', $startDate);
+        
+        $scheduleResponse = $plan->addSchedule(
+                $this->getIdentifier($feed['meta']['feedName'] . $plan->key)
+            )
+            ->withStatus('Active')
+            ->withCurrency($currency)
+            ->withAmount($totalAmount)
+            ->withStartDate($startDate)
+            ->withFrequency($frequency)
+            ->withReprocessingCount(1)
+            ->create();
 
-        /*Conditional; Required if Frequency is Monthly, Bi-Monthly, Quarterly, Semi-Annually, or Semi-Monthly.*/
-        if (!in_array($schedule->frequency, array(HpsPayPlanScheduleFrequency::WEEKLY,HpsPayPlanScheduleFrequency::BIWEEKLY, HpsPayPlanScheduleFrequency::ANNUALLY))) {
-            $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
-        }
-
-        $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
-        $numberOfPayments = $feed['meta']['recurringTimes'] === '0'
-            ? HpsPayPlanScheduleDuration::ONGOING
-            : HpsPayPlanScheduleDuration::LIMITED_NUMBER;
-        $schedule->duration = $numberOfPayments;
-        $schedule->reprocessingCount = 1;
-
-        if ($numberOfPayments !== HpsPayPlanScheduleDuration::ONGOING) {
-            $schedule->numberOfPayments = intval($feed['meta']['recurringTimes']);
-
-            if ($trial_period_days != null && $trial_period_days != 0) {
-                $schedule->numberOfPayments = $schedule->numberOfPayments - 1;
-            }
-        }
-
-        return $schedule;
+        return $scheduleResponse;
     }
 
     /** Takes subscription billing cycle and returns a valid payplan cycle
@@ -2579,21 +2523,21 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @param array $feed
      *
      * @return null|string
-     * @throws \HpsArgumentException
+     * @throws \ArgumentException
      */
     private function validPayPlanCycle($feed)
     {
         $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r($feed, 1));
 
         $this->includeSecureSubmitSDK();
-        $oClass = new ReflectionClass('HpsPayPlanScheduleFrequency');
+        $oClass = new ReflectionClass('GlobalPayments\Api\Entities\Enums\ScheduleFrequency');
         $array = $oClass->getConstants();
         $cycle = rgar($array, $feed['meta']['billingCycle']);
         if (null == $cycle) {
             $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($feed, 1));
-            throw new HpsArgumentException(
+            throw new ArgumentException(
                 'Invalid period for subscription. Please check settings and try again',
-                HpsExceptionCodes::INVALID_CONFIGURATION
+                ExceptionCodes::INVALID_CONFIGURATION
             );
         }
         $this->log_debug(__METHOD__ . '(): Billing Cycle Calculated => ' . $cycle);
@@ -2606,40 +2550,40 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @param int $trial_period_days
      *
      * @return bool|string
-     * @throws \HpsArgumentException
+     * @throws \ArgumentException
      */
     private function getStartDateInfo($frequency, $trial_period_days)
     {
         if ($trial_period_days*1 !== 0) {
-            $period = date('mdY', strtotime('+' . ($trial_period_days * 1) . ' days'));
+            $period = date('Ymd', strtotime('+' . ($trial_period_days * 1) . ' days'));
         } else {
             switch ($frequency) {
-                case HpsPayPlanScheduleFrequency::WEEKLY:
-                    $period = date('mdY', strtotime('+1 week'));
+                case ScheduleFrequency::WEEKLY:
+                    $period = date('Ymd', strtotime('+1 week'));
                     break;
-                case HpsPayPlanScheduleFrequency::BIWEEKLY:
+                case ScheduleFrequency::BI_WEEKLY:
                     $period = date('mdY', strtotime('+2 week'));
                     break;
-                case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
+                case ScheduleFrequency::SEMI_MONTHLY:
                     $period = 'Last';
                     break;
-                case HpsPayPlanScheduleFrequency::MONTHLY:
-                    $period = date('mdY', strtotime('+1 month'));
+                case ScheduleFrequency::MONTHLY:
+                    $period = date('Ymd', strtotime('+1 month'));
                     break;
-                case HpsPayPlanScheduleFrequency::QUARTERLY:
-                    $period = date('mdY', strtotime('+3 month'));
+                case ScheduleFrequency::QUARTERLY:
+                    $period = date('Ymd', strtotime('+3 month'));
                     break;
-                case HpsPayPlanScheduleFrequency::SEMIANNUALLY:
-                    $period = date('mdY', strtotime('+6 month'));
+                case ScheduleFrequency::SEMI_ANNUALLY:
+                    $period = date('Ymd', strtotime('+6 month'));
                     break;
-                case HpsPayPlanScheduleFrequency::ANNUALLY:
-                    $period = date('mdY', strtotime('+1 year'));
+                case ScheduleFrequency::ANNUALLY:
+                    $period = date('Ymd', strtotime('+1 year'));
                     break;
                 default:
                     $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($frequency, 1));
-                    throw new HpsArgumentException(
+                    throw new ArgumentException(
                         'Invalid period for subscription. Please check settings and try again',
-                        HpsExceptionCodes::INVALID_CONFIGURATION
+                        ExceptionCodes::INVALID_CONFIGURATION
                     );
             }
         }
@@ -2688,7 +2632,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     private function getPayPlanService($key)
     {
         static $service = null;
-        if (empty($service)) {
+        if (empty($service)) {            
             $service = new HpsPayPlanService($this->getHpsServicesConfig($key));
         }
 
@@ -2704,7 +2648,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         //authorize.net does not use years or weeks, override framework function
 
         $this->includeSecureSubmitSDK();
-        $oClass = new ReflectionClass('HpsPayPlanScheduleFrequency');
+        $oClass = new ReflectionClass('ScheduleFrequency');
         $array = $oClass->getConstants();
         $billing_cycles = array();
         foreach ($array as $const => $value) {
