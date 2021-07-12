@@ -5,10 +5,12 @@ use GlobalPayments\Api\Entities\EncryptionData;
 use GlobalPayments\Api\PaymentMethods\CreditCardData;
 use GlobalPayments\Api\PaymentMethods\CreditTrackData;
 use GlobalPayments\Api\Services\CreditService;
+use GlobalPayments\Api\Services\RecurringService;
 use GlobalPayments\Api\ServicesConfig;
 use GlobalPayments\Api\ServicesContainer;
 use GlobalPayments\Api\Entities\Address;
 use GlobalPayments\Api\Entities\Customer;
+use GlobalPayments\Api\Entities\Schedule;
 use GlobalPayments\Api\Entities\TransactionSummary;
 use GlobalPayments\Api\Entities\Enums\AccountType;
 use GlobalPayments\Api\Entities\Enums\CheckType;
@@ -1091,8 +1093,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->includeSecureSubmitSDK();
 
         $submission_data = array_merge($submission_data, $this->get_submission_dataACH($feed, $form, $entry));
-        $isCCData = $this->getSecureSubmitJsResponse();
-		
+        $isCCData = $this->getSecureSubmitJsResponse();		
 
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
@@ -1275,9 +1276,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 }
             }
 
-            $auth = $this->authorization_error($e->getMessage());
-        } catch (Exception $e) {
-            do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
             $auth = $this->authorization_error($e->getMessage());
         }
         return $auth;
@@ -2167,13 +2165,11 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @uses   GFSecureSubmit::getSecureSubmitJsError()
      * @uses   GFPaymentAddOn::authorization_error()
      * @uses   GFAddOn::log_debug()
-     * @uses   HpsInputValidation::checkAmount
      * @uses   \rgars
-     * @uses   \GFSecureSubmit::getPayPlanService
      * @uses   \GFSecureSubmit::create_customer
-     * @uses   \HpsPayPlanService::addCustomer
+     * @uses   \Customer::addCustomer
      * @uses   \GFSecureSubmit::createPaymentMethod
-     * @uses   \HpsPayPlanService::addPaymentMethod
+     * @uses   \RecurringPaymentMethod::addPaymentMethod
      * @uses   \GFSecureSubmit::create_plan
      * @uses   \HpsPayPlanService::addSchedule
      * @uses   \GFSecureSubmit::processRecurring
@@ -2275,7 +2271,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             // Get HPS plan for feed.
             $this->log_debug(__METHOD__ . '(): Add Schedule.');
-            /** @var HpsPayPlanSchedule $plan */
+            /** @var \RecurringPaymentMethod $plan */
             $planSchedule = $this->create_plan(
                 $payPlanPaymentMethod,
                 $feed,
@@ -2374,13 +2370,20 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         try {
             $scheduleKey = gform_get_meta($entry['id'], 'hps_payplan_subscription_id');
-            $service = $this->getPayPlanService($this->getSecretApiKey($feed));
-            $subscription = $service->getSchedule($scheduleKey);
+            $this->getHpsServicesConfig($this->getSecretApiKey($feed));
+            
+            $schedule = new Schedule();
+            $schedule->key = $scheduleKey;
+            
+            $subscription = RecurringService::get($schedule);
+            
             // set schedule to inactive
-            $subscription->scheduleStatus = HpsPayPlanScheduleStatus::INACTIVE;
-            $service->editSchedule($subscription);
+            $subscription->status = 'Inactive';
+            $subscription->endDate = null;
+            $subscription->saveChanges();
+            
             return true;
-        } catch (HpsException $e) {
+        } catch (\Exception $e) {
             return false;
         }
     }
@@ -2435,7 +2438,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      * @param array $submission_data
      * @param array $entry The entry currently being processed.
      *
-     * @return Customer The HPS customer object.
+     * @return Customer The Customer object.
      * @internal param array $customer_meta The customer properties.
      * @internal param array $form The form which created the current entry.
      *
@@ -2470,12 +2473,9 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @used-by GFSecureSubmit::subscribe()
      * @uses    \GFSecureSubmit::getIdentifier
-     * @uses    \GFSecureSubmit::getPayPlanService
      * @uses    \GFSecureSubmit::getSecretApiKey
-     * @uses    HpsInputValidation::checkAmount
      * @uses    \GFSecureSubmit::validPayPlanCycle
-     * @uses    HpsPayPlanSchedule
-     * @uses    HpsPayPlanAmount
+     * @uses    Schedule
      * @uses    GFAddOn::log_debug()
      *
      * @param RecurringPaymentMethod    $plan           The plan ID.
@@ -2494,7 +2494,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $trial_period_days = 0,
         $currency
     ) {
-        $subtotalAmount = $payment_amount * 100;
         $totalAmount = $payment_amount;
         $frequency = $this->validPayPlanCycle($feed);
         $startDate = $this->getStartDateInfo($frequency, $trial_period_days);       
@@ -2517,7 +2516,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     /** Takes subscription billing cycle and returns a valid payplan cycle
      *
      * @used-by \GFSecureSubmit::create_plan
-     * @uses    HpsPayPlanScheduleFrequency
+     * @uses    ScheduleFrequency
      * @uses    GFAddOn::log_debug()
      *
      * @param array $feed
@@ -2619,21 +2618,6 @@ class GFSecureSubmit extends GFPaymentAddOn
                 'https://api2.heartlandportico.com': 
                 'https://cert.api2.heartlandportico.com'; 
             $service =  ServicesContainer::configure($config);
-        }
-
-        return $service;
-    }
-
-    /**
-     * @param string $key
-     *
-     * @return \HpsPayPlanService|null
-     */
-    private function getPayPlanService($key)
-    {
-        static $service = null;
-        if (empty($service)) {            
-            $service = new HpsPayPlanService($this->getHpsServicesConfig($key));
         }
 
         return $service;
