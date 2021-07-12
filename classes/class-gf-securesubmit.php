@@ -1577,7 +1577,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
                     'note' => $note,
                 ),
-            );            
+            );     
         } catch (GatewayException $e) {
             do_action('heartland_gravityforms_transaction_failure', $form, $entry, $e);
             // if advanced fraud is enabled, increment the error count
@@ -1665,7 +1665,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      */
     private function cardHolderData($feed, $submission_data, $entry)
     {
-        $cardHolder = new \stdClass();
+        $cardHolder = new CreditCardData();
         $firstName = '';
         $lastName = '';
         if ('' === rgar($submission_data, 'card_name')) {
@@ -2231,7 +2231,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $trialEnabled = rgars($feed, 'meta/trial_enabled');
         $trial_period_days = $trialEnabled ? rgars($feed, 'meta/trial_product') : null;
         $currency = rgar($entry, 'currency');
-
+        
         $payPlanCustomer = null;
         $payPlanPaymentMethod = null;
         $planSchedule = null;
@@ -2378,8 +2378,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $subscription = RecurringService::get($schedule);
             
             // set schedule to inactive
-            $subscription->status = 'Inactive';
-            $subscription->endDate = null;
+            $subscription->status = 'Inactive';            
             $subscription->saveChanges();
             
             return true;
@@ -2494,7 +2493,6 @@ class GFSecureSubmit extends GFPaymentAddOn
         $trial_period_days = 0,
         $currency
     ) {
-        $totalAmount = $payment_amount;
         $frequency = $this->validPayPlanCycle($feed);
         $startDate = $this->getStartDateInfo($frequency, $trial_period_days);       
         $startDate = \DateTime::createFromFormat('Ymd', $startDate);
@@ -2504,7 +2502,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             )
             ->withStatus('Active')
             ->withCurrency($currency)
-            ->withAmount($totalAmount)
+            ->withAmount($payment_amount)
             ->withStartDate($startDate)
             ->withFrequency($frequency)
             ->withReprocessingCount(1)
@@ -2564,7 +2562,11 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $period = date('mdY', strtotime('+2 week'));
                     break;
                 case ScheduleFrequency::SEMI_MONTHLY:
-                    $period = 'Last';
+                    if (intval(date('d', strtotime('+15 day'))) < 15) {
+                        $period = date('m15Y', strtotime('+15 day'));
+                    } else {
+                        $period = date('mtY', strtotime('+15 day'));
+                    }
                     break;
                 case ScheduleFrequency::MONTHLY:
                     $period = date('Ymd', strtotime('+1 month'));
