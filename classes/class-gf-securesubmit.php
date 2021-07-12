@@ -1030,7 +1030,13 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->isCC = false;
         foreach ($validation_result['form']['fields'] as $field) {
             $current_page = GFFormDisplay::get_source_page($validation_result['form']['id']);
-            $field_on_curent_page = $current_page > 0 && $field['pageNumber'] == $current_page;
+
+            if ($current_page > 0) {
+                $field_on_curent_page = $field['pageNumber'] == $current_page;
+            } else {
+                $field_on_curent_page = true;
+            }
+
             $fieldType = GFFormsModel::get_input_type($field);
 
             if ($fieldType == 'hpsACH' && $field_on_curent_page) {
