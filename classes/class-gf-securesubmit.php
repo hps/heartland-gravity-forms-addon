@@ -2542,12 +2542,13 @@ class GFSecureSubmit extends GFPaymentAddOn
         // Log the plan to be created.
         $this->log_debug(__METHOD__ . '(): Plan to be created => ' . print_r(func_get_args(), 1));
         //(HpsPayPlanService $service, $customerKey, $paymentMethodKey, $amount)
+        $subtotalAmount = HpsInputValidation::checkAmount($payment_amount) * 100;
         $schedule = new HpsPayPlanSchedule();
         $schedule->scheduleIdentifier = $this->getIdentifier($feed['meta']['feedName'] . $plan->paymentMethodKey);
         $schedule->customerKey = $plan->customerKey;
         $schedule->scheduleStatus = HpsPayPlanScheduleStatus::ACTIVE;
         $schedule->paymentMethodKey = $plan->paymentMethodKey;
-        $schedule->subtotalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount) * 100);
+        $schedule->subtotalAmount = new HpsPayPlanAmount((string)$subtotalAmount);
         $schedule->totalAmount = new HpsPayPlanAmount(HpsInputValidation::checkAmount($payment_amount));
         $schedule->frequency = $this->validPayPlanCycle($feed);
 
