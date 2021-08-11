@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.6 =
+* Fix: Sub total amount floating point issue.
+
 = 1.4.5 =
 * Fix: Send correct start date for recurring payments when frequency is semi-monthly
 
