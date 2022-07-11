@@ -958,7 +958,7 @@ class GFSecureSubmit extends GFPaymentAddOn
      *
      * @return array
      */
-    public function maybe_validate($validationResult)
+    public function maybe_validate($validationResult, $context = 'api-submit')
     {
         if (!$this->has_feed($validationResult['form']['id'], true)) {
             return $validationResult;
@@ -985,7 +985,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             break;
         }
 
-        return parent::maybe_validate($validationResult);
+        return parent::maybe_validate($validationResult, $context);
     }
 
     /**
