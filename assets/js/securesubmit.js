@@ -52,17 +52,20 @@
                     * basic options.
                     */
                     fields: {
-                        cardNumber: {
-                            target:      'iframesCardNumber',
-                            placeholder: '•••• •••• •••• ••••'
+                        "card-number": {
+                            target:      '#iframesCardNumber',
+                            placeholder: '•••• •••• •••• ••••',
+                            value: "4253 9700 0000 5262"
                         },
-                        cardExpiration: {
-                            target:      'iframesCardExpiration',
-                            placeholder: 'MM / YYYY'
+                        "card-expiration": {
+                            target:      '#iframesCardExpiration',
+                            placeholder: 'MM / YYYY',
+                            value: "12/2025"
                         },
-                        cardCvv: {
-                            target:      'iframesCardCvv',
-                            placeholder: 'CVV'
+                        "card-cvv": {
+                            target:      '#iframesCardCvv',
+                            placeholder: 'CVV',
+                            value: "123"
                         }
                     },
                     /*
@@ -194,22 +197,36 @@
                 }
 
                 // Create a new HPS object with the above config
-                SecureSubmitObj.hps = new Heartland.HPS(options);
+                SecureSubmitObj.hps = new GlobalPayments.ui.form(options);
+                console.log(SecureSubmitObj);
+                SecureSubmitObj.hps.on("token-success", (resp) => {
+                    // add payment token to form as a hidden input
+                    const token = document.createElement("input");
+                    token.type = "hidden";
+                    token.name = "payment-reference";
+                    token.value = resp.paymentReference;
+
+                    // submit data to the integration's backend for processing
+                    const form = document.getElementById("payment-form");
+                    form.appendChild(token);
+                    form.submit();
+                });
+
 
                 /*
                  * The tab indexes get out-of-whack here.
                  * So, tweak the iframe elements after they are loaded.
                  */
-                var count = 0;
-                Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
-                    if (++count === 3) {
-                        $('#HPS_secure_cc iframe').each(function (i, el) {
-                            var $el = $(el);
-                            $el.attr('tabindex', $el.parent().attr('tabindex'));
-                            $el.parent().removeAttr('tabindex')
-                        });
-                    }
-                });
+                // var count = 0;
+                // Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
+                //     if (++count === 3) {
+                //         $('#HPS_secure_cc iframe').each(function (i, el) {
+                //             var $el = $(el);
+                //             $el.attr('tabindex', $el.parent().attr('tabindex'));
+                //             $el.parent().removeAttr('tabindex')
+                //         });
+                //     }
+                // });
             }
 
             // Bind SecureSubmit functionality to submit event.
@@ -227,15 +244,66 @@
                     if (SecureSubmitObj.isSecure) {
 
                         // Using iFrames. Tell the iframes to tokenize the data.
-                        SecureSubmitObj.hps.Messages.post(
+                        // SecureSubmitObj.hps.Messages.post(
+                        //     {
+                        //         accumulateData: true,
+                        //         action: 'tokenize',
+                        //         message: SecureSubmitObj.apiKey,
+                        //         data: SecureSubmitObj.hps.options
+                        //     },
+                        //     'cardNumber'
+                        // );
+                        GlobalPayments.internal.postMessage.post(
                             {
                                 accumulateData: true,
                                 action: 'tokenize',
                                 message: SecureSubmitObj.apiKey,
-                                data: SecureSubmitObj.hps.options
+                                data: SecureSubmitObj.hps.fields
                             },
                             'cardNumber'
                         );
+                        //
+                        // GlobalPayments.internal.postMessage.post({
+                        //     data: {
+                        //         fields: fields,
+                        //         target: target.id
+                        //     },
+                        //     id: frame.id,
+                        //     type: 'ui:iframe-field:request-data'
+                        // }, frame.id);
+
+
+                        // added due to getting an error as no gateway configuration
+                        GlobalPayments.configure({
+                            "X-GP-Api-Key": SecureSubmitObj.apiKey,
+                        });
+
+
+
+                        // Not using iFrames. No Cardinal tokenization
+                        // var options = {
+                        //     publicKey: SecureSubmitObj.apiKey,
+                        //     cardNumber: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '1').val().replace(/\D/g, ''),
+                        //     cardCvv: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '3').val(),
+                        //     cardExpMonth: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_month').val(),
+                        //     cardExpYear: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_year').val(),
+                        //     success: function (response) {
+                        //         SecureSubmitObj.secureSubmitResponseHandler(response);
+                        //     },
+                        //     error: function (response) {
+                        //         SecureSubmitObj.secureSubmitResponseHandler(response);
+                        //     }
+                        // };
+
+                        var options = {
+                            "public-key": SecureSubmitObj.apiKey,
+                            origin
+                        }
+
+                        // added this line to tokenize -  INVALID_CONFIGURATION
+                        console.log(options);
+                        GlobalPayments.internal.tokenize(options);
+
                         return false;
 
                     } else {
