@@ -3,21 +3,23 @@
     <div class="ss-shield"<?php echo $this->get_tabindex(); // added to get rid of GF silly confusion for the menu item being the next index from the first input ?>></div>
     <div id="secure-submit-card" class="form-group">
       <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
-      <input type="text" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>/><br /><br />
+        <div id="credit-card-card-holder"></div>
+      <input type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>/><br /><br />
     </div>
-    <!-- The Payment Form -->
-    <div id="secure-submit-card" class="form-group">
-      <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardNumber" <?php echo $this->get_tabindex(); ?>></div>
-    </div>
-    <div id="secure-submit-date" class="form-group">
-      <label for="iframesCardExpiration">Card Expiration<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardExpiration" <?php echo $this->get_tabindex(); ?>></div>
-    </div>
-    <div id="secure-submit-cvv" class="form-group">
-      <label for="iframesCardCvv">Card CVV<span class="red">*</span></label>
-      <div class="iframeholder" id="iframesCardCvv" <?php echo $this->get_tabindex(); ?>></div>
-    </div>
+      <div id="secure-submit-card" class="form-group">
+          <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
+          <div class="iframeholder" id="credit-card-card-number"></div>
+      </div>
+
+      <div id="secure-submit-card" class="form-group">
+          <label for="iframesCardCvv">Card CVV<span class="red">*</span></label>
+          <div class="iframeholder" id="credit-card-card-cvv"></div>
+      </div>
+      <div id="secure-submit-card" class="form-group">
+          <label for="iframesCardExpiration">Card Expiration<span class="red">*</span></label>
+          <div id="credit-card-card-expiration"></div>
+      </div>
+      <button id="credit-card-card-submit">Submit</button>
   </div>
 </div>
 
