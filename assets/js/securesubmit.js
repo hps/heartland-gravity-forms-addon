@@ -58,7 +58,7 @@
                 SecureSubmitObj.hps = GlobalPayments.ui.form({
                     fields: {
                         "card-holder-name": {
-                            placeholder: "•••• •••• •••• ••••",
+                            placeholder: "John Smith,
                             target: "#credit-card-card-holder"
                         },
                         "card-number": {
@@ -79,17 +79,145 @@
                      * These properties can match the site's styles
                      * to create a seamless experience.
                      */
-
+                    styles: {
+                        'html' : {
+                            "-webkit-text-size-adjust": "100%"
+                        },
+                        'body' : {
+                            'width' : '100%'
+                        },
+                        '#secure-payment-field-wrapper' : {
+                            'position' : 'relative',
+                            'width' : '100%'
+                        },
+                        '#secure-payment-field' : {
+                            'background-color' : '#fff',
+                            'border'           : '1px solid #ccc',
+                            'border-radius'    : '4px',
+                            'display'          : 'block',
+                            'font-size'        : '14px',
+                            'height'           : '35px',
+                            'padding'          : '6px 12px',
+                            'width'            : '100%',
+                        },
+                        '#secure-payment-field:focus' : {
+                            "border": "1px solid lightblue",
+                            "box-shadow": "0 1px 3px 0 #cecece",
+                            "outline": "none"
+                        },
+                        'button#secure-payment-field.submit' : {
+                            "border": "0",
+                            "border-radius": "0",
+                            "background": "none",
+                            "background-color": "#333333",
+                            "border-color": "#333333",
+                            "color": "#fff",
+                            "cursor": "pointer",
+                            "padding": ".6180469716em 1.41575em",
+                            "text-decoration": "none",
+                            "font-weight": "600",
+                            "text-shadow": "none",
+                            "display": "inline-block",
+                            "-webkit-appearance": "none",
+                            "height": "initial",
+                            "width": "100%",
+                            "flex": "auto",
+                            "position": "static",
+                            "margin": "0",
+                            "white-space": "pre-wrap",
+                            "margin-bottom": "0",
+                            "float": "none",
+                            "font": "600 1.41575em/1.618 Source Sans Pro,HelveticaNeue-Light,Helvetica Neue Light,\r\n                Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif !important"
+                        },
+                        '#secure-payment-field[type=button]' : {
+                            "width": "100%"
+                        },
+                        '#secure-payment-field[type=button]:focus' : {
+                            "color": "#fff",
+                            "background": "#000000",
+                            "width": "100%"
+                        },
+                        '#secure-payment-field[type=button]:hover' : {
+                            "color": "#fff",
+                            "background": "#000000"
+                        },
+                        '.card-cvv' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv.png) no-repeat right',
+                            'background-size' : '63px 40px'
+                        },
+                        '.card-cvv.card-type-amex' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv-amex.png) no-repeat right',
+                            'background-size' : '63px 40px'
+                        },
+                        '.card-number' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-inputcard-blank@2x.png) no-repeat right',
+                            'background-size' : '55px 35px'
+                        },
+                        '.card-number.invalid.card-type-amex' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex@2x.png) no-repeat right',
+                            'background-position-y' : '-41px',
+                            'background-size' : '50px 90px'
+                        },
+                        '.card-number.invalid.card-type-discover' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover@2x.png) no-repeat right',
+                            'background-position-y' : '-44px',
+                            'background-size' : '85px 90px'
+                        },
+                        '.card-number.invalid.card-type-jcb' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb@2x.png) no-repeat right',
+                            'background-position-y' : '-44px',
+                            'background-size' : '55px 94px'
+                        },
+                        '.card-number.invalid.card-type-mastercard' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-mastercard@2x.png) no-repeat right',
+                            'background-position-y' : '-41px',
+                            'background-size' : '82px 86px'
+                        },
+                        '.card-number.invalid.card-type-visa' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa@2x.png) no-repeat right',
+                            'background-position-y' : '-44px',
+                            'background-size' : '83px 88px',
+                        },
+                        '.card-number.valid.card-type-amex' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex@2x.png) no-repeat right',
+                            'background-position-y' : '3px',
+                            'background-size' : '50px 90px',
+                        },
+                        '.card-number.valid.card-type-discover' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover@2x.png) no-repeat right',
+                            'background-position-y' : '1px',
+                            'background-size' : '85px 90px'
+                        },
+                        '.card-number.valid.card-type-jcb' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb@2x.png) no-repeat right top',
+                            'background-position-y' : '2px',
+                            'background-size' : '55px 94px'
+                        },
+                        '.card-number.valid.card-type-mastercard' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-mastercard.png) no-repeat right',
+                            'background-position-y' : '2px',
+                            'background-size' : '82px 86px'
+                        },
+                        '.card-number.valid.card-type-visa' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa@2x.png) no-repeat right top',
+                            'background-size' : '82px 86px'
+                        },
+                        '.card-number::-ms-clear' : {
+                            'display' : 'none'
+                        },
+                        'input[placeholder]' : {
+                            'letter-spacing' : '.5px',
+                        }
+                    }
 
                 });
 
-
                 SecureSubmitObj.hps.on("token-success", (resp) => {
+                    clearFields();
                     SecureSubmitObj.secureSubmitResponseHandler(resp);
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {
                     // show error to the consumer
-
                     var error_message = resp?.error?.message ?? resp?.reasons[0]?.message;
                     document.getElementById("gp-error").style.display = 'block';
                     document.getElementById("gp-error").textContent = error_message;
@@ -97,26 +225,11 @@
                     $('#credit-card-card-submit').prop('disabled', false);
                     return true;
                 });
+            }
 
-                function clearFields() {
-                    document.getElementById("gp-error").style.display = 'none';
-                    $('#credit-card-card-submit').prop('disabled', true);
-                }
-
-                /*
-                 * The tab indexes get out-of-whack here.
-                 * So, tweak the iframe elements after they are loaded.
-                 */
-                // var count = 0;
-                // Heartland.Events.addHandler(document, 'securesubmitIframeReady', function () {
-                //     if (++count === 3) {
-                //         $('#HPS_secure_cc iframe').each(function (i, el) {
-                //             var $el = $(el);
-                //             $el.attr('tabindex', $el.parent().attr('tabindex'));
-                //             $el.parent().removeAttr('tabindex')
-                //         });
-                //     }
-                // });
+            function clearFields() {
+                document.getElementById("gp-error").style.display = 'none';
+                $('#credit-card-card-submit').prop('disabled', true);
             }
 
             function triggerSubmit(){
@@ -155,6 +268,7 @@
             // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
                 event.preventDefault();
+
                 SecureSubmitObj.form = $(this);
                 $('#credit-card-card-submit').prop('disabled', true);
 
@@ -164,11 +278,10 @@
                     return true;
                 }
 
-
-
                 if (!$('#securesubmit_response').length) {
 
                     if (SecureSubmitObj.isSecure) {
+
                         event.preventDefault();
                         triggerSubmit();
                         return false;
@@ -230,6 +343,7 @@
             var i, input;
 
             var heartland = response.heartland || response;
+
             /*
              * If 3DSecure is enabled, the tokenization
              * will send back the CCA token as well
