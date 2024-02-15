@@ -156,6 +156,16 @@ li.gfield_error
   background-color:white !important;
 }
 
+#gp-error {
+  border: 1px #ce1025 solid !important;
+  background: #ce1025 !important;
+  font-family:sans-serif !important;
+  font-weight:500 !important;
+  font-size:15px !important;
+  padding:10px !important;
+  color:white !important;
+}
+
 li.gfield_error div.ginput_complex.ginput_container.ginput_container_creditcard.hps_secure_ach label {
   color:#333333 !important;
 }

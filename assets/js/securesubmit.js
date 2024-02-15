@@ -34,7 +34,8 @@
 
         this.init = function () {
 
-            document.getElementById("gform_submit_button_1").style.display = "none";
+            document.getElementById("gform_submit_button_" + this.formId).style.display = "none";
+            document.getElementById("gp-error").style.display = 'none';
 
             var SecureSubmitObj = this;
 
@@ -56,20 +57,21 @@
                 // Mapping of payment fields with GlobalPayment Js
                 SecureSubmitObj.hps = GlobalPayments.ui.form({
                     fields: {
+                        "card-holder-name": {
+                            placeholder: "•••• •••• •••• ••••",
+                            target: "#credit-card-card-holder"
+                        },
                         "card-number": {
                             placeholder: "•••• •••• •••• ••••",
-                            target: "#credit-card-card-number",
-                            value: "4253970000005262"
+                            target: "#credit-card-card-number"
                         },
                         "card-expiration": {
                             placeholder: "MM / YYYY",
-                            target: "#credit-card-card-expiration",
-                            value:"12/2025"
+                            target: "#credit-card-card-expiration"
                         },
                         "card-cvv": {
                             placeholder: "•••",
                             target: "#credit-card-card-cvv",
-                            value:"123"
                         }
                     },
                     /*
@@ -87,7 +89,19 @@
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {
                     // show error to the consumer
-                })
+
+                    var error_message = resp?.error?.message ?? resp?.reasons[0]?.message;
+                    document.getElementById("gp-error").style.display = 'block';
+                    document.getElementById("gp-error").textContent = error_message;
+                    document.getElementById("gp-error").focus();
+                    $('#credit-card-card-submit').prop('disabled', false);
+                    return true;
+                });
+
+                function clearFields() {
+                    document.getElementById("gp-error").style.display = 'none';
+                    $('#credit-card-card-submit').prop('disabled', true);
+                }
 
                 /*
                  * The tab indexes get out-of-whack here.
@@ -141,6 +155,8 @@
             // Bind SecureSubmit functionality to submit event.
             $('#gform_' + this.formId).submit(function (event) {
                 event.preventDefault();
+                SecureSubmitObj.form = $(this);
+                $('#credit-card-card-submit').prop('disabled', true);
 
                 // If we have what we need, we can submit the form.
                 if ($('#securesubmit_cca_data').length
@@ -148,25 +164,14 @@
                     return true;
                 }
 
-                SecureSubmitObj.form = $(this);
+
 
                 if (!$('#securesubmit_response').length) {
 
                     if (SecureSubmitObj.isSecure) {
-
-                        // Using iFrames. Tell the iframes to tokenize the data.
-                        // SecureSubmitObj.hps.Messages.post(
-                        //     {
-                        //         accumulateData: true,
-                        //         action: 'tokenize',
-                        //         message: SecureSubmitObj.apiKey,
-                        //         data: SecureSubmitObj.hps.options
-                        //     },
-                        //     'cardNumber'
-                        // );
                         event.preventDefault();
                         triggerSubmit();
-                        // return false;
+                        return false;
 
                     } else {
 
@@ -275,7 +280,7 @@
             $form.append($(expYr));
 
             // Add tokenization response to the form
-            this.createSecureSubmitResponseNode(heartland.paymentReference);
+            this.createSecureSubmitResponseNode($.toJSON(heartland));
 
             /*
              * If 3dSecure is enabled, create a hidden form
@@ -288,7 +293,7 @@
             }
 
             $form.submit();
-            document.getElementById("gform_1").submit();
+            document.getElementById("gform_" + this.formId).submit();
             return false;
         };
 

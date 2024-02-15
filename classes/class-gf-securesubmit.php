@@ -1081,7 +1081,8 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
-        } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
+        } elseif (empty($submission_data['ach_number'])  && !empty($isCCData->paymentReference)) {
+
             $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
         } else {
             $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
@@ -1433,7 +1434,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
             $token->tokenValue = ($response != null
-                ? $response->token_value
+                ? isset($response->paymentReference) ? $response->paymentReference : $response->token_value
                 : '');
 
             /**
