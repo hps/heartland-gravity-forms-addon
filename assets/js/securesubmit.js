@@ -58,7 +58,7 @@
                 SecureSubmitObj.hps = GlobalPayments.ui.form({
                     fields: {
                         "card-holder-name": {
-                            placeholder: "John Smith,
+                            placeholder: "John Smith",
                             target: "#credit-card-card-holder"
                         },
                         "card-number": {
@@ -221,15 +221,15 @@
                     var error_message = resp?.error?.message ?? resp?.reasons[0]?.message;
                     document.getElementById("gp-error").style.display = 'block';
                     document.getElementById("gp-error").textContent = error_message;
-                    document.getElementById("gp-error").focus();
-                    $('#credit-card-card-submit').prop('disabled', false);
+                    document.getElementById("credit-card-card-submit").disabled = false;
+
                     return true;
                 });
             }
 
             function clearFields() {
                 document.getElementById("gp-error").style.display = 'none';
-                $('#credit-card-card-submit').prop('disabled', true);
+                document.getElementById("credit-card-card-submit").disabled = true;
             }
 
             function triggerSubmit(){
