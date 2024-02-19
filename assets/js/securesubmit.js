@@ -287,26 +287,9 @@
                         return false;
 
                     } else {
-
                         // Not using iFrames. No Cardinal tokenization
-                        var options = {
-                            publicKey: SecureSubmitObj.apiKey,
-                            cardNumber: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '1').val().replace(/\D/g, ''),
-                            cardCvv: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '3').val(),
-                            cardExpMonth: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_month').val(),
-                            cardExpYear: SecureSubmitObj.form.find('#' + SecureSubmitObj.ccInputPrefix + '2_year').val(),
-                            success: function (response) {
-                                SecureSubmitObj.secureSubmitResponseHandler(response);
-                            },
-                            error: function (response) {
-                                SecureSubmitObj.secureSubmitResponseHandler(response);
-                            }
-                        };
-
-                        // Create a new HPS object with the above config
-                        var hps = new Heartland.HPS(options);
-
-                        hps.tokenize();
+                        event.preventDefault();
+                        triggerSubmit();
                         return false;
 
                     }
