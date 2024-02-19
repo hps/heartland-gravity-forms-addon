@@ -754,7 +754,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $scripts = array(
             array(
                 'handle' => 'securesubmit.js',
-//                'src' => 'https://api.heartlandportico.com/SecureSubmit.v1/token/2.1/securesubmit.js',
+
                 'src' => 'https://js.globalpay.com/v1/globalpayments.js',
                 'version' => $this->_version,
                 'deps' => array(),
