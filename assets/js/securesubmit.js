@@ -91,55 +91,30 @@
                             'width' : '100%'
                         },
                         '#secure-payment-field' : {
-                            'background-color' : '#fff',
-                            'border'           : '1px solid #ccc',
-                            'border-radius'    : '4px',
-                            'display'          : 'block',
-                            'font-size'        : '14px',
-                            'height'           : '35px',
-                            'padding'          : '6px 12px',
-                            'width'            : '100%',
+                            'box-sizing':'border-box',
+                            'display': 'block',
+                            'width': '100%',
+                            'height': '48px',
+                            'padding': '6px 12px',
+                            'font-size': '14px',
+                            'line-height': '1.42857143',
+                            'color': '#555',
+                            'background-color': '#fff',
+                            'border': '1px solid #b5b5b5',
+                            '-webkit-box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
+                            'box-shadow': 'inset 0 1px 1px rgba(0,0,0,.075)',
+                            '-webkit-transition': 'border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s',
+                            '-o-transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s',
+                            'transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s'
                         },
                         '#secure-payment-field:focus' : {
                             "border": "1px solid lightblue",
                             "box-shadow": "0 1px 3px 0 #cecece",
                             "outline": "none"
                         },
-                        'button#secure-payment-field.submit' : {
-                            "border": "0",
-                            "border-radius": "0",
-                            "background": "none",
-                            "background-color": "#333333",
-                            "border-color": "#333333",
-                            "color": "#fff",
-                            "cursor": "pointer",
-                            "padding": ".6180469716em 1.41575em",
-                            "text-decoration": "none",
-                            "font-weight": "600",
-                            "text-shadow": "none",
-                            "display": "inline-block",
-                            "-webkit-appearance": "none",
-                            "height": "initial",
-                            "width": "100%",
-                            "flex": "auto",
-                            "position": "static",
-                            "margin": "0",
-                            "white-space": "pre-wrap",
-                            "margin-bottom": "0",
-                            "float": "none",
-                            "font": "600 1.41575em/1.618 Source Sans Pro,HelveticaNeue-Light,Helvetica Neue Light,\r\n                Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif !important"
-                        },
-                        '#secure-payment-field[type=button]' : {
-                            "width": "100%"
-                        },
-                        '#secure-payment-field[type=button]:focus' : {
-                            "color": "#fff",
-                            "background": "#000000",
-                            "width": "100%"
-                        },
-                        '#secure-payment-field[type=button]:hover' : {
-                            "color": "#fff",
-                            "background": "#000000"
+                        'input#heartland-field[name=cardCvv]' : {
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv.png) no-repeat right',
+                            'background-size' :'63px 40px'
                         },
                         '.card-cvv' : {
                             'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv.png) no-repeat right',

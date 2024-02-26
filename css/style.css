@@ -306,6 +306,16 @@ label[for=iframesCardCvv]{
   margin-left:2px;
   font-size:17px !important;
 }
+#credit-card-card-submit {
+  background: #fdfdff;
+  border-color: #d5d7e9;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  color: #242748;
+}
+#credit-card-card-submit:hover {
+  box-shadow: 0 3px 8px rgba(18,25,97,.15),0 1px 1px rgba(18,25,97,.16),0 2px 1px rgba(18,25,97,.04)
+}
+
 @media screen and (min-width:767px) {
   #secure-submit-date.form-group,
   #secure-submit-cvv.form-group{

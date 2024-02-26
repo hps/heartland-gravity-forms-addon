@@ -5,14 +5,14 @@
       <br>
       <div id="secure-submit-card" class="form-group">
           <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
-          <div id="credit-card-card-holder"></div>
+          <input type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>/><br /><br />
       </div>
 
       <div id="secure-submit-card" class="form-group">
           <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
           <div class="iframeholder" id="credit-card-card-number"></div>
       </div>
-
+      <br>
       <div id="secure-submit-date" class="form-group">
           <label for="iframesCardExpiration">Card Expiration<span class="red">*</span></label>
           <div id="credit-card-card-expiration"></div>
@@ -23,6 +23,7 @@
       </div>
   </div>
 </div>
+<br>
 <br>
       <button id="credit-card-card-submit">Submit</button>
   </div>
