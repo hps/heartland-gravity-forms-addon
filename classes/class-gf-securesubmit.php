@@ -1572,7 +1572,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'is_success' => true,
                     'transaction_id' => $transaction->transactionId,
                     'amount' => $submission_data['payment_amount'],
-                    'payment_method' => $response->card_type,
+                    'payment_method' => isset($response->card_type) ? $response->card_type : '',
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
                     'note' => $note,
                 ),
@@ -1786,12 +1786,17 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $cc_field = $this->get_credit_card_field($form);
         $response = $this->getSecureSubmitJsResponse();
-        $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . ($response != null
+        if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_1' ])) {
+            $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . ($response != null
                 ? $response->last_four
                 : '');
-        $_POST[ 'input_' . $cc_field['id'] . '_4' ] = ($response != null
+        }
+
+        if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_4' ])) {
+            $_POST[ 'input_' . $cc_field['id'] . '_4' ] = ($response != null
             ? $response->card_type
             : '');
+        }
     }
 
     public function includeSecureSubmitSDK()

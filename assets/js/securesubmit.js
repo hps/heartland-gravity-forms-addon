@@ -188,9 +188,9 @@
                 });
                 // apply style for iframes
                 var content = document.getElementById('credit-card-card-holder');
-                content.firstChild.style.width = "98%";
+                content.firstChild.style.width = "100%";
                 var content = document.getElementById('credit-card-card-number');
-                content.firstChild.style.width = "98%";
+                content.firstChild.style.width = "100%";
 
                 SecureSubmitObj.hps.on("token-success", (resp) => {
                     clearFields();
