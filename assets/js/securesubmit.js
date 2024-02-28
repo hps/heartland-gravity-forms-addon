@@ -181,11 +181,16 @@
                             'display' : 'none'
                         },
                         'input[placeholder]' : {
-                            'letter-spacing' : '.5px',
-                        }
+                            'letter-spacing' : '.5px'
+                        },
                     }
 
                 });
+                // apply style for iframes
+                var content = document.getElementById('credit-card-card-holder');
+                content.firstChild.style.width = "98%";
+                var content = document.getElementById('credit-card-card-number');
+                content.firstChild.style.width = "98%";
 
                 SecureSubmitObj.hps.on("token-success", (resp) => {
                     clearFields();

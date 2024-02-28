@@ -5,7 +5,7 @@
       <br>
       <div id="secure-submit-card" class="form-group">
           <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
-          <input type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>/><br /><br />
+          <div type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>></div><br /><br />
       </div>
 
       <div id="secure-submit-card" class="form-group">
@@ -25,7 +25,9 @@
 </div>
 <br>
 <br>
+  <div class="form-group">
       <button id="credit-card-card-submit">Submit</button>
+  </div>
   </div>
 </div>
 
