@@ -70,7 +70,7 @@
                             target: "#credit-card-card-expiration"
                         },
                         "card-cvv": {
-                            placeholder: "•••",
+                            placeholder: "CVV",
                             target: "#credit-card-card-cvv",
                         }
                     },
@@ -92,6 +92,7 @@
                         },
                         '#secure-payment-field' : {
                             'box-sizing':'border-box',
+                            'text-transform': 'uppercase',
                             'display': 'block',
                             'width': '100%',
                             'height': '48px',
@@ -108,16 +109,17 @@
                             'transition': 'border-color ease-in-out .15s,box-shadow ease-in-out .15s'
                         },
                         '#secure-payment-field:focus' : {
-                            "border": "1px solid lightblue",
-                            "box-shadow": "0 1px 3px 0 #cecece",
-                            "outline": "none"
+                            'border-color': '#3989e3',
+                            'outline': '0',
+                            '-webkit-box-shadow': 'none',
+                            'box-shadow': 'none'
                         },
                         'input#heartland-field[name=cardCvv]' : {
                             'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv.png) no-repeat right',
                             'background-size' :'63px 40px'
                         },
                         '.card-cvv' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/cvv1.png) no-repeat right',
                             'background-size' : '63px 40px'
                         },
                         '.card-cvv.card-type-amex' : {
@@ -181,7 +183,8 @@
                             'display' : 'none'
                         },
                         'input[placeholder]' : {
-                            'letter-spacing' : '.5px'
+                            'font-family':'sans-serif !important',
+                            'letter-spacing': '3px'
                         },
                     }
 

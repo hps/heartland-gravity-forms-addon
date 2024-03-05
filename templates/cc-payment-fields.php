@@ -12,7 +12,6 @@
           <label for="iframesCardNumber">Card Number<span class="red">*</span></label>
           <div class="iframeholder" id="credit-card-card-number"></div>
       </div>
-      <br>
       <div id="secure-submit-date" class="form-group">
           <label for="iframesCardExpiration">Card Expiration<span class="red">*</span></label>
           <div id="credit-card-card-expiration"></div>
@@ -23,8 +22,6 @@
       </div>
   </div>
 </div>
-<br>
-<br>
   <div class="form-group">
       <button id="credit-card-card-submit">Submit</button>
   </div>
