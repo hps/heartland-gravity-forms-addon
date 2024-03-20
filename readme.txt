@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 1.4.8 =
+* SecureSubmit js to Globalpayment JS migration
+
 = 1.4.7 =
 * Fix: Compatibility issue w/GF2.6.4
 
