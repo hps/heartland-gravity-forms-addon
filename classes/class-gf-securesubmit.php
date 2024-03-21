@@ -754,7 +754,8 @@ class GFSecureSubmit extends GFPaymentAddOn
         $scripts = array(
             array(
                 'handle' => 'securesubmit.js',
-                'src' => 'https://api.heartlandportico.com/SecureSubmit.v1/token/2.1/securesubmit.js',
+
+                'src' => 'https://js.globalpay.com/v1/globalpayments.js',
                 'version' => $this->_version,
                 'deps' => array(),
                 'enqueue' => array(
@@ -835,7 +836,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
     public function add_theme_scripts()
     {
-        wp_enqueue_style('style', $this->get_base_url() . '/../css/style.css', array(), '1.1', 'all');
+        wp_enqueue_style('style', $this->get_base_url() . '/../css/style.css', array(), $this->_version, 'all');
 
         if (is_singular() && comments_open() && get_option('thread_comments')) {
             wp_enqueue_script('comment-reply');
@@ -1080,7 +1081,8 @@ class GFSecureSubmit extends GFPaymentAddOn
 
         if (empty($isCCData->token_value) && false !== $this->isACH && !empty($submission_data['ach_number'])) {
             $auth = $this->authorizeACH($feed, $submission_data, $form, $entry);
-        } elseif (empty($submission_data['ach_number']) && false !== $this->isCC && !empty($isCCData->token_value)) {
+        } elseif (empty($submission_data['ach_number'])  && !empty($isCCData->paymentReference)) {
+
             $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
         } else {
             $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
@@ -1432,7 +1434,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $response = $this->getSecureSubmitJsResponse();
             $token = new HpsTokenData();
             $token->tokenValue = ($response != null
-                ? $response->token_value
+                ? isset($response->paymentReference) ? $response->paymentReference : $response->token_value
                 : '');
 
             /**
@@ -1570,7 +1572,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     'is_success' => true,
                     'transaction_id' => $transaction->transactionId,
                     'amount' => $submission_data['payment_amount'],
-                    'payment_method' => $response->card_type,
+                    'payment_method' => isset($response->card_type) ? $response->card_type : '',
                     'securesubmit_payment_action' => $this->getAuthorizeOrCharge($feed),
                     'note' => $note,
                 ),
@@ -1784,12 +1786,17 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $cc_field = $this->get_credit_card_field($form);
         $response = $this->getSecureSubmitJsResponse();
-        $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . ($response != null
+        if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_1' ])) {
+            $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . ($response != null
                 ? $response->last_four
                 : '');
-        $_POST[ 'input_' . $cc_field['id'] . '_4' ] = ($response != null
+        }
+
+        if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_4' ])) {
+            $_POST[ 'input_' . $cc_field['id'] . '_4' ] = ($response != null
             ? $response->card_type
             : '');
+        }
     }
 
     public function includeSecureSubmitSDK()
