@@ -1,7 +1,7 @@
 <div class="ginput_complex<?php echo $class_suffix; ?> ginput_container ginput_container_creditcard hps_secure_cc" id="<?php echo $field_id; ?>">
   <div id="HPS_secure_cc">
     <div class="ss-shield"<?php echo $this->get_tabindex(); // added to get rid of GF silly confusion for the menu item being the next index from the first input ?>></div>
-      <div id="gp-error" class="form-group"></div>
+
       <br>
       <div id="secure-submit-card" class="form-group">
           <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
@@ -20,11 +20,6 @@
           <label for="iframesCardCvv">Card CVV<span class="red">*</span></label>
           <div class="" id="credit-card-card-cvv"></div>
       </div>
-  </div>
-</div>
-  <div class="form-group">
-      <button id="credit-card-card-submit">Submit</button>
-  </div>
   </div>
 </div>
 

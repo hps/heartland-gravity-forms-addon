@@ -8,7 +8,7 @@
  * Author URI: https://developer.heartlandpaymentsystems.com/securesubmit
  */
 
-define('GF_SECURESUBMIT_VERSION', '1.4.8');
+define('GF_SECURESUBMIT_VERSION', '1.4.9');
 
 add_action('gform_loaded', array('GF_SecureSubmit_Bootstrap', 'load'), 5);
 

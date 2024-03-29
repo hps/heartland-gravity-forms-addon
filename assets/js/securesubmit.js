@@ -34,9 +34,6 @@
 
         this.init = function () {
 
-            document.getElementById("gform_submit_button_" + this.formId).style.display = "none";
-            document.getElementById("gp-error").style.display = 'none';
-
             var SecureSubmitObj = this;
 
             if (!this.isCreditCardOnPage()) {
@@ -189,30 +186,16 @@
                     }
 
                 });
-                // apply style for iframes
-                var content = document.getElementById('credit-card-card-holder');
-                content.firstChild.style.width = "100%";
-                var content = document.getElementById('credit-card-card-number');
-                content.firstChild.style.width = "100%";
 
                 SecureSubmitObj.hps.on("token-success", (resp) => {
-                    clearFields();
                     SecureSubmitObj.secureSubmitResponseHandler(resp);
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {
                     // show error to the consumer
                     var error_message = resp?.error?.message ?? resp?.reasons[0]?.message;
-                    document.getElementById("gp-error").style.display = 'block';
-                    document.getElementById("gp-error").textContent = error_message;
-                    document.getElementById("credit-card-card-submit").disabled = false;
-
+                    alert(error_message);
                     return true;
                 });
-            }
-
-            function clearFields() {
-                document.getElementById("gp-error").style.display = 'none';
-                document.getElementById("credit-card-card-submit").disabled = true;
             }
 
             function triggerSubmit(){
