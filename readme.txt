@@ -41,8 +41,8 @@ Features of SecureSubmit:
 
 
 == Changelog ==
-= 1.4.9 =
-* Fix: GlobalPaymentJS submit button issue.
+= 2.0.0 =
+* Removing support for non-iframes as per PCI compliance
 
 = 1.4.8 =
 * SecureSubmit js to Globalpayment JS migration

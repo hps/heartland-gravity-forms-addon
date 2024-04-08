@@ -188,6 +188,7 @@
                 });
 
                 SecureSubmitObj.hps.on("token-success", (resp) => {
+
                     SecureSubmitObj.secureSubmitResponseHandler(resp);
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {
@@ -236,7 +237,6 @@
                 event.preventDefault();
 
                 SecureSubmitObj.form = $(this);
-                $('#credit-card-card-submit').prop('disabled', true);
 
                 // If we have what we need, we can submit the form.
                 if ($('#securesubmit_cca_data').length

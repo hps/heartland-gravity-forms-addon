@@ -1255,7 +1255,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 if ($HeartlandHPS_FailCount < $fraud_velocity_attempts) {
                     set_transient(
                         $HPS_VarName . 'IssuerResponse',
-                        $err,
+                        $e,
                         MINUTE_IN_SECONDS * $fraud_velocity_timeout
                     );
                 }
