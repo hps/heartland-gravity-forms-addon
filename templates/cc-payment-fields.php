@@ -4,7 +4,7 @@
         <br>
         <div id="secure-submit-card" class="form-group">
             <label for="iframesCardHolder">Card Holder<span class="red">*</span></label>
-            <div type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>></div><br><br>
+            <input type="text" id="credit-card-card-holder" name="card_name" placeholder="John Doe" <?php echo $this->get_tabindex(); ?>\><br><br>
         </div>
         <div id="secure-submit-card" class="form-group">
             <label for="iframesCardNumber">Card Number<span class="red">*</span></label>

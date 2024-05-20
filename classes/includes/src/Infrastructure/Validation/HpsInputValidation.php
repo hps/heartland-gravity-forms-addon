@@ -67,7 +67,7 @@ class HpsInputValidation
      */
     public static function cleanPhoneNumber($number)
     {
-        return preg_replace('/\D+/', '', trim($number));
+        return preg_replace('/\D+/', '', trim((string)$number));
     }
     /**
      * @param $zip
@@ -173,7 +173,7 @@ class HpsInputValidation
      * @throws HpsInvalidRequestException     
      */
     public static function checkEmailAddress($value) {
-        $value = filter_var(trim($value),FILTER_SANITIZE_EMAIL);
+        $value = filter_var(trim((string)$value),FILTER_SANITIZE_EMAIL);
         
         //validate the email address format
         if(!empty($value) && filter_var($value, FILTER_VALIDATE_EMAIL) === false){            
