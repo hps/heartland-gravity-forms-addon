@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 2.1.0 =
+* Fix: Recurring payment issue and depricated issues
+
 = 2.0.0 =
 * Removing support for non-iframes as per PCI compliance
 

@@ -1793,9 +1793,9 @@ class GFSecureSubmit extends GFPaymentAddOn
         }
 
         if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_4' ])) {
-            $_POST[ 'input_' . $cc_field['id'] . '_4' ] = ($response != null
-            ? isset($response->details->cardType) ? isset($response->details->cardType) : $response->card_type
-            : '');
+            if($response != null) {
+                $_POST[ 'input_' . $cc_field['id'] . '_4' ] = $response->details->cardType ?? $response->card_type;
+            }
         }
     }
 
@@ -2456,8 +2456,12 @@ class GFSecureSubmit extends GFPaymentAddOn
         $this->log_debug(__METHOD__ . '(): Customer meta to be created => ' . print_r($acctHolder, 1));
 
         /** @var string $modifier This value helps semi uniqely identify the customer */
-        $temp_card_last_4 = isset($this->getSecureSubmitJsResponse()->details->cardLast4) ? $this->getSecureSubmitJsResponse()->details->cardLast4 : $this->getSecureSubmitJsResponse()->last_four;
-        $temp_card_type = isset($this->getSecureSubmitJsResponse()->details->cardType) ? $this->getSecureSubmitJsResponse()->details->cardType : $this->getSecureSubmitJsResponse()->card_type;
+        $temp_card_last_4 = isset($this->getSecureSubmitJsResponse()->details->cardLast4) ?
+            $this->getSecureSubmitJsResponse()->details->cardLast4 :
+            $this->getSecureSubmitJsResponse()->last_four;
+        $temp_card_type = isset($this->getSecureSubmitJsResponse()->details->cardType) ?
+            $this->getSecureSubmitJsResponse()->details->cardType :
+            $this->getSecureSubmitJsResponse()->card_type;
         $modifier = $temp_card_last_4 . $temp_card_type;
 
         $customer = new HpsPayPlanCustomer();
@@ -2498,7 +2502,9 @@ class GFSecureSubmit extends GFPaymentAddOn
     private function createPaymentMethod($customer)
     {
         $paymentMethod = null;
-        $temp_token_value = isset($this->getSecureSubmitJsResponse()->paymentReference) ? $this->getSecureSubmitJsResponse()->paymentReference : $this->getSecureSubmitJsResponse()->token_value;
+        $temp_token_value = isset($this->getSecureSubmitJsResponse()->paymentReference) ?
+            $this->getSecureSubmitJsResponse()->paymentReference :
+            $this->getSecureSubmitJsResponse()->token_value;
         $acct = $temp_token_value;
 
         if (!empty($acct)) {

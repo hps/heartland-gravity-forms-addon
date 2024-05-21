@@ -38,9 +38,6 @@ class HpsSoapGatewayService extends HpsGatewayServiceAbstract implements HpsGate
         if ($this->_config->developerId != null && $this->_config->developerId != "") {
             $hpsHeader->appendChild($xml->createElement('hps:DeveloperID', $this->_config->developerId));
             $hpsHeader->appendChild($xml->createElement('hps:VersionNbr', $this->_config->versionNumber));
-            if(!empty($this->_config->siteTrace)) {
-                $hpsHeader->appendChild($xml->createElement('hps:SiteTrace', $this->_config->siteTrace));
-            }
         }
         if (isset($options['clientTransactionId'])) {
             $hpsHeader->appendChild($xml->createElement('hps:ClientTxnId', $options['clientTransactionId']));
