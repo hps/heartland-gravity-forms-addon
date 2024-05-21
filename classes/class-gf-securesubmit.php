@@ -1787,9 +1787,9 @@ class GFSecureSubmit extends GFPaymentAddOn
         $cc_field = $this->get_credit_card_field($form);
         $response = $this->getSecureSubmitJsResponse();
         if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_1' ])) {
-            $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . ($response != null
-                ? isset($response->details->cardLast4) ? $response->details->cardLast4 : $response->last_four
-                : '');
+            if($response != null) {
+                $_POST[ 'input_' . $cc_field['id'] . '_1' ] = 'XXXXXXXXXXXX' . $response->details->cardLast4 ?? $response->last_four;
+            }
         }
 
         if(isset($cc_field['id']) && isset($_POST[ 'input_' . $cc_field['id'] . '_4' ])) {
