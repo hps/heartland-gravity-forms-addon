@@ -178,6 +178,12 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
   line-height:25px;
 }
 
+#credit-card-card-holder {
+  text-transform: uppercase;
+  font-family: sans-serif !important;
+  letter-spacing: 3px;
+}
+
 .red {
   color:#ce1025 !important;
   padding-left:3px;
