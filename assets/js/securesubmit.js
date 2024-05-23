@@ -54,10 +54,6 @@
                 // Mapping of payment fields with GlobalPayment Js
                 SecureSubmitObj.hps = GlobalPayments.ui.form({
                     fields: {
-                        "card-holder-name": {
-                            placeholder: "John Smith",
-                            target: "#credit-card-card-holder"
-                        },
                         "card-number": {
                             placeholder: "•••• •••• •••• ••••",
                             target: "#credit-card-card-number"
