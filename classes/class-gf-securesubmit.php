@@ -2026,7 +2026,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $response = $this->getSecureSubmitJsResponse();
 
-        if (isset($response->error)) {
+        if (isset($response->error) && isset($response->error->message)) {
             return $response->error->message;
         }
 

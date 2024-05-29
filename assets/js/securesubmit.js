@@ -188,9 +188,7 @@
                     SecureSubmitObj.secureSubmitResponseHandler(resp);
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {
-                    // show error to the consumer
-                    var error_message = resp?.error?.message ?? resp?.reasons[0]?.message;
-                    alert(error_message);
+                    SecureSubmitObj.secureSubmitResponseHandler(resp);
                     return true;
                 });
             }
@@ -289,12 +287,17 @@
 
             var heartland = response.heartland || response;
 
+            if (heartland.error) {
+                var error_message = response?.error?.message ?? response?.reasons[0]?.message;
+                $('.cc_error').append('<ul class="alert alert-danger"><li>'+error_message+'</li></ul>');
+            }
+
             /*
              * If 3DSecure is enabled, the tokenization
              * will send back the CCA token as well
              */
-             var  cardinal = null;
-             if (this.isCCA && response.cardinal) {
+            var  cardinal = null;
+            if (this.isCCA && response.cardinal) {
                 cardinal = response.cardinal;
              }
 
@@ -310,33 +313,36 @@
              * Create hidden form inputs to capture
              * the values passed back from tokenization.
              */
-            var last4 = document.createElement('input');
-            last4.type = 'hidden';
-            last4.id = 'last_four';
-            last4.name = 'last_four';
-            last4.value = heartland.details.cardLast4;
-            $form.append($(last4));
+            if (heartland.details) {
+                var last4 = document.createElement('input');
+                last4.type = 'hidden';
+                last4.id = 'last_four';
+                last4.name = 'last_four';
+                last4.value = heartland.details.cardLast4;
+                $form.append($(last4));
 
-            var cType = document.createElement('input');
-            cType.type = 'hidden';
-            cType.id = 'card_type';
-            cType.name = 'card_type';
-            cType.value = heartland.details.cardType;
-            $form.append($(cType));
+                var cType = document.createElement('input');
+                cType.type = 'hidden';
+                cType.id = 'card_type';
+                cType.name = 'card_type';
+                cType.value = heartland.details.cardType;
+                $form.append($(cType));
 
-            var expMo = document.createElement('input');
-            expMo.type = 'hidden';
-            expMo.id = 'exp_month';
-            expMo.name = 'exp_month';
-            expMo.value = heartland.details.expiryMonth;
-            $form.append($(expMo));
+                var expMo = document.createElement('input');
+                expMo.type = 'hidden';
+                expMo.id = 'exp_month';
+                expMo.name = 'exp_month';
+                expMo.value = heartland.details.expiryMonth;
+                $form.append($(expMo));
 
-            var expYr = document.createElement('input');
-            expYr.type = 'hidden';
-            expYr.id = 'exp_year';
-            expYr.name = 'exp_year';
-            expYr.value = heartland.details.expiryYear;
-            $form.append($(expYr));
+                var expYr = document.createElement('input');
+                expYr.type = 'hidden';
+                expYr.id = 'exp_year';
+                expYr.name = 'exp_year';
+                expYr.value = heartland.details.expiryYear;
+                $form.append($(expYr));
+            }
+
 
             // Add tokenization response to the form
             this.createSecureSubmitResponseNode($.toJSON(heartland));
