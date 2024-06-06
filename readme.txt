@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 2.1.1 =
+* Fix: Conditional logic issue - for ACH & CC payment type selection mode
+
 = 2.1.0 =
 * Fix: Recurring payment issue and depricated issues
 
