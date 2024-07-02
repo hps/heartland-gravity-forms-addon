@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 2.1.2 =
+* Fix: UI Glitch - On Secure Submit payment checkout page
+
 = 2.1.1 =
 * Fix: Conditional logic issue - for ACH & CC payment type selection mode
 
