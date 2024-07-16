@@ -1,7 +1,7 @@
 === Heartland Secure Submit Addon for Gravity Forms ===
 Contributors: markhagan
 Tags: gravity, forms, gravityforms, heartland, payment, systems, gateway, token, tokenize
-Tested up to: 6.5.3
+Tested up to: 6.5.5
 Stable tag: trunk
 License: GPLv2
 License URI: https://github.com/hps/heartland-gravity-forms-addon/blob/master/LICENSE.md
@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 2.1.2 =
+* Fix: UI Glitch - On Secure Submit payment checkout page
+
 = 2.1.1 =
 * Fix: Conditional logic issue - for ACH & CC payment type selection mode
 
