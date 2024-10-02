@@ -1,7 +1,7 @@
 === Heartland Secure Submit Addon for Gravity Forms ===
 Contributors: markhagan
 Tags: gravity, forms, gravityforms, heartland, payment, systems, gateway, token, tokenize
-Tested up to: 6.5.5
+Tested up to: 6.6.2
 Stable tag: trunk
 License: GPLv2
 License URI: https://github.com/hps/heartland-gravity-forms-addon/blob/master/LICENSE.md
