@@ -59,7 +59,7 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
             $data = $this->searchFields;
         }
 
-        $encodedData = json_encode($data);
+        $encodedData = wp_json_encode($data);
 
         $identity = array();
         if (isset($this->_config->siteId)) {
@@ -107,7 +107,7 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
                 return $response;
                 break;
             case '400':
-                throw new HpsException($response->error->message);
+                throw new HpsException(esc_html($response->error->message));
                 break;
             default:
                 throw new HpsException('Unexpected response');

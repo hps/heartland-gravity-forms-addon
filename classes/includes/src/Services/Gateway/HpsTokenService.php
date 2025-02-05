@@ -82,7 +82,7 @@ class HpsTokenService extends HpsRestGatewayService
         $response = json_decode($curlResponse);
 
         if (isset($response->error) && is_object($response->error)) {
-            throw new HpsException($response->error->message, $response->error->code);
+            throw new HpsException(esc_html($response->error->message), esc_html($response->error->code));
         }
         
         return $response;

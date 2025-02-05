@@ -120,46 +120,46 @@
                             'background-size' : '63px 40px'
                         },
                         '.card-number' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-inputcard-blank@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-inputcard-blank2x.png) no-repeat right',
                             'background-size' : '55px 35px'
                         },
                         '.card-number.invalid.card-type-amex' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex2x.png) no-repeat right',
                             'background-position-y' : '-41px',
                             'background-size' : '50px 90px'
                         },
                         '.card-number.invalid.card-type-discover' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover2x.png) no-repeat right',
                             'background-position-y' : '-44px',
                             'background-size' : '85px 90px'
                         },
                         '.card-number.invalid.card-type-jcb' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb2x.png) no-repeat right',
                             'background-position-y' : '-44px',
                             'background-size' : '55px 94px'
                         },
                         '.card-number.invalid.card-type-mastercard' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-mastercard@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-mastercard2x.png) no-repeat right',
                             'background-position-y' : '-41px',
                             'background-size' : '82px 86px'
                         },
                         '.card-number.invalid.card-type-visa' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa2x.png) no-repeat right',
                             'background-position-y' : '-44px',
                             'background-size' : '83px 88px',
                         },
                         '.card-number.valid.card-type-amex' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-amex2x.png) no-repeat right',
                             'background-position-y' : '3px',
                             'background-size' : '50px 90px',
                         },
                         '.card-number.valid.card-type-discover' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover@2x.png) no-repeat right',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-discover2x.png) no-repeat right',
                             'background-position-y' : '1px',
                             'background-size' : '85px 90px'
                         },
                         '.card-number.valid.card-type-jcb' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb@2x.png) no-repeat right top',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-jcb2x.png) no-repeat right top',
                             'background-position-y' : '2px',
                             'background-size' : '55px 94px'
                         },
@@ -169,7 +169,7 @@
                             'background-size' : '82px 86px'
                         },
                         '.card-number.valid.card-type-visa' : {
-                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa@2x.png) no-repeat right top',
+                            'background' : 'transparent url(' + SecureSubmitObj.baseUrl + '/assets/images/ss-saved-visa2x.png) no-repeat right top',
                             'background-size' : '82px 86px'
                         },
                         '.card-number::-ms-clear' : {

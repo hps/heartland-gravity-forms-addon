@@ -53,7 +53,7 @@ abstract class HpsGatewayServiceAbstract
     {
         if ($this->_isConfigInvalid()) {
             throw new HpsAuthenticationException(
-                HpsExceptionCodes::INVALID_CONFIGURATION,
+                esc_html(HpsExceptionCodes::INVALID_CONFIGURATION),
                 "The HPS SDK has not been properly configured. "
                 ."Please make sure to initialize the config "
                 ."in a service constructor."
@@ -69,8 +69,8 @@ abstract class HpsGatewayServiceAbstract
                 $message .= ", but a(n) {$type} key is currently configured.";
             }
             throw new HpsAuthenticationException(
-                HpsExceptionCodes::INVALID_CONFIGURATION,
-                $message
+                esc_html(HpsExceptionCodes::INVALID_CONFIGURATION),
+                esc_html($message)
             );
         }
 
@@ -127,11 +127,11 @@ abstract class HpsGatewayServiceAbstract
             return $this->processResponse($curlResponse, $curlInfo, $curlError);
         } catch (Exception $e) {
             throw new HpsGatewayException(
-                $e->getCode() != null ? $e->getCode() : HpsExceptionCodes::UNKNOWN_GATEWAY_ERROR,
-                $e->getMessage() != null ? $e->getMessage() : 'Unable to process transaction',
+                $e->getCode() != null ? esc_html($e->getCode()) : esc_html(HpsExceptionCodes::UNKNOWN_GATEWAY_ERROR),
+                $e->getMessage() != null ? esc_html($e->getMessage()) : 'Unable to process transaction',
                 null,
                 null,
-                $e
+                esc_html($e)
             );
         }
     }

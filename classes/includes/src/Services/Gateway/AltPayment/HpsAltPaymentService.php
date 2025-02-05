@@ -380,12 +380,12 @@ class HpsAltPaymentService extends HpsSoapGatewayService
                 $this->void($transactionId);
             } catch (Exception $e) {
                 throw new HpsGatewayException(
-                    HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR,
+                    esc_html(HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR),
                     'Error occurred while reversing a charge due to HPS gateway timeout',
-                    $e,
+                    esc_html($e),
                     null,
                     null,
-                    $transactionId
+                    esc_html($transactionId)
                 );
             }
         }
@@ -441,7 +441,11 @@ class HpsAltPaymentService extends HpsSoapGatewayService
                 //         throw new HpsGatewayException('0', HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR);
                 //     }
                 // }
-                throw new HpsException('An error occurred and the gateway has timed out', 'gateway_timeout', $e, 'gateway_timeout');
+                throw new HpsException('An error occurred and the gateway has timed out',
+                    'gateway_timeout',
+                    esc_html($e),
+                    'gateway_timeout'
+                );
             }
             throw $e;
         }
