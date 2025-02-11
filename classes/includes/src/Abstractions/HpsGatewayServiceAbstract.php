@@ -77,41 +77,40 @@ abstract class HpsGatewayServiceAbstract
         $logger = HpsLogger::getInstance();
 
         try {
-            $request = curl_init();
-            curl_setopt($request, CURLOPT_URL, $url);
-            curl_setopt($request, CURLOPT_CONNECTTIMEOUT, 100);
-            curl_setopt($request, CURLOPT_TIMEOUT, 100);
-            curl_setopt($request, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($request, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($request, CURLOPT_SSL_VERIFYHOST, false);
-            if ($data != null) {
-                $logger->log('Request data', $data);
-                curl_setopt($request, CURLOPT_CUSTOMREQUEST, $httpVerb);
-                curl_setopt($request, CURLOPT_POSTFIELDS, $data);
-            }
-            $logger->log('Request headers', $headers);
-            curl_setopt($request, CURLOPT_HTTPHEADER, $headers);
-            curl_setopt($request, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+            $args = array();
+            $args['headers'] = $headers;
+            $args['sslverify'] = false;
+            $args['method'] = $httpVerb;
+            $args['timeout'] = 100;
+            $args['body'] = (string)$data;
+            $args['httpversion'] = '1.0';
+            $args['blocking'] = true;
 
-            if ($this->_config->useProxy) {
-                curl_setopt($request, CURLOPT_PROXY, $this->_config->proxyOptions['proxy_host']);
-                curl_setopt($request, CURLOPT_PROXYPORT, $this->_config->proxyOptions['proxy_port']);
-            }
+            error_log(print_r($args, true));
+            $response = wp_remote_post($url, $args);
+            $body =  wp_remote_retrieve_body( $response );
 
-            if (
-                $this->_config->curlOptions != null
-                && !empty($this->_config->curlOptions)
-            ) {
-                curl_setopt_array($request, $this->_config->curlOptions);
+            if ( is_wp_error( $response ) ) {
+                $error_message = $response->get_error_message();
+                echo "Something went wrong: $error_message";
+            } else {
+                error_log('remote response start');
+                error_log(print_r($response,true));
+                error_log('remote response end');
             }
 
-            $curlResponse = curl_exec($request);
-            $curlInfo = curl_getinfo($request);
-            $curlError = curl_errno($request);
+            $curlResponse = $body;
+            $curlInfo['http_code'] = wp_remote_retrieve_response_code($response);
+            $curlError = wp_remote_retrieve_response_code($response);
 
-            $logger->log('Response data', $curlResponse);
+            $logger->log('Response data: ', $curlResponse);
             $logger->log('Curl info', $curlInfo);
             $logger->log('Curl error', $curlError);
+
+            if ($data != null) {
+                $logger->log('Request data', $data);
+            }
+            $logger->log('Request headers', $headers);
 
             if ($curlError == 28) { //CURLE_OPERATION_TIMEOUTED
                 throw new HpsException("gateway_time-out");
@@ -127,8 +126,8 @@ abstract class HpsGatewayServiceAbstract
             return $this->processResponse($curlResponse, $curlInfo, $curlError);
         } catch (Exception $e) {
             throw new HpsGatewayException(
-                $e->getCode() != null ? esc_html($e->getCode()) : esc_html(HpsExceptionCodes::UNKNOWN_GATEWAY_ERROR),
-                $e->getMessage() != null ? esc_html($e->getMessage()) : 'Unable to process transaction',
+                $e->getCode() != null ? esc_attr($e->getCode()) : esc_attr(HpsExceptionCodes::UNKNOWN_GATEWAY_ERROR),
+                $e->getMessage() != null ? esc_attr($e->getMessage()) : 'Unable to process transaction',
                 null,
                 null,
                 esc_html($e)

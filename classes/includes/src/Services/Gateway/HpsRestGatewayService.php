@@ -76,13 +76,13 @@ class HpsRestGatewayService extends HpsGatewayServiceAbstract
             ? $this->_config->username.':'.$this->_config->password
             : $this->_config->secretApiKey;
         $header = array(
-            'Authorization: Basic '.base64_encode($auth),
-            'Content-Type: application/json; charset=utf-8',
-            'Content-Length: '.strlen($encodedData),
+            'Authorization' => 'Basic '.base64_encode($auth),
+            'Content-Type' => 'application/json; charset=utf-8',
+            'Content-Length' => strlen($encodedData)
         );
 
         if (isset($this->_config->username)) {
-            $header[] = 'HPS-Identity: '.implode(',', $identity);
+            $header['HPS-Identity'] = implode(',', $identity);
         }
         $keyType = HpsServicesConfig::KEY_TYPE_SECRET;
         // print "\n" . $encodedData;

@@ -1666,7 +1666,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                     $this->_slug,
                     $type,
                     $amount_formatted,
-                    $response->transactionId
+                    $transaction->transactionId
                 )
             );
 
