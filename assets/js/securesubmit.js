@@ -184,7 +184,6 @@
                 });
 
                 SecureSubmitObj.hps.on("token-success", (resp) => {
-
                     SecureSubmitObj.secureSubmitResponseHandler(resp);
                 });
                 SecureSubmitObj.hps.on("token-error", (resp) => {

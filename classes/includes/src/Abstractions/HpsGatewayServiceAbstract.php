@@ -92,7 +92,7 @@ abstract class HpsGatewayServiceAbstract
 
             if ( is_wp_error( $response ) ) {
                 $error_message = $response->get_error_message();
-                echo "Something went wrong: $error_message";
+                echo "Something went wrong:". esc_html($error_message);
             } else {
                 error_log('remote response start');
                 error_log(print_r($response,true));
