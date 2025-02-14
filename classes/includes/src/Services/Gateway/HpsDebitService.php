@@ -315,7 +315,8 @@ class HpsDebitService extends HpsSoapGatewayService
                         throw new HpsGatewayException('0', esc_html(HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR));
                     }
                 }
-                throw new HpsException('An error occurred and the gateway has timed out',
+                throw new HpsException(
+                    'An error occurred and the gateway has timed out',
                     'gateway_timeout',
                     esc_html($e),
                     'gateway_timeout'

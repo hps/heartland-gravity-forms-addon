@@ -61,7 +61,8 @@ class HpsAttachmentService extends HpsSoapGatewayService
         $AttachmentDataId = filter_var($AttachmentDataId, FILTER_SANITIZE_NUMBER_INT);
         // this is a limitation of the gateway and we want to inform the user
         if ($AttachmentTypeProvided && $AttachmentDataId) {
-            throw new HpsGatewayException(esc_html(HpsExceptionCodes::GATEWAY_ERROR),
+            throw new HpsGatewayException(
+                esc_html(HpsExceptionCodes::GATEWAY_ERROR),
                 "Since the AttachmentDataId was provided the AttachmentType was ignored by the server"
             );
             //trigger_error("Since the AttachmentDataId was provided the AttachmentType was ignored by the server", E_USER_NOTICE);
