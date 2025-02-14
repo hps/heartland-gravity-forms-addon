@@ -28,12 +28,12 @@ class HpsGatewayResponseValidation
         }
         if (!isset($response->Transaction) || !isset($response->Transaction->$expectedType)) {
             throw new HpsGatewayException(
-                HpsExceptionCodes::UNEXPECTED_GATEWAY_ERROR,
+                esc_html(HpsExceptionCodes::UNEXPECTED_GATEWAY_ERROR),
                 'Unexpected response from HPS gateway',
                 null,
                 null,
                 null,
-                $transactionId
+                esc_html($transactionId)
             );
         }
     }

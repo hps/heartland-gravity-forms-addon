@@ -245,7 +245,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $response = $is_valid
             ? 'valid'
             : 'invalid';
-        die($response);
+        die(esc_attr($response));
     }
 
     /**
@@ -255,11 +255,17 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         return array(
             array(
-                'title' => __('SecureSubmit API', $this->_slug),
+                'title' => sprintf(
+                        esc_html__( 'SecureSubmit API', 'gravityforms' ),
+                        $this->_slug
+                ),
                 'fields' => $this->sdkSettingsFields(),
             ),
             array(
-                'title' => __('Velocity Limits', $this->_slug),
+                'title' => sprintf(
+                    esc_html__( 'Velocity Limits', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'fields' => $this->vmcSettingsFields(),
             ),
         );
@@ -323,28 +329,43 @@ class GFSecureSubmit extends GFPaymentAddOn
         return array(
             array(
                 'name' => 'enable_fraud',
-                'label' => __('Velocity Settings', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Velocity Settings', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'select',
                 'default_value' => 'Enabled',
-                'tooltip' => __('Choose whether you wish to limit failed attempts', $this->_slug),
+                'tooltip' => sprintf(
+                    esc_html__( 'Choose whether you wish to limit failed attempts', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'choices' => array(
                     array(
-                        'label' => __('Enabled', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Enabled', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'true',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Disabled', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Disabled', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'false',
                     ),
                 ),
             ),
             array(
                 'name' => 'fraud_message',
-                'label' => __('Displayed Message', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Displayed Message', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
-                'tooltip' => __(
-                    'Text entered here will be displayed to your consumer if they exceed the failures within the timeframe.',
+                'tooltip' => sprintf(
+                    esc_html__( 'Text entered here will be displayed to your consumer if they exceed the failures within the timeframe.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'default_value' => 'Please contact us to complete the transaction.',
@@ -352,15 +373,18 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'fraud_velocity_attempts',
-                'label' => __('How many failed attempts before blocking?', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'How many failed attempts before blocking?', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'default_value' => '3',
                 'class' => 'small',
             ),
             array(
                 'name' => 'fraud_velocity_timeout',
-                'label' => __(
-                    'How long (in minutes) should we keep a tally of recent failures?',
+                'label' => sprintf(
+                    esc_html__( 'How long (in minutes) should we keep a tally of recent failures?', 'gravityforms' ),
                     $this->_slug
                 ),
                 'type' => 'text',
@@ -378,56 +402,80 @@ class GFSecureSubmit extends GFPaymentAddOn
         return array(
             array(
                 'name' => 'public_api_key',
-                'label' => __('Public Key', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Public Key', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",
             ),
             array(
                 'name' => 'secret_api_key',
-                'label' => __('Secret Key', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Secret Key', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",
             ),
             array(
                 'name' => 'authorize_or_charge',
-                'label' => __('Payment Action', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Payment Action', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'select',
                 'default_value' => 'capture',
-                'tooltip' => __(
-                    'Choose whether you wish to capture funds immediately or authorize payment only.',
+                'tooltip' => sprintf(
+                    esc_html__( 'Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                     array(
-                        'label' => __('Capture', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Capture', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'capture',
                         'selected' => true,
                     ),
                    array(
-                        'label' => __('Authorize', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Authorize', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'authorize',
                     ),
                 ),
             ),
             array(
                 'name' => 'allow_payment_action_override',
-                'label' => __('Allow Payment Action Override', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Allow Payment Action Override', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'radio',
                 'default_value' => 'no',
-                'tooltip' => __(
-                    'Allows a SecureSubmit Feed to override the default payment action (authorize / capture).',
+                'tooltip' => sprintf(
+                    esc_html__( 'Allows a SecureSubmit Feed to override the default payment action (authorize / capture).', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'No', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'no',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Yes', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'yes',
                     ),
                 ),
@@ -435,18 +483,30 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'allow_level_ii',
-                'label' => __('Allow Level II Processing', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Allow Level II Processing', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'radio',
                 'default_value' => 'no',
-                'tooltip' => __('If you need Level II Processing, enable this field.', $this->_slug),
+                'tooltip' => sprintf(
+                    esc_html__( 'If you need Level II Processing, enable this field.', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'No', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'no',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Yes', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'yes',
                     ),
                 ),
@@ -454,21 +514,30 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'allow_api_keys_override',
-                'label' => __('Allow API Keys Override', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Allow API Keys Override', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'radio',
                 'default_value' => 'no',
-                'tooltip' => __(
-                    'Allows a SecureSubmit Feed to override the default set of API keys.',
+                'tooltip' => sprintf(
+                    esc_html__( 'Allows a SecureSubmit Feed to override the default set of API keys.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'No', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'no',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Yes', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'yes',
                     ),
                 ),
@@ -476,21 +545,31 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'enable_threedsecure',
-                'label' => __('Enable Cardholder Authentication (3DSecure)', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Enable Cardholder Authentication (3DSecure)', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'radio',
                 'default_value' => 'no',
-                'tooltip' => __(
-                    'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.',
+                'tooltip' => sprintf(
+                    esc_html__(
+                            'This feature requires additional account setup. Please contact your Heartland representative to enable this feature.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'No', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'no',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Yes', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'yes',
                     ),
                 ),
@@ -499,39 +578,57 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'enable_threedsecure_api_identifier',
-                'label' => __('Cardholder Authentication API Identifier', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Cardholder Authentication API Identifier', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
             ),
             array(
                 'name' => 'enable_threedsecure_org_unit_id',
-                'label' => __('Cardholder Authentication Org Unit ID', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Cardholder Authentication Org Unit ID', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
             ),
             array(
                 'name' => 'enable_threedsecure_api_key',
-                'label' => __('Cardholder Authentication API Key', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Cardholder Authentication API Key', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
             ),
             array(
                 'name' => 'send_email',
-                'label' => __('Send Email', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Send Email', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'radio',
                 'default_value' => 'no',
-                'tooltip' => __(
-                    'Sends email with transaction details independent of GF notification system.',
+                'tooltip' => sprintf(
+                    esc_html__( 'Sends email with transaction details independent of GF notification system.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                     array(
-                        'label' => __('No', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'No', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'no',
                         'selected' => true,
                     ),
                     array(
-                        'label' => __('Yes', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Yes', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'yes',
                     ),
                 ),
@@ -540,7 +637,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             ),
             array(
                 'name' => 'send_email_recipient_address',
-                'label' => __('Email Recipient', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Email Recipient', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
             ),
@@ -603,21 +703,30 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($this->getAllowPaymentActionOverride() == 'yes') {
             $authorize_or_charge_field = array(
                 'name' => 'authorize_or_charge',
-                'label' => __('Payment Action', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Payment Action', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'select',
                 'default_value' => 'capture',
-                'tooltip' => __(
-                    'Choose whether you wish to capture funds immediately or authorize payment only.',
+                'tooltip' => sprintf(
+                    esc_html__( 'Choose whether you wish to capture funds immediately or authorize payment only.', 'gravityforms' ),
                     $this->_slug
                 ),
                 'choices' => array(
                      array(
-                        'label' => __('Capture', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Capture', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'capture',
                         'selected' => $this->getAuthorizeOrCharge() == 'capture',
                     ),
                     array(
-                        'label' => __('Authorize', $this->_slug),
+                        'label' => sprintf(
+                            esc_html__( 'Authorize', 'gravityforms' ),
+                            $this->_slug
+                        ),
                         'value' => 'authorize',
                         'selected' => $this->getAuthorizeOrCharge() == 'authorize',
                     ),
@@ -631,14 +740,20 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($this->getAllowAPIKeysOverride() == 'yes') {
             $public_api_key_field = array(
                 'name' => 'public_api_key',
-                'label' => __('Public Key', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Public Key', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('public_api_key', this.value);",
             );
             $secret_api_key_field = array(
                 'name' => 'secret_api_key',
-                'label' => __('Secret Key', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Secret Key', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'text',
                 'class' => 'medium',
                 'onchange' => "SecureSubmitAdmin.validateKey('secret_api_key', this.value);",
@@ -652,11 +767,20 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($this->getAllowLevelII() == 'yes') {
             $tax_type_field = array(
                 'name' => 'mappedFields',
-                'label' => esc_html__('Level II Mapping', $this->_slug),
+                'label' => sprintf(
+                    esc_html__( 'Level II Mapping', 'gravityforms' ),
+                    $this->_slug
+                ),
                 'type' => 'field_map',
                 'field_map' => $this->get_level_ii_fields(),
-                'tooltip' => '<h6>' . esc_html__('Map Fields', $this->_slug) . '</h6>'
-                            . esc_html__('This is only required if you plan to do Level II Processing.', $this->_slug),
+                'tooltip' => '<h6>' . sprintf(
+                        esc_html__( 'Map Fields', 'gravityforms' ),
+                        $this->_slug
+                    ) . '</h6>'
+                            . sprintf(
+                        esc_html__( 'This is only required if you plan to do Level II Processing.', 'gravityforms' ),
+                        $this->_slug
+                    ),
             );
 
             $default_settings = $this->add_field_after('paymentAmount', $tax_type_field, $default_settings);
@@ -705,7 +829,7 @@ class GFSecureSubmit extends GFPaymentAddOn
         $html .= '&nbsp' . $this->settings_text($product_field, false);
 
         if ($echo) {
-            echo $html;
+            echo esc_attr($html);
         }
 
         return $html;
@@ -807,7 +931,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 ),
                 'strings' => array(
                     'spinner' => GFCommon::get_base_url() . '/images/spinner.gif',
-                    'validation_error' => __('Error validating this key. Please try again later.', 'gravityforms-securesubmit'),
+                    'validation_error' => __('Error validating this key. Please try again later.', 'gravityforms'),
                 ),
             ),
         );
@@ -918,7 +1042,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             );
         }
 
-        $script = 'new window.SecureSubmit(' . json_encode($args) . ');';
+        $script = 'new window.SecureSubmit(' . wp_json_encode($args) . ');';
         GFFormDisplay::add_init_script($form['id'], 'securesubmit', GFFormDisplay::ON_PAGE_RENDER, $script);
     }
 
@@ -1085,7 +1209,7 @@ class GFSecureSubmit extends GFPaymentAddOn
 
             $auth = $this->authorizeCC($feed, $submission_data, $form, $entry);
         } else {
-            $failMessage = __('Please check your entries and submit only Credit Card or Bank Transfer');
+            $failMessage = esc_attr('Please check your entries and submit only Credit Card or Bank Transfer');
             $auth = $this->authorization_error($failMessage);
         }
 
@@ -1186,10 +1310,14 @@ class GFSecureSubmit extends GFPaymentAddOn
             $type = 'Payment';
             $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
             $note = sprintf(
-                __('%s has been completed. Amount: %s. Transaction Id: %s.', $this->_slug),
-                $type,
-                $amount_formatted,
-                $response->transactionId
+                sprintf(
+                        /* translators:%1$s has been completed. Amount: %2$s. Transaction Id: %3$s. */
+                        esc_html__('%1$s has been completed. Amount: %2$s. Transaction Id: %3$s.', 'gravityforms'),
+                    $this->_slug,
+                    $type,
+                    $amount_formatted,
+                    $response->transactionId
+                )
             );
 
             $auth = array(
@@ -1532,10 +1660,14 @@ class GFSecureSubmit extends GFPaymentAddOn
                 : 'Payment';
             $amount_formatted = GFCommon::to_money($submission_data['payment_amount'], GFCommon::get_currency());
             $note = sprintf(
-                __('%s has been completed. Amount: %s. Transaction Id: %s.', $this->_slug),
-                $type,
-                $amount_formatted,
-                $transaction->transactionId
+                sprintf(
+                /* translators:%1$s has been completed. Amount: %2$s. Transaction Id: %3$s. */
+                    esc_html__('%1$s has been completed. Amount: %2$s. Transaction Id: %3$s.', 'gravityforms'),
+                    $this->_slug,
+                    $type,
+                    $amount_formatted,
+                    $transaction->transactionId
+                )
             );
 
             if ($cpcReq
@@ -1558,12 +1690,22 @@ class GFSecureSubmit extends GFPaymentAddOn
 
                 if (!empty($cpcData->CardHolderPONbr) && !empty($cpcData->TaxType) && !empty($cpcData->TaxAmt)) {
                     $cpcResponse = $service->cpcEdit($transaction->transactionId, $cpcData);
-                    $note .= sprintf(__(' CPC Response Code: %s', $this->_slug), $cpcResponse->responseCode);
+                    $note .= sprintf(
+                        /* translators: %s: CPC Response Code: %s */
+                        esc_html__( 'CPC Response Code: %s', 'gravityforms' ),
+                        $this->_slug,
+                        $cpcResponse->responseCode
+                    );
                 }
             }
 
             if ($isAuth) {
-                $note .= sprintf(__(' Authorization Code: %s', $this->_slug), $transaction->authorizationCode);
+                $note .= sprintf(
+                /* translators: Authorization Code: %s */
+                    esc_html__( 'Authorization Code:: %s', 'gravityforms' ),
+                    $this->_slug,
+                    $cpcResponse->authorizationCode
+                );
             }
 
             $auth = array(
@@ -1623,7 +1765,10 @@ class GFSecureSubmit extends GFPaymentAddOn
             && isset($result['is_success'])
             && $result['is_success']
         ) {
-            $entry['payment_status'] = __('Authorized', $this->_slug);
+            $entry['payment_status'] = sprintf(
+                esc_html__( 'Authorized', 'gravityforms' ),
+                $this->_slug
+            );
             GFAPI::update_entry($entry);
         }
 
@@ -2051,7 +2196,11 @@ class GFSecureSubmit extends GFPaymentAddOn
         if ($mapped_field_page > $cc_page) {
             $this->set_field_error(
                 $field,
-                __('The selected field needs to be on the same page as the Credit Card field or a previous page.', $this->_slug)
+                sprintf(esc_html__(
+                        'The selected field needs to be on the same page as the Credit Card field or a previous page.',
+                        'gravityforms' ),
+                    $this->_slug
+                )
             );
         }
     }
@@ -2575,7 +2724,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             HpsPayPlanScheduleFrequency::SEMIMONTHLY,
             HpsPayPlanScheduleFrequency::ANNUALLY
         ))) {
-            $schedule->processingDateInfo = date("d", strtotime(date('d-m-Y')));
+            $schedule->processingDateInfo = gmdate("d", strtotime(gmdate('d-m-Y')));
         }
 
         $schedule->startDate = $this->getStartDateInfo($schedule->frequency, $trial_period_days);
@@ -2624,7 +2773,7 @@ class GFSecureSubmit extends GFPaymentAddOn
             $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($feed, 1));
             throw new HpsArgumentException(
                 'Invalid period for subscription. Please check settings and try again',
-                HpsExceptionCodes::INVALID_CONFIGURATION
+                esc_attr(HpsExceptionCodes::INVALID_CONFIGURATION)
             );
         }
         $this->log_debug(__METHOD__ . '(): Billing Cycle Calculated => ' . $cycle);
@@ -2642,39 +2791,39 @@ class GFSecureSubmit extends GFPaymentAddOn
     private function getStartDateInfo($frequency, $trial_period_days)
     {
         if ($trial_period_days*1 !== 0) {
-            $period = date('mdY', strtotime('+' . ($trial_period_days * 1) . ' days'));
+            $period = gmdate('mdY', strtotime('+' . ($trial_period_days * 1) . ' days'));
         } else {
             switch ($frequency) {
                 case HpsPayPlanScheduleFrequency::WEEKLY:
-                    $period = date('mdY', strtotime('+1 week'));
+                    $period = gmdate('mdY', strtotime('+1 week'));
                     break;
                 case HpsPayPlanScheduleFrequency::BIWEEKLY:
-                    $period = date('mdY', strtotime('+2 week'));
+                    $period = gmdate('mdY', strtotime('+2 week'));
                     break;
                 case HpsPayPlanScheduleFrequency::SEMIMONTHLY:
-                    if (intval(date('d', strtotime('+15 day'))) < 15) {
-                        $period = date('m15Y', strtotime('+15 day'));
+                    if (intval(gmdate('d', strtotime('+15 day'))) < 15) {
+                        $period = gmdate('m15Y', strtotime('+15 day'));
                     } else {
-                        $period = date('mtY', strtotime('+15 day'));
+                        $period = gmdate('mtY', strtotime('+15 day'));
                     }
                     break;
                 case HpsPayPlanScheduleFrequency::MONTHLY:
-                    $period = date('mdY', strtotime('+1 month'));
+                    $period = gmdate('mdY', strtotime('+1 month'));
                     break;
                 case HpsPayPlanScheduleFrequency::QUARTERLY:
-                    $period = date('mdY', strtotime('+3 month'));
+                    $period = gmdate('mdY', strtotime('+3 month'));
                     break;
                 case HpsPayPlanScheduleFrequency::SEMIANNUALLY:
-                    $period = date('mdY', strtotime('+6 month'));
+                    $period = gmdate('mdY', strtotime('+6 month'));
                     break;
                 case HpsPayPlanScheduleFrequency::ANNUALLY:
-                    $period = date('mdY', strtotime('+1 year'));
+                    $period = gmdate('mdY', strtotime('+1 year'));
                     break;
                 default:
                     $this->log_debug(__METHOD__ . '(): Billing Cycle Error => ' . print_r($frequency, 1));
                     throw new HpsArgumentException(
                         'Invalid period for subscription. Please check settings and try again',
-                        HpsExceptionCodes::INVALID_CONFIGURATION
+                        esc_attr(HpsExceptionCodes::INVALID_CONFIGURATION)
                     );
             }
         }
@@ -2691,7 +2840,7 @@ class GFSecureSubmit extends GFPaymentAddOn
     {
         $identifierBase = '%s-%s' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz'), 0, 10);
 
-        return substr(sprintf($identifierBase, date('Ymd'), $id), 0, 50);
+        return substr(sprintf($identifierBase, gmdate('Ymd'), $id), 0, 50);
     }
 
     /**
@@ -2740,7 +2889,11 @@ class GFSecureSubmit extends GFPaymentAddOn
         $array = $oClass->getConstants();
         $billing_cycles = array();
         foreach ($array as $const => $value) {
-            $billing_cycles[$const] = array('label' => esc_html__($value, 'gravityforms'), 'min' => 1, 'max' => 1);
+            $billing_cycles[$const] = array('label' => sprintf(
+                    /* translators: %s: Value */
+                    esc_html__('%s:', 'gravityforms'), $value),
+                    'min' => 1,
+                    'max' => 1);
         }
 
         return $billing_cycles;
@@ -2820,7 +2973,7 @@ class GFSecureSubmit extends GFPaymentAddOn
                 return 'CAN';
             default:
                 if ($isRecurring) {
-                    throw new Exception(sprintf('Country "%s" is currently not supported', $country));
+                    throw new Exception(sprintf('Country "%s" is currently not supported', esc_html($country)));
                 }
                 return null;
         }
@@ -2910,6 +3063,6 @@ class GFSecureSubmit extends GFPaymentAddOn
             return $state_uc;
         }
 
-        throw new Exception(sprintf('State/Province "%s" is currently not supported', $state));
+        throw new Exception(sprintf('State/Province "%s" is currently not supported', esc_html($state)));
     }
 }

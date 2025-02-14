@@ -229,12 +229,12 @@ class HpsDebitService extends HpsSoapGatewayService
                 $this->reverse($transactionId, $this->_amount, $this->_currency);
             } catch (Exception $e) {
                 throw new HpsGatewayException(
-                    HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR,
+                    esc_html(HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR),
                     'Error occurred while reversing a charge due to HPS gateway timeout',
-                    $e,
+                    esc_html($e),
                     null,
                     null,
-                    $transactionId
+                    esc_html($transactionId)
                 );
             }
         }
@@ -268,17 +268,17 @@ class HpsDebitService extends HpsSoapGatewayService
                             HpsIssuerResponseValidation::checkResponse($transactionId, $responseCode, $responseText);
                         }
                         throw new HpsCreditException(
-                            $transactionId,
-                            HpsExceptionCodes::ISSUER_TIMEOUT_REVERSAL_ERROR,
+                            esc_html($transactionId),
+                            esc_html(HpsExceptionCodes::ISSUER_TIMEOUT_REVERSAL_ERROR),
                             'Error occurred while reversing a charge due to HPS issuer timeout',
-                            $e
+                            esc_html($e)
                         );
                     } catch (HpsException $e) {
                         throw new HpsCreditException(
-                            $transactionId,
-                            HpsExceptionCodes::ISSUER_TIMEOUT_REVERSAL_ERROR,
+                            esc_html($transactionId),
+                            esc_html(HpsExceptionCodes::ISSUER_TIMEOUT_REVERSAL_ERROR),
                             'Error occurred while reversing a charge due to HPS issuer timeout',
-                            $e
+                            esc_html($e)
                         );
                     }
                 }
@@ -312,10 +312,15 @@ class HpsDebitService extends HpsSoapGatewayService
                     try {
                         $this->reverse($cardData, $this->_amount, $this->_currency);
                     } catch (Exception $e) {
-                        throw new HpsGatewayException('0', HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR);
+                        throw new HpsGatewayException('0', esc_html(HpsExceptionCodes::GATEWAY_TIMEOUT_REVERSAL_ERROR));
                     }
                 }
-                throw new HpsException('An error occurred and the gateway has timed out', 'gateway_timeout', $e, 'gateway_timeout');
+                throw new HpsException(
+                    'An error occurred and the gateway has timed out',
+                    'gateway_timeout',
+                    esc_html($e),
+                    'gateway_timeout'
+                );
             }
             throw $e;
         }

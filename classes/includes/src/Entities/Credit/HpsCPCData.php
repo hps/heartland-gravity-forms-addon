@@ -21,7 +21,8 @@ class HpsCPCData
     {
         if ($poNbr != null) {
             if (strlen($poNbr) > 17) {
-                throw new HpsArgumentException('Card holder PO number must be less than 17 characters',HpsExceptionCodes::INVALID_CPC_DATA);
+                throw new HpsArgumentException('Card holder PO number must be less than 17 characters',
+                    esc_html(HpsExceptionCodes::INVALID_CPC_DATA));
             }
             $this->cardHolderPONbr = $poNbr;
         }

@@ -96,7 +96,7 @@ abstract class HpsBuilderAbstract
             $result = call_user_func_array($validation['callback'], array($actions));
             if (!$result) {
                 $class = $validation['exceptionType'];
-                throw new $class($validation['exceptionMessage'], 0);
+                throw new $class(esc_attr($validation['exceptionMessage']), 0);
             }
         }
     }
@@ -153,7 +153,7 @@ abstract class HpsBuilderAbstract
             $action->arguments = array($property, $value);
             $this->addAction($action);
         } else {
-            throw new HpsUnknownPropertyException($this, $property);
+            throw new HpsUnknownPropertyException(esc_html($this), esc_html($property));
         }
         return $this;
     }
