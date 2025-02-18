@@ -41,6 +41,9 @@ Features of SecureSubmit:
 
 
 == Changelog ==
+= 2.1.3 =
+* Fix: Security Vulnerabilities issues
+
 = 2.1.2 =
 * Fix: UI Glitch - On Secure Submit payment checkout page
 
