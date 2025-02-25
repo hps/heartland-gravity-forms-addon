@@ -43,8 +43,8 @@ class HeartlandJWT
         $header = array('typ' => 'JWT', 'alg' => 'HS256');
 
         $parts = array(
-            self::urlsafeBase64Encode(json_encode($header)),
-            self::urlsafeBase64Encode(json_encode($payload)),
+            self::urlsafeBase64Encode(wp_json_encode($header)),
+            self::urlsafeBase64Encode(wp_json_encode($payload)),
         );
         $signingData = implode('.', $parts);
         $signature = self::sign($key, $signingData);

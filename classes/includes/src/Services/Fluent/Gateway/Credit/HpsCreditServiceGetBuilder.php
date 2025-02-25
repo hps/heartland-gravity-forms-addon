@@ -30,7 +30,7 @@ class HpsCreditServiceGetBuilder extends HpsBuilderAbstract
         parent::execute();
 
         if ($this->transactionId <= 0) {
-            throw new HpsArgumentException('Invalid Transaction Id',HpsExceptionCodes::INVALID_ORIGINAL_TRANSACTION);
+            throw new HpsArgumentException('Invalid Transaction Id',esc_html(HpsExceptionCodes::INVALID_ORIGINAL_TRANSACTION));
         }
 
         $xml = new DOMDocument();

@@ -12,7 +12,7 @@ iframe {
   color:#333333;
 }
 .ss-shield {
-  background: transparent url(../images/img/ss-shield@2x.png) no-repeat top left;
+  background: transparent url(../images/img/ss-shield2x.png) no-repeat top left;
   height:50px;
   background-size:40px 40px;
 }
@@ -27,7 +27,7 @@ iframe {
 }
 
 div.HPS_gform_card_icon {
-  background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
+  background: transparent url(../images/img/ss-shield1x.png) no-repeat !important;
   background-size:250px 30px !important;
   width:540px !important;
   height:42px !important;
@@ -235,7 +235,7 @@ li div.hps_secure_ach ~ div.gfield_description.validation_message {
   }
 
   #HPS_secure_ach div.HPS_gform_card_icon {
-    background: transparent url(../images/img/ss-shield@1x.png) no-repeat !important;
+    background: transparent url(../images/img/ss-shield1x.png) no-repeat !important;
     background-size:320px 40px !important;
     width:540px !important;
     height:42px !important;
