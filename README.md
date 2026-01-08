@@ -1,3 +1,6 @@
+# ** This repository is no longer maintained **
+Our Gravity Forms Plugin can be found <a href="https://github.com/globalpayments/globalpayments-gravity-forms" target="_blank">here</a>.
+
 # Heartland Secure Submit Addon for Gravity Forms
 
 This extension allows Gravity Forms to use the Heartland Payment Systems Gateway. All card data is tokenized using Heartland's SecureSubmit product.
